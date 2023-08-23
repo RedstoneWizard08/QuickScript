@@ -12,3 +12,7 @@ This project is licensed under the MIT license. Feel free to use the code for wh
 Currently you just run `cargo run [file]`, where `[file]` represents the path to the input file. I know, very complex.
 
 If you want to use the code as a library, feel free, I tried to document most of it. I may have forgotten some though, or I may just stop out of laziness later. :p
+
+# Credits
+
+Huge thanks to [Pixeled (@orosmatthew)](https://github.com/orosmatthew) and his [Creating a Compiler](https://www.youtube.com/playlist?list=PLUDlas_Zy_qC7c5tCgTMYq2idyyT241qs) series, as it helped me think about how to do this best and it gave me the inspiration for this project.
