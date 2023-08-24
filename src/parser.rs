@@ -2,7 +2,10 @@ use std::process::exit;
 
 use serde::Serialize;
 
-use crate::{token::{Token, TOKENS, EXPRESSIONS}, cursor::{Cursor, Reader}};
+use crate::{
+    cursor::{Cursor, Reader},
+    token::{Token, EXPRESSIONS, TOKENS},
+};
 
 /// A parser/tokenizer for an unknown semicolon-based
 /// syntax tree. Can identify strings, numbers, literals,
@@ -76,7 +79,11 @@ impl Parser {
 
                 // Check if it is now more than one character.
                 if buf.len() > 1 {
-                    eprintln!("Invalid value for character literal: {} (index {})", buf, self.code.position - (buf.len() + 1));
+                    eprintln!(
+                        "Invalid value for character literal: {} (index {})",
+                        buf,
+                        self.code.position - (buf.len() + 1)
+                    );
                     eprintln!("Character literals can only be one character long!");
                     exit(1);
                 }
@@ -101,9 +108,13 @@ impl Parser {
                     if ch == '.' {
                         points += 1;
                         buf.push(ch);
-                    
+
                         if points > 1 {
-                            eprintln!("Invalid syntax for float: {} (index {})", buf, self.code.position - (buf.len() + 1));
+                            eprintln!(
+                                "Invalid syntax for float: {} (index {})",
+                                buf,
+                                self.code.position - (buf.len() + 1)
+                            );
                             eprintln!("Floating-point numbers can only have one decimal point!");
                             exit(1);
                         }
@@ -132,7 +143,8 @@ impl Parser {
                 // This is an expression.
 
                 // Add the token.
-                self.tokens.push(TOKENS.get("EXPR").unwrap().create(ch.to_string()));
+                self.tokens
+                    .push(TOKENS.get("EXPR").unwrap().create(ch.to_string()));
 
                 // Skip any other checks.
                 continue;
@@ -141,7 +153,7 @@ impl Parser {
             if ch.is_alphanumeric() {
                 // This is an identifier.
                 let mut buf = String::new();
-                
+
                 buf.push(ch);
 
                 while ch.is_alphanumeric() && self.code.has_next() {

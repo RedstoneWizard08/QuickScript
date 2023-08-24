@@ -1,16 +1,12 @@
 #![allow(irrefutable_let_patterns)]
 
-pub mod parser;
-pub mod token;
-pub mod cursor;
+use std::{fs, io::stdout, path::PathBuf, process::exit};
 
-use std::{path::PathBuf, fs, io::stdout, process::exit};
-
-use clap::{Parser as ClapParser, Subcommand, Command, CommandFactory, error::ErrorKind};
-use clap_complete::{Shell, Generator, generate};
-use parser::Parser;
-use tokio::main;
+use clap::{error::ErrorKind, Command, CommandFactory, Parser as ClapParser, Subcommand};
+use clap_complete::{generate, Generator, Shell};
+use qsc::parser::Parser;
 use serde_json::to_string_pretty;
+use tokio::main;
 
 #[derive(ClapParser)]
 #[command(author, version, about, long_about = None)]
@@ -52,7 +48,10 @@ pub async fn main() {
 
     if cli.file.is_none() {
         let mut cmd = Cli::command();
-        let err = cmd.error(ErrorKind::MissingRequiredArgument, "Missing value for file!");
+        let err = cmd.error(
+            ErrorKind::MissingRequiredArgument,
+            "Missing value for file!",
+        );
 
         err.print().unwrap();
         exit(1);

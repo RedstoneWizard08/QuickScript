@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use lazy_static::lazy_static;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// A token. Contains a name (string identifier),
 /// an id (numerical identifier), a pretty name
