@@ -1,3 +1,3 @@
-fn main() -> int {
-    return 20;
+fn main() {
+    exit 20;
 }

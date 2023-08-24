@@ -1,12 +1,10 @@
 #![allow(irrefutable_let_patterns)]
 
-use std::{fs, io::stdout, path::PathBuf, process::exit};
-
 use clap::{error::ErrorKind, Command, CommandFactory, Parser as ClapParser, Subcommand};
 use clap_complete::{generate, Generator, Shell};
-use qsc::parser::Parser;
-use serde_json::to_string_pretty;
-use tokio::main;
+use qsc::{compiler::compile, parser::Parser, syntax::Syntax};
+use std::{fs, io::stdout, path::PathBuf, process::exit};
+use tokio::{main, process as proc};
 
 #[derive(ClapParser)]
 #[command(author, version, about, long_about = None)]
@@ -59,8 +57,43 @@ pub async fn main() {
 
     let path = cli.file.unwrap();
     let path = PathBuf::from(path);
-    let content = fs::read_to_string(path).unwrap();
+    let content = fs::read_to_string(path.clone()).unwrap();
     let tokens = Parser::new(content).parse();
+    let keywords = Syntax::new(tokens).parse();
+    let content = compile(keywords);
 
-    println!("Content:\n{}", to_string_pretty(&tokens).unwrap());
+    fs::write("_tmp.S", content).unwrap();
+
+    proc::Command::new("as")
+        .arg("-o")
+        .arg("_tmp.o")
+        .arg("_tmp.S")
+        .spawn()
+        .unwrap()
+        .wait()
+        .await
+        .unwrap();
+
+    proc::Command::new("ld")
+        .arg("-s")
+        .arg("-o")
+        .arg("_tmp")
+        .arg("_tmp.o")
+        .spawn()
+        .unwrap()
+        .wait()
+        .await
+        .unwrap();
+
+    fs::remove_file("_tmp.S").unwrap();
+    fs::remove_file("_tmp.o").unwrap();
+
+    let name = path.file_name().unwrap().to_str().unwrap();
+    let mut name = name.split(".").collect::<Vec<&str>>();
+    
+    name.pop();
+    
+    let name = name.join(".");
+
+    fs::rename("_tmp", name).unwrap();
 }
