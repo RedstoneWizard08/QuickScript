@@ -9,7 +9,7 @@ This project is licensed under the MIT license. Feel free to use the code for wh
 
 ## Usage
 
-Currently you just run `cargo run [file]`, where `[file]` represents the path to the input file. I know, very complex.
+Currently you just run `cargo run [file]`, where `[file]` represents the path to the input file. I know, very complex. For any other options, use `--help` or `-h`, as the CLI is built with Clap.
 
 If you want to use the code as a library, feel free, I tried to document most of it. I may have forgotten some though, or I may just stop out of laziness later. :p
 
