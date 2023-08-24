@@ -9,7 +9,7 @@ pub enum Architecture {
     ARM,
     AARCH64,
     X86_64,
-    I686,
+    X86,
 }
 
 pub fn detect_arch() -> Architecture {
@@ -17,7 +17,7 @@ pub fn detect_arch() -> Architecture {
         "arm" => Architecture::ARM,
         "aarch64" => Architecture::AARCH64,
         "x86_64" => Architecture::X86_64,
-        "x86" => Architecture::I686,
+        "x86" => Architecture::X86,
 
         _ => {
             eprintln!("Unsupported system architecture!");

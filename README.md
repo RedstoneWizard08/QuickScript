@@ -11,7 +11,16 @@ This project is licensed under the MIT license. Feel free to use the code for wh
 
 Currently you just run `cargo run [file]`, where `[file]` represents the path to the input file. I know, very complex. For any other options, use `--help` or `-h`, as the CLI is built with Clap.
 
-If you want to use the code as a library, feel free, I tried to document most of it. I may have forgotten some though, or I may just stop out of laziness later. :p
+If you want to use the code as a library, feel free, I tried to document most of it. I may have forgotten some though, or I may just stop out of laziness later. :p (I will likely get to documenting it later anyway.)
+
+# Support
+
+Currently, here is the support matrix:
+
+| Version | x86 (32-bit) | x86_64 (64-bit) | arm (32-bit) | arm (64-bit) |
+| ------- | ------------ | --------------- | ------------ | ------------ |
+|  0.0.0  | 🔴 | 🔴 | 🔴 | 🟢 |
+|  0.1.0  | 🔴 | 🟢 | 🔴 | 🟢 |
 
 # Credits
 

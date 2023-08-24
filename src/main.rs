@@ -4,9 +4,11 @@ use clap::{error::ErrorKind, Command, CommandFactory, Parser as ClapParser, Subc
 use clap_complete::{generate, Generator, Shell};
 use qsc::{
     arch::{detect_arch, Architecture},
-    compiler::{assemble_and_link, compile},
+    build::build,
+    compiler::compile,
     parser::Parser,
     syntax::Syntax,
+    util::name_no_ext,
 };
 use std::{fs, io::stdout, path::PathBuf, process::exit};
 use tokio::main;
@@ -39,17 +41,19 @@ fn print_completions<G: Generator>(gen: G, cmd: &mut Command) {
     generate(gen, cmd, cmd.get_name().to_string(), &mut stdout());
 }
 
-fn name_no_ext(path: PathBuf) -> String {
-    let name = path.file_name().unwrap().to_str().unwrap();
-    let mut name = name.split(".").collect::<Vec<&str>>();
-
-    name.pop();
-
-    name.join(".")
+#[main]
+#[cfg(not(target_arch = "wasm32"))]
+pub async fn main() {
+    start().await;
 }
 
-#[main]
+#[main(flavor = "current_thread")]
+#[cfg(target_arch = "wasm32")]
 pub async fn main() {
+    start().await;
+}
+
+pub async fn start() {
     let cli = Cli::parse();
 
     if let Some(command) = cli.command {
@@ -82,5 +86,5 @@ pub async fn main() {
     let content = compile(keywords, arch);
     let name = name_no_ext(path);
 
-    assemble_and_link(name, content, arch).await;
+    build(name, content, arch);
 }
