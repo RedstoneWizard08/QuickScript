@@ -9,12 +9,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Install latest nightly
+      - name: Install latest nightly (x86)
         uses: actions-rs/toolchain@v1
         with:
             toolchain: nightly
             override: true
-            target: x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu
+            target: x86_64-unknown-linux-gnu
+      
+      - name: Install latest nightly (aarch64)
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: nightly
+            override: true
+            target: aarch64-unknown-linux-gnu
       
       - name: Install dependencies
         run: |
