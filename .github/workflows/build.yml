@@ -27,8 +27,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get -y install \
-            aarch64-linux-gnu-gcc \
-            x86-64-linux-gnu-gcc \
+            gcc-aarch64-linux-gnu \
+            gcc-x86-64-linux-gnu \
             bash build-essential
       
       - name: Build
