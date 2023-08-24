@@ -1,0 +1,34 @@
+on: [push]
+name: build
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: nightly
+            override: true
+            target: x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install \
+            aarch64-linux-gnu-gcc \
+            x86-64-linux-gnu-gcc \
+            bash build-essential
+      
+      - name: Build
+        run: bash build.sh
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries
+          path: bin/*
