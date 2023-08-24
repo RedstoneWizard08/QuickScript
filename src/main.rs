@@ -2,15 +2,24 @@
 
 use clap::{error::ErrorKind, Command, CommandFactory, Parser as ClapParser, Subcommand};
 use clap_complete::{generate, Generator, Shell};
-use qsc::{compiler::compile, parser::Parser, syntax::Syntax};
+use qsc::{
+    arch::{detect_arch, Architecture},
+    compiler::{assemble_and_link, compile},
+    parser::Parser,
+    syntax::Syntax,
+};
 use std::{fs, io::stdout, path::PathBuf, process::exit};
-use tokio::{main, process as proc};
+use tokio::main;
 
 #[derive(ClapParser)]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
     /// The path to the file to compile.
     file: Option<String>,
+
+    /// The arch to compile for.
+    #[arg(short, long)]
+    arch: Option<Architecture>,
 
     /// A sub-command.
     #[command(subcommand)]
@@ -28,6 +37,15 @@ pub enum Commands {
 
 fn print_completions<G: Generator>(gen: G, cmd: &mut Command) {
     generate(gen, cmd, cmd.get_name().to_string(), &mut stdout());
+}
+
+fn name_no_ext(path: PathBuf) -> String {
+    let name = path.file_name().unwrap().to_str().unwrap();
+    let mut name = name.split(".").collect::<Vec<&str>>();
+
+    name.pop();
+
+    name.join(".")
 }
 
 #[main]
@@ -55,45 +73,14 @@ pub async fn main() {
         exit(1);
     }
 
+    let arch = cli.arch.unwrap_or(detect_arch());
     let path = cli.file.unwrap();
     let path = PathBuf::from(path);
     let content = fs::read_to_string(path.clone()).unwrap();
     let tokens = Parser::new(content).parse();
     let keywords = Syntax::new(tokens).parse();
-    let content = compile(keywords);
+    let content = compile(keywords, arch);
+    let name = name_no_ext(path);
 
-    fs::write("_tmp.S", content).unwrap();
-
-    proc::Command::new("as")
-        .arg("-o")
-        .arg("_tmp.o")
-        .arg("_tmp.S")
-        .spawn()
-        .unwrap()
-        .wait()
-        .await
-        .unwrap();
-
-    proc::Command::new("ld")
-        .arg("-s")
-        .arg("-o")
-        .arg("_tmp")
-        .arg("_tmp.o")
-        .spawn()
-        .unwrap()
-        .wait()
-        .await
-        .unwrap();
-
-    fs::remove_file("_tmp.S").unwrap();
-    fs::remove_file("_tmp.o").unwrap();
-
-    let name = path.file_name().unwrap().to_str().unwrap();
-    let mut name = name.split(".").collect::<Vec<&str>>();
-    
-    name.pop();
-    
-    let name = name.join(".");
-
-    fs::rename("_tmp", name).unwrap();
+    assemble_and_link(name, content, arch).await;
 }

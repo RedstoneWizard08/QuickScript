@@ -4,7 +4,8 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    compilable::{Architecture, Compilable},
+    arch::Architecture,
+    compilable::Compilable,
     token::{Token, TOKENS},
 };
 
@@ -54,17 +55,20 @@ impl Keyword {
 }
 
 impl Compilable for Keyword {
-    // Not using the arch yet, I want to focus
-    // on making this work first. Will only
-    // compile to aarch64 asm right now.
-    fn to_asm(&mut self, _: Architecture) -> String {
+    fn to_asm(&mut self, arch: Architecture) -> String {
         let mut buf = String::new();
 
         if self.id == KW_EXIT.id {
             if let Some(value) = self.value.clone() {
-                buf.push_str("    mov w8, #93\n");
-                buf.push_str(format!("    mov x0, #{}\n", value.value.unwrap()).as_str());
-                buf.push_str("    svc #0\n");
+                if arch == Architecture::ARM || arch == Architecture::AARCH64 {
+                    buf.push_str("    mov w8, #93\n");
+                    buf.push_str(format!("    mov x0, #{}\n", value.value.unwrap()).as_str());
+                    buf.push_str("    svc #0\n");
+                } else {
+                    buf.push_str("    mov rax, 60\n");
+                    buf.push_str(format!("    mov rdi, {}\n", value.value.unwrap()).as_str());
+                    buf.push_str("    syscall\n");
+                }
             }
         } else if self.id == KW_FN.id {
             if let Some(value) = self.value.clone() {

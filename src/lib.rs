@@ -1,3 +1,4 @@
+pub mod arch;
 pub mod compilable;
 pub mod compiler;
 pub mod cursor;
