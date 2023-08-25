@@ -49,12 +49,12 @@ impl Parser {
                 // We are starting a string.
                 let mut buf = String::new();
 
-                while ch != '"' && self.code.has_next() {
-                    ch = self.read();
+                ch = self.read();
 
-                    if ch != '"' {
-                        buf.push(ch);
-                    }
+                while ch != '"' && self.code.has_next() {
+                    buf.push(ch);
+
+                    ch = self.read();
                 }
 
                 // Add the token.
@@ -68,13 +68,13 @@ impl Parser {
                 // We are starting a single character.
                 let mut buf = String::new();
 
+                ch = self.read();
+
                 // Since there may be an escape code, we still have to loop.
                 while ch != '\'' && self.code.has_next() {
-                    ch = self.read();
+                    buf.push(ch);
 
-                    if ch != '\'' {
-                        buf.push(ch);
-                    }
+                    ch = self.read();
                 }
 
                 // Check if it is now more than one character.

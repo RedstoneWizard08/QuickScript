@@ -6,44 +6,68 @@ use serde::{Deserialize, Serialize};
 use crate::{
     arch::Architecture,
     compilable::Compilable,
+    functions::{function::Function, print::Print},
     token::{Token, TOKENS},
 };
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum AnyKeyword {
+    Token(Keyword<Token>),
+    Print(Keyword<Print>),
+}
+
+impl Compilable for AnyKeyword {
+    fn to_asm(&mut self, arch: Architecture) -> (String, String) {
+        match self {
+            AnyKeyword::Token(kw) => kw.to_asm(arch),
+            AnyKeyword::Print(kw) => kw.to_asm(arch),
+        }
+    }
+}
 
 /// A keyword. Contains the id (integer), the name,
 /// the pretty name, the key for documentation
 /// lookup, and the value.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Keyword {
+pub struct Keyword<T> {
     pub id: i8,
-    pub name: &'static str,
-    pub pretty_name: &'static str,
-    pub documentation_key: &'static str,
-    pub value: Option<Token>,
+    pub name: String,
+    pub pretty_name: String,
+    pub documentation_key: String,
+    pub value: Option<T>,
 }
 
 lazy_static! {
     /// The exit keyword. This is a keyword and not a
     /// function because reasons.
-    pub static ref KW_EXIT: Keyword = Keyword {
+    pub static ref KW_EXIT: Keyword<Token> = Keyword::<Token> {
         id: 0,
-        name: "exit",
-        pretty_name: "Exit",
-        documentation_key: "#/doc/core/exit",
+        name: String::from("exit"),
+        pretty_name: String::from("Exit"),
+        documentation_key: String::from("#/doc/core/exit"),
         value: None,
     };
 
     /// The fn keyword. Defines a function. Wow.
-    pub static ref KW_FN: Keyword = Keyword {
+    pub static ref KW_FN: Keyword<Token> = Keyword::<Token> {
         id: 1,
-        name: "fn",
-        pretty_name: "Function",
-        documentation_key: "#/doc/core/fn",
+        name: String::from("fn"),
+        pretty_name: String::from("Function"),
+        documentation_key: String::from("#/doc/core/fn"),
+        value: None,
+    };
+
+    pub static ref KW_PRINT_WRAPPER: Keyword<Print> = Keyword::<Print> {
+        id: 2,
+        name: String::from("print_wrap"),
+        pretty_name: String::from("Print Wrapper"),
+        documentation_key: String::from("#/doc/core/fn_wrappers/print"),
         value: None,
     };
 }
 
-impl Keyword {
-    pub fn create(&self, value: Token) -> Keyword {
+impl<T> Keyword<T> {
+    pub fn create(&self, value: T) -> Keyword<T> {
         Keyword {
             id: self.id,
             name: self.name.clone(),
@@ -54,8 +78,8 @@ impl Keyword {
     }
 }
 
-impl Compilable for Keyword {
-    fn to_asm(&mut self, arch: Architecture) -> String {
+impl Compilable for Keyword<Token> {
+    fn to_asm(&mut self, arch: Architecture) -> (String, String) {
         let mut buf = String::new();
 
         if self.id == KW_EXIT.id {
@@ -87,6 +111,12 @@ impl Compilable for Keyword {
             }
         }
 
-        buf
+        (String::new(), buf)
+    }
+}
+
+impl Compilable for Keyword<Print> {
+    fn to_asm(&mut self, arch: Architecture) -> (String, String) {
+        self.value.clone().unwrap().compile(arch)
     }
 }

@@ -5,5 +5,5 @@ use crate::arch::Architecture;
 pub trait Compilable {
     /// Translate into assembly. Takes in the
     /// architecture to compile to.
-    fn to_asm(&mut self, arch: Architecture) -> String;
+    fn to_asm(&mut self, arch: Architecture) -> (String, String);
 }

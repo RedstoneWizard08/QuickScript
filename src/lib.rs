@@ -4,6 +4,7 @@ pub mod build;
 pub mod compilable;
 pub mod compiler;
 pub mod cursor;
+pub mod functions;
 pub mod keyword;
 pub mod linker;
 pub mod parser;

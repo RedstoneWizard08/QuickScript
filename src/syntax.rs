@@ -1,12 +1,13 @@
 use crate::{
-    keyword::{Keyword, KW_EXIT, KW_FN},
+    functions::{function::Function, print::Print},
+    keyword::{AnyKeyword, KW_EXIT, KW_FN, KW_PRINT_WRAPPER},
     token::{Token, TOKENS},
 };
 
 #[derive(Debug, Clone)]
 pub struct Syntax {
     tokens: Vec<Token>,
-    keywords: Vec<Keyword>,
+    keywords: Vec<AnyKeyword>,
     position: usize,
 }
 
@@ -27,7 +28,7 @@ impl Syntax {
         token
     }
 
-    pub fn parse(&mut self) -> Vec<Keyword> {
+    pub fn parse(&mut self) -> Vec<AnyKeyword> {
         while self.position < self.tokens.len() {
             let mut token = self.read_token();
 
@@ -55,11 +56,22 @@ impl Syntax {
                         }
 
                         self.read_token();
-                        self.keywords.push(KW_FN.create(fn_name));
+                        self.keywords.push(AnyKeyword::Token(KW_FN.create(fn_name)));
                     } else if value == "exit" {
                         token = self.read_token();
 
-                        self.keywords.push(KW_EXIT.create(token));
+                        self.keywords.push(AnyKeyword::Token(KW_EXIT.create(token)));
+                    } else if value == Print::name() {
+                        self.read_token();
+
+                        token = self.read_token();
+
+                        self.read_token();
+
+                        let print_fn = Print::new(token.value.unwrap());
+
+                        self.keywords
+                            .push(AnyKeyword::Print(KW_PRINT_WRAPPER.create(print_fn)));
                     }
                 }
             }

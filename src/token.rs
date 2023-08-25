@@ -9,8 +9,8 @@ use serde::{Deserialize, Serialize};
 /// value to contain any data these might represent.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Token {
-    pub name: &'static str,
-    pub pretty_name: &'static str,
+    pub name: String,
+    pub pretty_name: String,
     pub id: i8,
     pub value: Option<String>,
 }
@@ -41,48 +41,48 @@ lazy_static! {
         // Strings
         ("STRING", Token {
             id: 0,
-            name: "STR_LIT",
-            pretty_name: "String Literal",
+            name: String::from("STR_LIT"),
+            pretty_name: String::from("String Literal"),
             value: None,
         }),
 
         // Single characters
         ("CHAR", Token {
             id: 1,
-            name: "CHAR_LIT",
-            pretty_name: "Character Literal",
+            name: String::from("CHAR_LIT"),
+            pretty_name: String::from("Character Literal"),
             value: None,
         }),
 
         // Integers
         ("INTEGER", Token {
             id: 2,
-            name: "INT_LIT",
-            pretty_name: "Integer Literal",
+            name: String::from("INT_LIT"),
+            pretty_name: String::from("Integer Literal"),
             value: None,
         }),
 
         // Floating-point numbers
         ("FLOAT", Token {
             id: 3,
-            name: "FLOAT_LIT",
-            pretty_name: "Float Literal",
+            name: String::from("FLOAT_LIT"),
+            pretty_name: String::from("Float Literal"),
             value: None,
         }),
 
         // Identifiers (names of things, including keywords)
         ("IDENT", Token {
             id: 4,
-            name: "IDENT",
-            pretty_name: "Identifier",
+            name: String::from("IDENT"),
+            pretty_name: String::from("Identifier"),
             value: None,
         }),
 
         // Expressions (+, -, *, /, ^, &, |, etc.)
         ("EXPR", Token {
             id: 5,
-            name: "EXPR",
-            pretty_name: "Expression",
+            name: String::from("EXPR"),
+            pretty_name: String::from("Expression"),
             value: None,
         }),
     ]);
