@@ -18,3 +18,10 @@ tokio = { version = "1.32.0", features = ["sync", "macros", "io-util", "rt", "ti
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1.32.0", features = ["full"] }
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
