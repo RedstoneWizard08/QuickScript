@@ -19,8 +19,8 @@ If you want to use the code as a library, feel free, I tried to document most of
 
 Currently, here is the support matrix:
 
-| Version | x86 (32-bit) | x86_64 (64-bit) | arm (32-bit) | arm (64-bit) |
-| ------- | ------------ | --------------- | ------------ | ------------ |
+| Version | x86 (32-bit) | x86_64 (64-bit) | arm (32-bit) | aarch64 (64-bit) |
+| ------- | ------------ | --------------- | ------------ | ---------------- |
 |  0.0.0  | 🔴 | 🔴 | 🔴 | 🟢 |
 |  0.1.0  | 🔴 | 🟢 | 🔴 | 🟢 |
 
