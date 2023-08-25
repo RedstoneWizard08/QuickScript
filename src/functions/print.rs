@@ -26,7 +26,7 @@ impl Function for Print {
 
         if arch == Architecture::ARM || arch == Architecture::AARCH64 {
             data_buf.push_str(format!("msg_{}:\n", msg_id).as_str());
-            data_buf.push_str(format!("    .ascii \"{}\"\n", value).as_str());
+            data_buf.push_str(format!("    .ascii \"{}\\n\"\n", value).as_str());
             data_buf.push_str(format!("len_{} = . - msg_{}\n", msg_id, msg_id).as_str());
 
             buf.push_str("    mov x0, #1\n");
