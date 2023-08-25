@@ -2,5 +2,5 @@ fn main() {
     print("Hello, world!");
     print("Another test!");
 
-    exit 20;
+    exit 0;
 }
