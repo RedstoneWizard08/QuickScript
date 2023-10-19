@@ -23,6 +23,14 @@ pub struct Cli {
     #[arg(short, long)]
     arch: Option<Architecture>,
 
+    /// Print parsed tokens only.
+    #[arg(short = 't', long = "print-tokens")]
+    print_tokens_only: bool,
+
+    /// Print parsed keywords only.
+    #[arg(short = 'k', long = "print-keywords")]
+    print_keywords_only: bool,
+
     /// A sub-command.
     #[command(subcommand)]
     command: Option<Commands>,
@@ -34,6 +42,12 @@ pub enum Commands {
     Completion {
         /// The shell to generate for.
         shell: Shell,
+    },
+
+    /// Does new parsing.
+    NewParsingDemo {
+        /// The file to parse.
+        file: String,
     },
 }
 
@@ -82,7 +96,16 @@ pub async fn start() {
     let path = PathBuf::from(path);
     let content = fs::read_to_string(path.clone()).unwrap();
     let tokens = Parser::new(content).parse();
-    let keywords = Syntax::new(tokens).parse();
+    let keywords = Syntax::new(tokens.clone()).parse();
+
+    if cli.print_tokens_only {
+        return println!("Tokens:\n{:#?}", tokens);
+    }
+
+    if cli.print_keywords_only {
+        return println!("Keywords:\n{:#?}", keywords);
+    }
+
     let content = compile(keywords, arch);
     let name = name_no_ext(path);
 

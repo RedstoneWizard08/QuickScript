@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 /// an id (numerical identifier), a pretty name
 /// (a readable string identifier), and an optional
 /// value to contain any data these might represent.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Token {
     pub name: String,
     pub pretty_name: String,
@@ -24,6 +24,14 @@ impl Token {
             pretty_name: self.pretty_name.clone(),
             id: self.id,
             value: Some(value),
+        }
+    }
+
+    pub fn as_string(&self) -> String {
+        match self.name.as_str() {
+            "STR_LIT" => format!("\"{}\"", self.value.clone().unwrap()),
+            "CHAR_LIT" => format!("'{}'", self.value.clone().unwrap()),
+            _ => self.value.clone().unwrap(),
         }
     }
 }
@@ -109,5 +117,8 @@ lazy_static! {
         "<",
         ">",
         ",",
+        "_",
+        ";",
+        ".",
     ];
 }

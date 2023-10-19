@@ -1,5 +1,3 @@
-use std::process::exit;
-
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
@@ -7,13 +5,23 @@ use crate::{
     arch::Architecture,
     compilable::Compilable,
     functions::{function::Function, print::Print},
-    token::{Token, TOKENS},
+    token::Token,
 };
+
+pub type TokenKeyword = Keyword<Token>;
+pub type PrintKeyword = Keyword<Print>;
+pub type FunctionKeyword = Keyword<(String, Vec<Token>, Vec<AnyKeyword>)>;
+pub type BlockKeyword = Keyword<(Vec<Token>, Vec<AnyKeyword>)>;
+pub type VariableKeyword = Keyword<(String, Vec<Token>)>;
+pub type ArrayKeyword = Keyword<(String, usize)>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AnyKeyword {
-    Token(Keyword<Token>),
-    Print(Keyword<Print>),
+    Token(TokenKeyword),
+    Print(PrintKeyword),
+    Function(FunctionKeyword),
+    Block(BlockKeyword),
+    Variable(VariableKeyword),
 }
 
 impl Compilable for AnyKeyword {
@@ -21,6 +29,9 @@ impl Compilable for AnyKeyword {
         match self {
             AnyKeyword::Token(kw) => kw.to_asm(arch),
             AnyKeyword::Print(kw) => kw.to_asm(arch),
+            AnyKeyword::Block(kw) => kw.to_asm(arch),
+            AnyKeyword::Variable(kw) => kw.to_asm(arch),
+            AnyKeyword::Function(kw) => kw.to_asm(arch),
         }
     }
 }
@@ -40,7 +51,7 @@ pub struct Keyword<T> {
 lazy_static! {
     /// The exit keyword. This is a keyword and not a
     /// function because reasons.
-    pub static ref KW_EXIT: Keyword<Token> = Keyword::<Token> {
+    pub static ref KW_EXIT: TokenKeyword = TokenKeyword {
         id: 0,
         name: String::from("exit"),
         pretty_name: String::from("Exit"),
@@ -49,7 +60,7 @@ lazy_static! {
     };
 
     /// The fn keyword. Defines a function. Wow.
-    pub static ref KW_FN: Keyword<Token> = Keyword::<Token> {
+    pub static ref KW_FN: FunctionKeyword = FunctionKeyword {
         id: 1,
         name: String::from("fn"),
         pretty_name: String::from("Function"),
@@ -57,11 +68,27 @@ lazy_static! {
         value: None,
     };
 
-    pub static ref KW_PRINT_WRAPPER: Keyword<Print> = Keyword::<Print> {
+    pub static ref KW_PRINT_WRAPPER: PrintKeyword = PrintKeyword {
         id: 2,
         name: String::from("print_wrap"),
         pretty_name: String::from("Print Wrapper"),
         documentation_key: String::from("#/doc/core/fn_wrappers/print"),
+        value: None,
+    };
+
+    pub static ref KW_IF: BlockKeyword = BlockKeyword {
+        id: 3,
+        name: String::from("if"),
+        pretty_name: String::from("Conditional"),
+        documentation_key: String::from("#/doc/core/if"),
+        value: None,
+    };
+
+    pub static ref KW_LET: VariableKeyword = VariableKeyword {
+        id: 4,
+        name: String::from("let"),
+        pretty_name: String::from("Variable"),
+        documentation_key: String::from("#/doc/core/let"),
         value: None,
     };
 }
@@ -78,7 +105,7 @@ impl<T> Keyword<T> {
     }
 }
 
-impl Compilable for Keyword<Token> {
+impl Compilable for TokenKeyword {
     fn to_asm(&mut self, arch: Architecture) -> (String, String) {
         let mut buf = String::new();
 
@@ -94,29 +121,26 @@ impl Compilable for Keyword<Token> {
                     buf.push_str("    syscall\n");
                 }
             }
-        } else if self.id == KW_FN.id {
-            if let Some(value) = self.value.clone() {
-                if value.id != TOKENS.get("IDENT").unwrap().id {
-                    eprintln!("A function name must be an identifier!");
-                    exit(1);
-                }
-
-                let mut value = value.value.unwrap();
-
-                if value == "main" {
-                    value = String::from("_start");
-                }
-
-                buf.push_str(format!("{}:\n", value).as_str());
-            }
         }
 
         (String::new(), buf)
     }
 }
 
-impl Compilable for Keyword<Print> {
+impl Compilable for PrintKeyword {
     fn to_asm(&mut self, arch: Architecture) -> (String, String) {
         self.value.clone().unwrap().compile(arch)
+    }
+}
+
+impl Compilable for BlockKeyword {
+    fn to_asm(&mut self, _: Architecture) -> (String, String) {
+        (String::new(), String::new())
+    }
+}
+
+impl Compilable for VariableKeyword {
+    fn to_asm(&mut self, _: Architecture) -> (String, String) {
+        (String::new(), String::new())
     }
 }

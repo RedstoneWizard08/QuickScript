@@ -7,7 +7,7 @@ len = . - msg
 
 .text
 
-.globl _start
+.global _start
 
 _start:
     mov x0, #1 ;// stdout is fd #1

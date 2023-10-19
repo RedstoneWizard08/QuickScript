@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 /// A simple trait to depict something that can read
@@ -21,6 +23,7 @@ where
 {
     pub content: T,
     pub position: usize,
+    pub lines_cols: HashMap<usize, (usize, usize)>,
 }
 
 impl<T> Cursor<T>
@@ -34,6 +37,7 @@ where
         Self {
             content,
             position: 0,
+            lines_cols: HashMap::new(),
         }
     }
 
@@ -42,6 +46,40 @@ where
     /// and false if there isn't.
     pub fn has_next(&self) -> bool {
         self.position < self.content.as_ref().len()
+    }
+
+    /// Skips [size] indexes. Returns the position after
+    /// skipping.
+    pub fn skip(&mut self, size: usize) -> usize {
+        self.position += size;
+        self.position
+    }
+}
+
+impl Cursor<String> {
+    pub fn from_string(content: String) -> Self {
+        let mut lines_cols = HashMap::new();
+        let mut pos = 0;
+
+        for (idx, line) in content.split("\n").enumerate() {
+            for (ch_idx, _) in line.chars().enumerate() {
+                let ch_pos = (idx + 1, ch_idx + 1);
+
+                lines_cols.insert(pos + ch_idx, ch_pos);
+            }
+
+            pos += line.len();
+        }
+
+        Self {
+            content,
+            position: 0,
+            lines_cols,
+        }
+    }
+
+    pub fn get_pos(&self) -> (usize, usize) {
+        self.lines_cols[&self.position]
     }
 }
 
