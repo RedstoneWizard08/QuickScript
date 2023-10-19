@@ -1,15 +1,4 @@
 pub mod arch;
-pub mod assembler;
-pub mod build;
-pub mod codegen;
-pub mod compilable;
-pub mod compiler;
-pub mod cursor;
-pub mod functions;
-pub mod keyword;
-pub mod linker;
-pub mod parser;
-pub mod syntax;
-pub mod token;
-pub mod tooling;
 pub mod util;
+pub mod ast;
+pub mod compile;

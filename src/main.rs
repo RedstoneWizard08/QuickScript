@@ -1,15 +1,7 @@
-#![allow(irrefutable_let_patterns)]
-
+use anyhow::Result;
 use clap::{error::ErrorKind, Command, CommandFactory, Parser as ClapParser, Subcommand};
 use clap_complete::{generate, Generator, Shell};
-use qsc::{
-    arch::{detect_arch, Architecture},
-    build::build,
-    compiler::compile,
-    parser::Parser,
-    syntax::Syntax,
-    util::name_no_ext,
-};
+use quickscript::{arch::{detect_arch, Architecture}, compile::Compiler};
 use std::{fs, io::stdout, path::PathBuf, process::exit};
 use tokio::main;
 
@@ -22,14 +14,6 @@ pub struct Cli {
     /// The arch to compile for.
     #[arg(short, long)]
     arch: Option<Architecture>,
-
-    /// Print parsed tokens only.
-    #[arg(short = 't', long = "print-tokens")]
-    print_tokens_only: bool,
-
-    /// Print parsed keywords only.
-    #[arg(short = 'k', long = "print-keywords")]
-    print_keywords_only: bool,
 
     /// A sub-command.
     #[command(subcommand)]
@@ -57,8 +41,8 @@ fn print_completions<G: Generator>(gen: G, cmd: &mut Command) {
 
 #[main]
 #[cfg(not(target_arch = "wasm32"))]
-pub async fn main() {
-    start().await;
+pub async fn main() -> Result<()> {
+    start().await
 }
 
 #[main(flavor = "current_thread")]
@@ -67,7 +51,7 @@ pub async fn main() {
     start().await;
 }
 
-pub async fn start() {
+pub async fn start() -> Result<()> {
     let cli = Cli::parse();
 
     if let Some(command) = cli.command {
@@ -76,7 +60,7 @@ pub async fn start() {
 
             print_completions(shell, &mut cmd);
 
-            return;
+            return Ok(());
         }
     }
 
@@ -91,23 +75,14 @@ pub async fn start() {
         exit(1);
     }
 
-    let arch = cli.arch.unwrap_or(detect_arch());
+    let _arch = cli.arch.unwrap_or(detect_arch());
     let path = cli.file.unwrap();
     let path = PathBuf::from(path);
     let content = fs::read_to_string(path.clone()).unwrap();
-    let tokens = Parser::new(content).parse();
-    let keywords = Syntax::new(tokens.clone()).parse();
+    let mut compiler = Compiler::new();
+    let output = compiler.compile(&content)?;
 
-    if cli.print_tokens_only {
-        return println!("Tokens:\n{:#?}", tokens);
-    }
+    println!("{:?}", output);
 
-    if cli.print_keywords_only {
-        return println!("Keywords:\n{:#?}", keywords);
-    }
-
-    let content = compile(keywords, arch);
-    let name = name_no_ext(path);
-
-    build(name, content, arch);
+    Ok(())
 }
