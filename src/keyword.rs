@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    arch::Architecture,
+    arch::{get_call_opcode, get_input_register, get_num_prefix, Architecture},
     compilable::Compilable,
     functions::{function::Function, print::Print},
     token::Token,
@@ -10,10 +10,11 @@ use crate::{
 
 pub type TokenKeyword = Keyword<Token>;
 pub type PrintKeyword = Keyword<Print>;
-pub type FunctionKeyword = Keyword<(String, Vec<Token>, Vec<AnyKeyword>)>;
+pub type FunctionKeyword = Keyword<(String, Vec<Token>, Option<Token>, Vec<AnyKeyword>)>;
 pub type BlockKeyword = Keyword<(Vec<Token>, Vec<AnyKeyword>)>;
 pub type VariableKeyword = Keyword<(String, Vec<Token>)>;
 pub type ArrayKeyword = Keyword<(String, usize)>;
+pub type ReturnKeyword = Keyword<(Token, String)>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AnyKeyword {
@@ -22,6 +23,7 @@ pub enum AnyKeyword {
     Function(FunctionKeyword),
     Block(BlockKeyword),
     Variable(VariableKeyword),
+    Return(ReturnKeyword),
 }
 
 impl Compilable for AnyKeyword {
@@ -32,6 +34,7 @@ impl Compilable for AnyKeyword {
             AnyKeyword::Block(kw) => kw.to_asm(arch),
             AnyKeyword::Variable(kw) => kw.to_asm(arch),
             AnyKeyword::Function(kw) => kw.to_asm(arch),
+            AnyKeyword::Return(kw) => kw.to_asm(arch),
         }
     }
 }
@@ -91,6 +94,14 @@ lazy_static! {
         documentation_key: String::from("#/doc/core/let"),
         value: None,
     };
+
+    pub static ref KW_RETURN: ReturnKeyword = ReturnKeyword {
+        id: 5,
+        name: String::from("return"),
+        pretty_name: String::from("Return"),
+        documentation_key: String::from("#/doc/core/return"),
+        value: None,
+    };
 }
 
 impl<T> Keyword<T> {
@@ -111,15 +122,17 @@ impl Compilable for TokenKeyword {
 
         if self.id == KW_EXIT.id {
             if let Some(value) = self.value.clone() {
-                if arch == Architecture::ARM || arch == Architecture::AARCH64 {
-                    buf.push_str("    mov w8, #93\n");
-                    buf.push_str(format!("    mov x0, #{}\n", value.value.unwrap()).as_str());
-                    buf.push_str("    svc #0\n");
-                } else {
-                    buf.push_str("    mov rax, 60\n");
-                    buf.push_str(format!("    mov rdi, {}\n", value.value.unwrap()).as_str());
-                    buf.push_str("    syscall\n");
-                }
+                buf.push_str(
+                    format!(
+                        "mov {}, {}{}\n",
+                        get_input_register(arch),
+                        get_num_prefix(arch),
+                        value.value.unwrap()
+                    )
+                    .as_str(),
+                );
+
+                buf.push_str(format!("{} exit\n", get_call_opcode(arch)).as_str());
             }
         }
 
@@ -134,13 +147,41 @@ impl Compilable for PrintKeyword {
 }
 
 impl Compilable for BlockKeyword {
-    fn to_asm(&mut self, _: Architecture) -> (String, String) {
-        (String::new(), String::new())
+    fn to_asm(&mut self, arch: Architecture) -> (String, String) {
+        let mut dbuf = String::new();
+        let mut cbuf = String::new();
+
+        if let Some((_, ks)) = self.value.clone() {
+            for mut k in ks {
+                let (d, c) = k.to_asm(arch);
+
+                dbuf.push_str(d.as_str());
+                cbuf.push_str(c.as_str());
+            }
+        }
+
+        (dbuf, cbuf)
     }
 }
 
 impl Compilable for VariableKeyword {
     fn to_asm(&mut self, _: Architecture) -> (String, String) {
         (String::new(), String::new())
+    }
+}
+
+impl Compilable for ReturnKeyword {
+    fn to_asm(&mut self, arch: Architecture) -> (String, String) {
+        let tkn = self.value.clone().unwrap().0;
+
+        (
+            String::new(),
+            format!(
+                "    mov {}, {}{}\n",
+                get_input_register(arch),
+                get_num_prefix(arch),
+                tkn.value.unwrap()
+            ),
+        )
     }
 }

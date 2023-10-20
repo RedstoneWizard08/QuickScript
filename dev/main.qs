@@ -1,4 +1,4 @@
-fn main(args: Array<str>) {
+fn main(args: Array<str>) -> i32 {
     print("Hello, world!");
     print("Another test!");
 
@@ -8,5 +8,5 @@ fn main(args: Array<str>) {
         print("Hello to {} in particular!", name);
     }
 
-    exit 0;
+    return 8;
 }

@@ -1,5 +1,6 @@
 pub mod arch;
 pub mod assembler;
+pub mod base;
 pub mod build;
 pub mod codegen;
 pub mod compilable;

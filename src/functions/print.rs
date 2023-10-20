@@ -24,23 +24,19 @@ impl Function<Vec<Token>> for Print {
         let msg_id = random_string(16);
 
         if arch == Architecture::ARM || arch == Architecture::AARCH64 {
-            for (idx, arg) in self.args.clone().iter().enumerate() {
+            for (_, arg) in self.args.clone().iter().enumerate() {
                 if arg.name == "STR_LIT" {
-                    data_buf.push_str(format!("msg_{}_{}:\n", idx, msg_id).as_str());
+                    data_buf.push_str(format!("msg_{}:\n", msg_id).as_str());
                     data_buf.push_str(
                         format!("    .ascii \"{}\\n\"\n", arg.value.clone().unwrap()).as_str(),
                     );
-                    data_buf.push_str(
-                        format!("len_{}_{} = . - msg_{}_{}\n", idx, msg_id, idx, msg_id).as_str(),
-                    );
+                    data_buf.push_str(format!("len_{} = . - msg_{}\n", msg_id, msg_id).as_str());
                 }
             }
 
-            buf.push_str("    mov x0, #1\n");
             buf.push_str(format!("    ldr x1, =msg_{}\n", msg_id).as_str());
             buf.push_str(format!("    ldr x2, =len_{}\n", msg_id).as_str());
-            buf.push_str("    mov w8, #64\n");
-            buf.push_str("    svc #0\n");
+            buf.push_str("    bl print\n");
         } else {
             for (idx, arg) in self.args.clone().iter().enumerate() {
                 if arg.name == "STR_LIT" {
@@ -53,17 +49,16 @@ impl Function<Vec<Token>> for Print {
                         )
                         .as_str(),
                     );
+
                     data_buf.push_str(
                         format!("len_{}_{} equ $ - msg_{}_{}\n", idx, msg_id, idx, msg_id).as_str(),
                     );
                 }
             }
 
-            buf.push_str("mov rax, 1\n");
-            buf.push_str("mov rdi, 1\n");
             buf.push_str(format!("mov rsi, msg_0_{}\n", msg_id).as_str());
             buf.push_str(format!("mov rdx, len_0_{}\n", msg_id).as_str());
-            buf.push_str("syscall\n");
+            buf.push_str("    call print\n");
         }
 
         (data_buf, buf)

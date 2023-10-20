@@ -1,6 +1,6 @@
 use crate::{
     functions::{function::Function, print::Print},
-    keyword::{AnyKeyword, KW_EXIT, KW_FN, KW_IF, KW_LET, KW_PRINT_WRAPPER},
+    keyword::{AnyKeyword, KW_FN, KW_IF, KW_LET, KW_PRINT_WRAPPER, KW_RETURN},
     token::{Token, TOKENS},
 };
 
@@ -40,6 +40,7 @@ impl Syntax {
                         self.read_token();
 
                         let mut args = Vec::new();
+                        let mut ret: Option<Token> = None;
                         let mut block = Vec::new();
                         let mut token = self.read_token();
                         let mut remaining_closes = 1;
@@ -49,8 +50,25 @@ impl Syntax {
                             token = self.read_token();
                         }
 
-                        self.read_token();
+                        let mut tmp = String::new();
+
                         token = self.read_token();
+
+                        if let Some(ref v) = token.value {
+                            tmp.push_str(v.as_str());
+                        }
+
+                        token = self.read_token();
+
+                        if let Some(ref v) = token.value {
+                            tmp.push_str(v.as_str());
+                        }
+
+                        if tmp == "->" {
+                            ret = Some(self.read_token());
+
+                            self.read_token();
+                        }
 
                         while remaining_closes > 0 {
                             if token.value == Some(String::from("{")) {
@@ -72,7 +90,7 @@ impl Syntax {
                         let block = Syntax::new(block).parse();
 
                         self.keywords
-                            .push(AnyKeyword::Function(KW_FN.create((name, args, block))));
+                            .push(AnyKeyword::Function(KW_FN.create((name, args, ret, block))));
                     } else if value == "if" {
                         self.read_token();
 
@@ -124,10 +142,11 @@ impl Syntax {
 
                         self.keywords
                             .push(AnyKeyword::Block(KW_IF.create((condition, block))));
-                    } else if value == "exit" {
+                    } else if value == "return" {
                         token = self.read_token();
 
-                        self.keywords.push(AnyKeyword::Token(KW_EXIT.create(token)));
+                        self.keywords
+                            .push(AnyKeyword::Return(KW_RETURN.create((token, String::new()))));
                     } else if value == "let" {
                         let name = self.read_token().value.unwrap();
                         let mut value = Vec::new();

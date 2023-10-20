@@ -25,3 +25,27 @@ pub fn detect_arch() -> Architecture {
         }
     }
 }
+
+pub fn get_num_prefix(arch: Architecture) -> &'static str {
+    if arch == Architecture::ARM || arch == Architecture::AARCH64 {
+        return "#";
+    }
+
+    ""
+}
+
+pub fn get_input_register(arch: Architecture) -> &'static str {
+    if arch == Architecture::ARM || arch == Architecture::AARCH64 {
+        return "x0";
+    }
+
+    "rax"
+}
+
+pub fn get_call_opcode(arch: Architecture) -> &'static str {
+    if arch == Architecture::ARM || arch == Architecture::AARCH64 {
+        return "bl";
+    }
+
+    "call"
+}

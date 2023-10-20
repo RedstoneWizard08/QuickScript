@@ -8,6 +8,7 @@ pub fn assemble_code(code: String) -> String {
     let (_, assembler) = get_tools(Architecture::AARCH64);
 
     Command::new(assembler)
+        .arg("-c")
         .arg("-o")
         .arg("_tmp.o")
         .arg("_tmp.S")

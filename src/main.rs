@@ -31,6 +31,10 @@ pub struct Cli {
     #[arg(short = 'k', long = "print-keywords")]
     print_keywords_only: bool,
 
+    /// Output ASM.
+    #[arg(short = 's', long = "asm")]
+    asm: bool,
+
     /// A sub-command.
     #[command(subcommand)]
     command: Option<Commands>,
@@ -108,6 +112,10 @@ pub async fn start() {
 
     let content = compile(keywords, arch);
     let name = name_no_ext(path);
+
+    if cli.asm {
+        return fs::write(format!("{}.S", name), content).unwrap();
+    }
 
     build(name, content, arch);
 }
