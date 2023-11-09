@@ -10,9 +10,9 @@ use crate::{
 
 pub type TokenKeyword = Keyword<Token>;
 pub type PrintKeyword = Keyword<Print>;
-pub type FunctionKeyword = Keyword<(String, Vec<Token>, Option<Token>, Vec<AnyKeyword>)>;
+pub type FunctionKeyword = Keyword<(String, Vec<(Token, Token)>, Option<Token>, Vec<AnyKeyword>)>;
 pub type BlockKeyword = Keyword<(Vec<Token>, Vec<AnyKeyword>)>;
-pub type VariableKeyword = Keyword<(String, Vec<Token>)>;
+pub type VariableKeyword = Keyword<(String, String, Vec<Token>)>;
 pub type ArrayKeyword = Keyword<(String, usize)>;
 pub type ReturnKeyword = Keyword<(Token, String)>;
 

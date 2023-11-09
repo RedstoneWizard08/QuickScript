@@ -15,6 +15,10 @@ Currently you just run `cargo run [file]`, where `[file]` represents the path to
 
 If you want to use the code as a library, feel free, I tried to document most of it. I may have forgotten some though, or I may just stop out of laziness later. :p (I will likely get to documenting it later anyway.)
 
+## New Parsing
+
+I'm working on a new parser implementation! To use it, run `cargo run -- new-parsing-demo [file]`.
+
 # Support
 
 Currently, here is the support matrix:

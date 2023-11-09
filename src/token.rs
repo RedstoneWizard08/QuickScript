@@ -49,7 +49,7 @@ lazy_static! {
         // Strings
         ("STRING", Token {
             id: 0,
-            name: String::from("STR_LIT"),
+            name: String::from("STRING"),
             pretty_name: String::from("String Literal"),
             value: None,
         }),
@@ -57,7 +57,7 @@ lazy_static! {
         // Single characters
         ("CHAR", Token {
             id: 1,
-            name: String::from("CHAR_LIT"),
+            name: String::from("CHAR"),
             pretty_name: String::from("Character Literal"),
             value: None,
         }),
@@ -65,7 +65,7 @@ lazy_static! {
         // Integers
         ("INTEGER", Token {
             id: 2,
-            name: String::from("INT_LIT"),
+            name: String::from("INTEGER"),
             pretty_name: String::from("Integer Literal"),
             value: None,
         }),
@@ -73,7 +73,7 @@ lazy_static! {
         // Floating-point numbers
         ("FLOAT", Token {
             id: 3,
-            name: String::from("FLOAT_LIT"),
+            name: String::from("FLOAT"),
             pretty_name: String::from("Float Literal"),
             value: None,
         }),

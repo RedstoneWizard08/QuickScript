@@ -39,15 +39,34 @@ impl Syntax {
 
                         self.read_token();
 
-                        let mut args = Vec::new();
+                        let mut args_pre = Vec::new();
                         let mut ret: Option<Token> = None;
                         let mut block = Vec::new();
                         let mut token = self.read_token();
                         let mut remaining_closes = 1;
 
                         while token.value != Some(String::from(")")) {
-                            args.push(token);
+                            args_pre.push(token);
                             token = self.read_token();
+                        }
+
+                        let mut args = Vec::new();
+                        let mut i = 0;
+
+                        while i < args_pre.len() {
+                            let item = args_pre[i].clone();
+
+                            if args_pre[i + 1].value != Some(String::from(":")) {
+                                // TODO: Not this.
+                                println!("Function arguments must have a type!");
+                                break;
+                            }
+
+                            let arg_type = args_pre[i + 2].clone();
+
+                            args.push((item, arg_type));
+
+                            i += 4;
                         }
 
                         let mut tmp = String::new();
@@ -151,7 +170,11 @@ impl Syntax {
                         let name = self.read_token().value.unwrap();
                         let mut value = Vec::new();
 
-                        self.read_token();
+                        self.read_token(); // :
+
+                        let type_ = self.read_token().value.unwrap();
+
+                        self.read_token(); // =
 
                         token = self.read_token();
 
@@ -161,7 +184,7 @@ impl Syntax {
                         }
 
                         self.keywords
-                            .push(AnyKeyword::Variable(KW_LET.create((name, value))));
+                            .push(AnyKeyword::Variable(KW_LET.create((name, type_, value))));
                     } else if value == Print::name() {
                         self.read_token();
 

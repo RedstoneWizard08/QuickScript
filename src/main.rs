@@ -4,11 +4,11 @@ use clap::{error::ErrorKind, Command, CommandFactory, Parser as ClapParser, Subc
 use clap_complete::{generate, Generator, Shell};
 use qsc::{
     arch::{detect_arch, Architecture},
-    build::build,
-    compiler::compile,
+    ast::AstParser,
+    codegen::gen::Compiler,
     parser::Parser,
     syntax::Syntax,
-    util::name_no_ext,
+    tokenizer::Tokenizer,
 };
 use std::{fs, io::stdout, path::PathBuf, process::exit};
 use tokio::main;
@@ -82,6 +82,22 @@ pub async fn start() {
 
             return;
         }
+
+        if let Commands::NewParsingDemo { file } = command {
+            let path = PathBuf::from(file);
+            let content = fs::read_to_string(path.clone()).unwrap();
+            let mut tokenizer = Tokenizer::from(content);
+
+            tokenizer.tokenize();
+
+            let mut parser = AstParser::new(tokenizer.tokens);
+
+            parser.parse().unwrap();
+
+            println!("{:#?}", parser.exprs);
+
+            return;
+        }
     }
 
     if cli.file.is_none() {
@@ -95,7 +111,7 @@ pub async fn start() {
         exit(1);
     }
 
-    let arch = cli.arch.unwrap_or(detect_arch());
+    let _arch = cli.arch.unwrap_or(detect_arch());
     let path = cli.file.unwrap();
     let path = PathBuf::from(path);
     let content = fs::read_to_string(path.clone()).unwrap();
@@ -110,12 +126,17 @@ pub async fn start() {
         return println!("Keywords:\n{:#?}", keywords);
     }
 
-    let content = compile(keywords, arch);
-    let name = name_no_ext(path);
+    // let content = compile(keywords, arch);
+    // let name = name_no_ext(path);
 
-    if cli.asm {
-        return fs::write(format!("{}.S", name), content).unwrap();
-    }
+    // if cli.asm {
+    //     return fs::write(format!("{}.S", name), content).unwrap();
+    // }
 
-    build(name, content, arch);
+    // build(name, content, arch);
+
+    let mut compiler = Compiler::new();
+    let res = compiler.compile(keywords).unwrap();
+
+    println!("{:?}", res);
 }

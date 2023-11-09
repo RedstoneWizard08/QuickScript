@@ -55,3 +55,19 @@ where
 
     out
 }
+
+pub trait AsCharVec {
+    fn as_char_vec(&self) -> Vec<char>;
+}
+
+impl<'a> AsCharVec for &'a str {
+    fn as_char_vec(&self) -> Vec<char> {
+        self.chars().collect()
+    }
+}
+
+impl AsCharVec for String {
+    fn as_char_vec(&self) -> Vec<char> {
+        self.chars().collect()
+    }
+}

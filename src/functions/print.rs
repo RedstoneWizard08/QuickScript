@@ -6,7 +6,7 @@ use super::function::Function;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Print {
-    args: Vec<Token>,
+    pub args: Vec<Token>,
 }
 
 impl Function<Vec<Token>> for Print {
