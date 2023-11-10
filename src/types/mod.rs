@@ -5,6 +5,8 @@ use crate::tokenizer::{
     token::{operator::Operator, ttype::TokenType},
 };
 
+pub mod clif;
+
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Type {
     pub name: String,

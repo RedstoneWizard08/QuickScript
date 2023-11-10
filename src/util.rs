@@ -35,27 +35,6 @@ pub fn random_string(len: i32) -> String {
     val
 }
 
-pub fn split_vec<T>(vec: Vec<T>, element: T) -> Vec<Vec<T>>
-where
-    T: PartialEq + Clone,
-{
-    let mut out = Vec::new();
-    let mut cur = Vec::new();
-
-    for item in vec {
-        if item == element {
-            out.push(cur.clone());
-            cur = Vec::new();
-        } else {
-            cur.push(item);
-        }
-    }
-
-    out.push(cur);
-
-    out
-}
-
 pub trait AsCharVec {
     fn as_char_vec(&self) -> Vec<char>;
 }

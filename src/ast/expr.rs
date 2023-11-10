@@ -1,4 +1,5 @@
 use crate::types::Type;
+use cranelift::prelude::{types, Type as ClifType};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Operation {
@@ -59,4 +60,17 @@ pub enum Expression {
 
     /// object name, name, args
     MethodCall(Vec<String>, String, Vec<Box<Expression>>),
+}
+
+impl Expression {
+    pub fn get_type(self) -> ClifType {
+        match self {
+            Expression::String(_) => types::I64,
+            Expression::Number(_) => types::I32,
+            Expression::Float(_) => types::F32,
+            Expression::Identifier(_) => types::I32,
+
+            _ => types::I32,
+        }
+    }
 }

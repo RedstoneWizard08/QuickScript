@@ -1,12 +1,15 @@
-use self::{token::{
-    operator::{Operator, OPERATORS},
-    ttype::TokenType,
-}, consumer::Cursor};
+use self::{
+    consumer::Cursor,
+    token::{
+        operator::{Operator, OPERATORS},
+        ttype::TokenType,
+    },
+};
 
+pub mod consumer;
 pub mod parse;
 pub mod recurse;
 pub mod token;
-pub mod consumer;
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Tokenizer {
@@ -47,7 +50,7 @@ impl Tokenizer {
                 while let Some(ch) = iter.next() {
                     if OPERATORS.contains(&ch) || ch == '"' || ch.is_whitespace() {
                         iter.prev();
-                        
+
                         break;
                     }
 

@@ -3,12 +3,7 @@
 use clap::{error::ErrorKind, Command, CommandFactory, Parser as ClapParser, Subcommand};
 use clap_complete::{generate, Generator, Shell};
 use qsc::{
-    arch::{detect_arch, Architecture},
-    ast::AstParser,
-    codegen::gen::Compiler,
-    parser::Parser,
-    syntax::Syntax,
-    tokenizer::Tokenizer,
+    ast::AstParser, codegen::backend::CraneliftBackend, tokenizer::Tokenizer, util::name_no_ext,
 };
 use std::{fs, io::stdout, path::PathBuf, process::exit};
 use tokio::main;
@@ -18,10 +13,6 @@ use tokio::main;
 pub struct Cli {
     /// The path to the file to compile.
     file: Option<String>,
-
-    /// The arch to compile for.
-    #[arg(short, long)]
-    arch: Option<Architecture>,
 
     /// Print parsed tokens only.
     #[arg(short = 't', long = "print-tokens")]
@@ -46,12 +37,6 @@ pub enum Commands {
     Completion {
         /// The shell to generate for.
         shell: Shell,
-    },
-
-    /// Does new parsing.
-    NewParsingDemo {
-        /// The file to parse.
-        file: String,
     },
 }
 
@@ -82,61 +67,43 @@ pub async fn start() {
 
             return;
         }
-
-        if let Commands::NewParsingDemo { file } = command {
-            let path = PathBuf::from(file);
-            let content = fs::read_to_string(path.clone()).unwrap();
-            let mut tokenizer = Tokenizer::from(content);
-
-            tokenizer.tokenize();
-
-            let mut parser = AstParser::new(tokenizer.tokens);
-
-            parser.parse().unwrap();
-
-            println!("{:#?}", parser.exprs);
-
-            return;
-        }
     }
 
     if cli.file.is_none() {
         let mut cmd = Cli::command();
+
         let err = cmd.error(
             ErrorKind::MissingRequiredArgument,
             "Missing value for file!",
         );
 
         err.print().unwrap();
+
         exit(1);
     }
 
-    let _arch = cli.arch.unwrap_or(detect_arch());
-    let path = cli.file.unwrap();
-    let path = PathBuf::from(path);
+    let path = PathBuf::from(cli.file.unwrap());
     let content = fs::read_to_string(path.clone()).unwrap();
-    let tokens = Parser::new(content).parse();
-    let keywords = Syntax::new(tokens.clone()).parse();
+    let mut tokenizer = Tokenizer::from(content);
 
-    if cli.print_tokens_only {
-        return println!("Tokens:\n{:#?}", tokens);
-    }
+    tokenizer.tokenize();
 
-    if cli.print_keywords_only {
-        return println!("Keywords:\n{:#?}", keywords);
-    }
+    let mut parser = AstParser::new(tokenizer.tokens);
 
-    // let content = compile(keywords, arch);
-    // let name = name_no_ext(path);
+    parser.parse().unwrap();
 
-    // if cli.asm {
-    //     return fs::write(format!("{}.S", name), content).unwrap();
-    // }
+    let mut back = CraneliftBackend::new().unwrap();
 
-    // build(name, content, arch);
+    back.compile(parser.exprs).unwrap();
 
-    let mut compiler = Compiler::new();
-    let res = compiler.compile(keywords).unwrap();
+    let product = back.finish();
+    let data = product.emit().unwrap();
 
-    println!("{:?}", res);
+    let out_path = path
+        .clone()
+        .parent()
+        .unwrap()
+        .join(format!("{}.o", name_no_ext(path)));
+
+    fs::write(out_path, data).unwrap();
 }
