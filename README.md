@@ -23,11 +23,26 @@ I'm working on a new parser implementation! To use it, run `cargo run -- new-par
 
 Currently, here is the support matrix:
 
-| Version | x86 (32-bit) | x86_64 (64-bit) | arm (32-bit) | aarch64 (64-bit) |
-| ------- | ------------ | --------------- | ------------ | ---------------- |
-|  0.0.0  | 🔴 | 🔴 | 🔴 | 🟢 |
-|  0.1.0  | 🔴 | 🟢 | 🔴 | 🟢 |
+| Version | i686 | x86_64 | armv7l | armhf | arm64 |
+| ------- | ---- | ------ | ------ | ----- | ----- |
+|  0.0.0  | 🔴 | 🔴 | 🔴 | 🔴 | 🟢 |
+|  0.1.0  | 🔴 | 🟡 | 🔴 | 🔴 | 🟢 |
+|  0.3.0  | 🟢 | 🟢 | 🔴 | 🔴 | 🟢 |
+
+Note that armv7l and armhf support is dependent on Cranelift's support for it.
+See [cranelift#1173](https://github.com/bytecodealliance/wasmtime/issues/1173)
+for more details.
+
+Musl builds for i686 are also not supported due to a big in cargo zigbuild.
+See [cargo-zigbuild#96](https://github.com/rust-cross/cargo-zigbuild/issues/96)
+for more details.
 
 # Credits
 
-Huge thanks to [Pixeled (@orosmatthew)](https://github.com/orosmatthew) and his [Creating a Compiler](https://www.youtube.com/playlist?list=PLUDlas_Zy_qC7c5tCgTMYq2idyyT241qs) series, as it helped me think about how to do this best and it gave me the inspiration for this project.
+Huge thanks to [Pixeled (@orosmatthew)](https://github.com/orosmatthew) and his
+[Creating a Compiler](https://www.youtube.com/playlist?list=PLUDlas_Zy_qC7c5tCgTMYq2idyyT241qs)
+series, as it helped me think about how to do this best and it gave me the
+inspiration for this project.
+
+Another huge thanks for the [cranelift-jit-demo](https://github.com/bytecodealliance/cranelift-jit-demo),
+as it helped me implement the code generator with Cranelift.
