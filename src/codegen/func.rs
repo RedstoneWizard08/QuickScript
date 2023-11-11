@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use anyhow::Result;
 use cranelift_codegen::{entity::EntityRef, ir::AbiParam};
 use cranelift_frontend::{FunctionBuilder, Variable};
+use cranelift_module::Module;
 
 use crate::{
     ast::expr::{Definition, Expression},
@@ -12,7 +13,10 @@ use crate::{
 
 use super::backend::CraneliftBackend;
 
-impl CraneliftBackend {
+impl<T> CraneliftBackend<T>
+where
+    T: Module,
+{
     pub fn translate_fn(
         &mut self,
         args: Vec<Box<Definition>>,

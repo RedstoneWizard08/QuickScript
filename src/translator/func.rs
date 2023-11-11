@@ -7,7 +7,6 @@ use cranelift_codegen::{
 };
 use cranelift_frontend::{FunctionBuilder, Variable};
 use cranelift_module::{DataDescription, Linkage, Module};
-use cranelift_object::ObjectModule;
 
 use crate::{
     ast::expr::Expression,
@@ -16,20 +15,26 @@ use crate::{
     util::random_string,
 };
 
-pub struct FunctionTranslator<'a> {
+pub struct FunctionTranslator<'a, T>
+where
+    T: Module,
+{
     pub builder: FunctionBuilder<'a>,
     pub variables: HashMap<String, Variable>,
-    pub module: &'a mut ObjectModule,
+    pub module: &'a mut T,
     pub data_desc: &'a mut DataDescription,
     pub var_idx: usize,
     pub ret_type: Type,
     pub is_entry: bool,
 }
 
-impl<'a> FunctionTranslator<'a> {
+impl<'a, T> FunctionTranslator<'a, T>
+where
+    T: Module,
+{
     pub fn new(
         builder: FunctionBuilder<'a>,
-        module: &'a mut ObjectModule,
+        module: &'a mut T,
         data_desc: &'a mut DataDescription,
         ret_type: Type,
         variables: HashMap<String, Variable>,
@@ -152,9 +157,9 @@ impl<'a> FunctionTranslator<'a> {
         }
     }
 
-    pub fn use_data<T>(&mut self, name: String, val: T) -> Result<Value>
+    pub fn use_data<V>(&mut self, name: String, val: V) -> Result<Value>
     where
-        T: Into<Vec<u8>>,
+        V: Into<Vec<u8>>,
     {
         create_data(&mut self.module, &mut self.data_desc, &name, val)?;
 

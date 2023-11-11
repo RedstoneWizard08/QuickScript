@@ -1,41 +1,47 @@
 use anyhow::Result;
-use cranelift_codegen::{
-    settings::{builder as flag_builder, Configurable, Flags},
-    Context,
-};
+use cranelift_codegen::{ir::Function, write_function, Context};
 use cranelift_frontend::FunctionBuilderContext;
-use cranelift_module::{default_libcall_names, DataDescription, Module};
-use cranelift_native::builder as isa_builder;
-use cranelift_object::{ObjectBuilder, ObjectModule, ObjectProduct};
+use cranelift_module::{DataDescription, Module};
 
-pub struct CraneliftBackend {
+pub struct CraneliftBackend<T>
+where
+    T: Module,
+{
     pub builder_ctx: FunctionBuilderContext,
     pub ctx: Context,
     pub data_desc: DataDescription,
-    pub module: ObjectModule,
+    pub module: T,
+    pub fns: Vec<Function>,
 }
 
-impl CraneliftBackend {
-    pub fn new() -> Result<Self> {
-        let mut flags = flag_builder();
+impl<T> CraneliftBackend<T>
+where
+    T: Module,
+{
+    pub fn output_clif(&self) -> Result<String> {
+        let mut buf = String::new();
+        let isa = self.module.isa();
 
-        flags.set("use_colocated_libcalls", "false")?;
-        flags.set("is_pic", "false")?;
+        for func in self.fns.clone() {
+            write_function(&mut buf, &func)?;
+        }
 
-        let isa_builder = isa_builder().map_err(|v| anyhow!(v))?;
-        let isa = isa_builder.finish(Flags::new(flags))?;
-        let builder = ObjectBuilder::new(isa, "qsc", default_libcall_names())?;
-        let module = ObjectModule::new(builder);
+        write_function(&mut buf, &self.ctx.func)?;
 
-        Ok(Self {
-            builder_ctx: FunctionBuilderContext::new(),
-            ctx: module.make_context(),
-            data_desc: DataDescription::new(),
-            module,
-        })
-    }
+        for flag in isa.flags().iter() {
+            buf.push_str(format!("set {}\n", flag).as_str());
+        }
 
-    pub fn finish(self) -> ObjectProduct {
-        self.module.finish()
+        buf.push_str(format!("target {}", isa.triple().architecture).as_str());
+
+        for isa_flag in isa.isa_flags().iter() {
+            buf.push_str(format!(" {}", isa_flag).as_str());
+        }
+
+        buf.push('\n');
+        buf.push('\n');
+        buf.push('\n');
+
+        Ok(buf)
     }
 }

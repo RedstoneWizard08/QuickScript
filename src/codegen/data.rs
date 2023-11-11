@@ -1,9 +1,8 @@
 use anyhow::Result;
 use cranelift_module::{DataDescription, DataId, Linkage, Module};
-use cranelift_object::ObjectModule;
 
-pub fn create_data<T, C>(
-    module: &mut ObjectModule,
+pub fn create_data<T, C, M>(
+    module: &mut M,
     data_desc: &mut DataDescription,
     name: T,
     contents: C,
@@ -11,6 +10,7 @@ pub fn create_data<T, C>(
 where
     T: AsRef<str>,
     C: Into<Vec<u8>>,
+    M: Module,
 {
     data_desc.define(contents.into().into_boxed_slice());
 

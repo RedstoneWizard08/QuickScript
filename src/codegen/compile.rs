@@ -5,7 +5,10 @@ use crate::ast::expr::{Definition, Expression};
 
 use super::backend::CraneliftBackend;
 
-impl CraneliftBackend {
+impl<T> CraneliftBackend<T>
+where
+    T: Module,
+{
     pub fn compile(&mut self, exprs: Vec<Expression>) -> Result<()> {
         // At the top level, only functions can be declared atm
 
@@ -26,6 +29,7 @@ impl CraneliftBackend {
                         )?;
 
                         self.module.define_function(id, &mut self.ctx)?;
+                        self.fns.push(self.ctx.func.clone());
                         self.module.clear_context(&mut self.ctx);
                     }
 

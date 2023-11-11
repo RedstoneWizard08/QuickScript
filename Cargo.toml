@@ -3,11 +3,8 @@ name = "qsc"
 version = "0.2.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 anyhow = "1.0.75"
-byteorder = "1.5.0"
 clap = { version = "4.3.24", features = ["derive"] }
 clap_complete = "4.3.2"
 cranelift = { version = "0.101.0", features = ["core"] }
@@ -17,17 +14,9 @@ cranelift-jit = "0.101.0"
 cranelift-module = "0.101.0"
 cranelift-native = "0.101.0"
 cranelift-object = "0.101.0"
-lazy_static = "1.4.0"
 phf = { version = "0.11.2", features = ["macros"] }
 rand = "0.8.5"
-serde = { version = "1.0.185", features = ["derive"] }
-serde_json = "1.0.105"
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-tokio = { version = "1.32.0", features = ["sync", "macros", "io-util", "rt", "time"] }
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-tokio = { version = "1.32.0", features = ["full"] }
+tempfile = "3.8.1"
 
 [profile.release]
 strip = true
