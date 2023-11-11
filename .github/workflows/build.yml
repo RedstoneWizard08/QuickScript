@@ -9,31 +9,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Install latest nightly (x86)
-        uses: actions-rs/toolchain@v1
-        with:
-            toolchain: nightly
-            override: true
-            target: x86_64-unknown-linux-gnu
-      
-      - name: Install latest nightly (aarch64)
-        uses: actions-rs/toolchain@v1
-        with:
-            toolchain: nightly
-            override: true
-            target: aarch64-unknown-linux-gnu
-      
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get -y install \
-            gcc-aarch64-linux-gnu \
-            gcc-x86-64-linux-gnu \
-            bash build-essential
-      
       - name: Build
         run: bash build.sh
-      
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
