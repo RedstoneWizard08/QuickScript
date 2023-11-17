@@ -1,6 +1,6 @@
 [package]
 name = "qsc"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 
 [dependencies]
@@ -8,15 +8,18 @@ anyhow = "1.0.75"
 clap = { version = "4.3.24", features = ["derive"] }
 clap_complete = "4.3.2"
 cranelift = { version = "0.101.0", features = ["core"] }
-cranelift-codegen = { version = "0.101.0", features = ["all-arch", "anyhow", "core"] }
+cranelift-codegen = { version = "0.101.0", features = ["all-arch", "anyhow", "core", "bincode", "disas"] }
 cranelift-frontend = "0.101.0"
-cranelift-jit = "0.101.0"
+cranelift-jit = { version = "0.104.0", path = "jit" }
 cranelift-module = "0.101.0"
 cranelift-native = "0.101.0"
 cranelift-object = "0.101.0"
+object = "0.32.1"
 phf = { version = "0.11.2", features = ["macros"] }
 rand = "0.8.5"
+target-lexicon = "0.12.12"
 tempfile = "3.8.1"
+which = "5.0.0"
 
 [profile.release]
 strip = true
@@ -24,3 +27,9 @@ opt-level = "z"
 lto = true
 codegen-units = 1
 panic = "abort"
+
+[workspace]
+resolver = "2"
+members = [
+    "jit"
+]

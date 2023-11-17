@@ -1,21 +1,22 @@
+use super::backend::CraneliftBackend;
 use anyhow::Result;
-use cranelift_codegen::settings::{builder as flag_builder, Configurable, Flags};
+use cranelift_codegen::{
+    isa::lookup,
+    settings::{builder as flag_builder, Configurable, Flags},
+};
 use cranelift_frontend::FunctionBuilderContext;
 use cranelift_module::{default_libcall_names, DataDescription, Module};
-use cranelift_native::builder as isa_builder;
 use cranelift_object::{ObjectBuilder, ObjectModule, ObjectProduct};
-
-use super::backend::CraneliftBackend;
+use target_lexicon::Triple;
 
 impl CraneliftBackend<ObjectModule> {
-    pub fn new() -> Result<Self> {
+    pub fn new(target: Triple, disasm: bool) -> Result<Self> {
         let mut flags = flag_builder();
 
         flags.set("use_colocated_libcalls", "false")?;
         flags.set("is_pic", "false")?;
 
-        let isa_builder = isa_builder().map_err(|v| anyhow!(v))?;
-        let isa = isa_builder.finish(Flags::new(flags))?;
+        let isa = lookup(target)?.finish(Flags::new(flags))?;
         let builder = ObjectBuilder::new(isa, "qsc", default_libcall_names())?;
         let module = ObjectModule::new(builder);
 
@@ -25,10 +26,27 @@ impl CraneliftBackend<ObjectModule> {
             data_desc: DataDescription::new(),
             module,
             fns: Vec::new(),
+            code: Vec::new(),
+            disasm,
+            is_jit: false,
+            bytecode: Vec::new(),
         })
     }
 
     pub fn finalize(self) -> ObjectProduct {
         self.module.finish()
+    }
+
+    pub fn asm(self) -> String {
+        let capstone = self.module.isa().to_capstone().unwrap();
+        let product = self.finalize();
+        let data = product.emit().unwrap();
+        let disasm = capstone.disasm_all(&*data.into_boxed_slice(), 0x0).unwrap();
+
+        disasm
+            .iter()
+            .map(|v| format!("{} {}", v.mnemonic().unwrap(), v.op_str().unwrap()))
+            .collect::<Vec<String>>()
+            .join("\n")
     }
 }

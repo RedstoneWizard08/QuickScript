@@ -2,6 +2,26 @@ use std::path::PathBuf;
 
 use rand::Rng;
 
+pub fn split_vec<T>(vec: Vec<T>, item: T) -> Vec<Vec<T>>
+where
+    T: PartialEq,
+{
+    let mut res = Vec::new();
+    let mut cur = Vec::new();
+
+    for el in vec {
+        if el == item {
+            res.push(cur);
+            cur = Vec::new();
+            continue;
+        }
+
+        cur.push(el);
+    }
+
+    res
+}
+
 pub fn name_no_ext(path: PathBuf) -> String {
     let name = path.file_name().unwrap().to_str().unwrap();
     let mut name = name.split(".").collect::<Vec<&str>>();

@@ -17,6 +17,7 @@ where
     let id = module.declare_data(name.as_ref(), Linkage::Export, true, false)?;
 
     module.define_data(id, &data_desc)?;
+
     data_desc.clear();
 
     Ok(id)

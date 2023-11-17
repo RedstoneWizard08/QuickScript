@@ -1,5 +1,5 @@
 use anyhow::Result;
-use cranelift_codegen::{ir::Function, write_function, Context};
+use cranelift_codegen::{ir::Function, write_function, CompiledCode, Context};
 use cranelift_frontend::FunctionBuilderContext;
 use cranelift_module::{DataDescription, Module};
 
@@ -12,6 +12,10 @@ where
     pub data_desc: DataDescription,
     pub module: T,
     pub fns: Vec<Function>,
+    pub code: Vec<CompiledCode>,
+    pub disasm: bool,
+    pub is_jit: bool,
+    pub bytecode: Vec<(String, *const u8, usize)>,
 }
 
 impl<T> CraneliftBackend<T>
@@ -43,5 +47,15 @@ where
         buf.push('\n');
 
         Ok(buf)
+    }
+
+    pub fn vcode(&self) -> String {
+        self.code
+            .iter()
+            .map(|v| v.vcode.clone())
+            .filter(|v| v.is_some())
+            .map(|v| v.unwrap())
+            .collect::<Vec<String>>()
+            .join("\n")
     }
 }

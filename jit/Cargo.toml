@@ -1,0 +1,41 @@
+[package]
+name = "cranelift-jit"
+version = "0.104.0"
+authors = ["The Cranelift Project Developers"]
+description = "A JIT library backed by Cranelift"
+repository = "https://github.com/bytecodealliance/wasmtime"
+documentation = "https://docs.rs/cranelift-jit"
+license = "Apache-2.0 WITH LLVM-exception"
+readme = "README.md"
+edition = "2021"
+
+[features]
+selinux-fix = ["memmap2"]
+default = []
+
+[dependencies]
+anyhow = "1.0.75"
+cranelift-codegen = "0.101.4"
+cranelift-control = "0.101.4"
+cranelift-entity = "0.101.4"
+cranelift-module = "0.101.4"
+cranelift-native = "0.101.4"
+libc = "0.2.42"
+log = "0.4.20"
+memmap2 = { version = "0.2.1", optional = true }
+region = "2.2.0"
+target-lexicon = "0.12.12"
+wasmtime-jit-icache-coherence = "14.0.4"
+
+[target.'cfg(windows)'.dependencies.windows-sys]
+version = "0.48.0"
+features = [
+    "Win32_Foundation",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Memory",
+]
+
+[dev-dependencies]
+cranelift = "0.101.4"
+cranelift-entity = "0.101.4"
+cranelift-frontend = "0.101.4"

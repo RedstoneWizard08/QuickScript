@@ -1,13 +1,14 @@
 use anyhow::Result;
+use cranelift_codegen::control::ControlPlane;
 use cranelift_module::{Linkage, Module};
 
 use crate::ast::expr::{Definition, Expression};
 
-use super::backend::CraneliftBackend;
+use super::{backend::CraneliftBackend, jit::JITFinish};
 
 impl<T> CraneliftBackend<T>
 where
-    T: Module,
+    T: Module + 'static,
 {
     pub fn compile(&mut self, exprs: Vec<Expression>) -> Result<()> {
         // At the top level, only functions can be declared atm
@@ -20,6 +21,7 @@ where
                             name = String::from("_start");
                         }
 
+                        self.ctx.set_disasm(self.disasm);
                         self.translate_fn(args, ret, content, name == "_start")?;
 
                         let id = self.module.declare_function(
@@ -30,7 +32,16 @@ where
 
                         self.module.define_function(id, &mut self.ctx)?;
                         self.fns.push(self.ctx.func.clone());
+
+                        self.code.push(
+                            self.ctx
+                                .compile(self.module.isa(), &mut ControlPlane::default())
+                                .unwrap()
+                                .clone(),
+                        );
+
                         self.module.clear_context(&mut self.ctx);
+                        self.jit_finish_fn(name, id)?;
                     }
 
                     _ => (),
