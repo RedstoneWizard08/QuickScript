@@ -9,7 +9,7 @@ use cranelift_frontend::{FunctionBuilder, Variable};
 use cranelift_module::{DataDescription, Linkage, Module};
 
 use crate::{
-    ast::expr::Expression,
+    ast::expr::{Expression, Definition},
     codegen::data::create_data,
     types::{clif::IntoClifType, Type},
     util::random_string,
@@ -63,10 +63,6 @@ where
     }
 
     pub fn null(&mut self) -> Value {
-        // self.builder
-        //     .ins()
-        //     .null(self.module.target_config().pointer_type())
-
         Value::from_u32(0)
     }
 
@@ -101,6 +97,19 @@ where
                 self.builder.ins().return_(&[val]);
 
                 Ok(self.null())
+            }
+
+            Expression::Define(def) => match def {
+                Definition::Variable(name, ty, val) => {
+                    let var = self.create_var(&name, ty);
+                    let val = self.translate(*val)?;
+
+                    self.builder.def_var(var, val);
+
+                    Ok(self.null())
+                }
+
+                _ => Ok(self.null())
             }
 
             Expression::String(val) => {

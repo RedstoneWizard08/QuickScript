@@ -37,7 +37,7 @@ pub struct Cli {
     pub jit: bool,
 
     /// Strip the binary.
-    #[arg(short = 's', long = "strip", default_value_t = true)]
+    #[arg(short = 's', long = "strip")]
     pub strip: bool,
 
     /// Output an object file.

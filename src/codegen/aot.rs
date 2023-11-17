@@ -14,7 +14,12 @@ impl CraneliftBackend<ObjectModule> {
         let mut flags = flag_builder();
 
         flags.set("use_colocated_libcalls", "false")?;
-        flags.set("is_pic", "false")?;
+        flags.set("is_pic", "true")?;
+        flags.set("opt_level", "speed")?;
+        flags.set("regalloc_checker", "true")?;
+        flags.set("enable_alias_analysis", "true")?;
+        flags.set("enable_verifier", "true")?;
+        flags.set("enable_probestack", "false")?;
 
         let isa = lookup(target)?.finish(Flags::new(flags))?;
         let builder = ObjectBuilder::new(isa, "qsc", default_libcall_names())?;

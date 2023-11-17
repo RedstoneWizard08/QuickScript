@@ -28,6 +28,29 @@ pub fn get_default_linker() -> &'static str {
 }
 
 #[cfg(target_os = "linux")]
+pub fn get_dynamic_linker(
+    prefix: String,
+    target_arch: Option<String>,
+    target_env: Option<String>,
+) -> String {
+    use std::env::consts::ARCH;
+
+    use crate::target::ENV;
+
+    let env = target_env.unwrap_or(ENV.to_string());
+
+    if env == "android" {
+        return "/system/lib/ld-android.so".to_string();
+    }
+
+    format!(
+        "{}/lib/ld-linux-{}.so.1",
+        prefix,
+        target_arch.unwrap_or(ARCH.to_string())
+    )
+}
+
+#[cfg(target_os = "linux")]
 pub fn get_library_dir(
     prefix_dir: Option<String>,
     target_arch: Option<String>,
@@ -54,14 +77,25 @@ pub fn get_library_dir(
         format!(
             "-L{}/{}-{}-{}/lib",
             prefix,
-            target_arch.unwrap_or(ARCH.to_string()),
+            target_arch.clone().unwrap_or(ARCH.to_string()),
             target_os.unwrap_or(OS.to_string()),
-            target_env.unwrap_or(ENV.to_string())
+            target_env.clone().unwrap_or(ENV.to_string())
         ),
+        "--dynamic-linker".to_string(),
+        get_dynamic_linker(prefix, target_arch, target_env),
     ]
 }
 
 #[cfg(target_os = "windows")]
-pub fn get_library_dir(target_arch: String, target_c: String) -> Vec<String> {
+pub fn get_library_dir(_target_arch: String, _target_c: String) -> Vec<String> {
     todo!("get_library_dir is not supported on Windows yet!")
+}
+
+#[cfg(target_os = "windows")]
+pub fn get_dynamic_linker(
+    _prefix: String,
+    _target_arch: Option<String>,
+    _target_env: Option<String>,
+) -> String {
+    todo!("get_dynamic_linker is not supported on Windows yet!")
 }
