@@ -1,5 +1,10 @@
 # qsc: The QuickScript compiler.
 
+![Crates.io](https://img.shields.io/crates/v/quickscript?style=flat-square)
+![Crates.io Downloads](https://img.shields.io/crates/d/quickscript?style=flat-square&label=downloads%20(crates.io))
+![GitHub Downloads](https://img.shields.io/github/downloads/RedstoneWizard08/QuickScript/total?style=flat-square&label=downloads%20(GitHub)&color=red)
+![Build status](https://img.shields.io/github/actions/workflow/status/RedstoneWizard08/QuickScript/build.yml?style=flat-square)
+
 [![build](https://github.com/RedstoneWizard08/QuickScript/actions/workflows/build.yml/badge.svg)](https://nightly.link/RedstoneWizard08/QuickScript/workflows/build/main/binaries)
 
 QuickScript is a language that I am creating to learn how to, well, create a language.
