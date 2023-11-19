@@ -14,6 +14,17 @@ The syntax is very similar to Rust, and it is a semicolon-based language, or at 
 
 This project is licensed under the MIT license. Feel free to use the code for whatever you want.
 
+## Installation
+
+Installing QuickScript is incredibly easy!
+Here's how you can do it:
+
+**With Cargo:**
+
+```sh
+cargo install quickscript
+```
+
 ## Usage
 
 Currently you just run `cargo run [file]`, where `[file]` represents the path to the input file. I know, very complex. For any other options, use `--help` or `-h`, as the CLI is built with Clap.
