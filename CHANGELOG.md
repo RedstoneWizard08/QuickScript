@@ -1,8 +1,10 @@
+# v0.5.3
+
+Updated all dependencies.
+
 # v0.5.2
 
-Changes:
-
-- Fixed Android (Termux) support.
+Fixed Android (Termux) support.
 
 # v0.5.1
 
