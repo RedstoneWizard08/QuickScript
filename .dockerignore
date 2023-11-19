@@ -3,4 +3,3 @@ target
 Dockerfile
 .dockerignore
 build.sh
-.git
