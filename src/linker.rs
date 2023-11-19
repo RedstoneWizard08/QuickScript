@@ -27,7 +27,7 @@ pub fn get_default_linker() -> &'static str {
     "cc"
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn get_dynamic_linker(
     prefix: String,
     target_arch: Option<String>,
@@ -50,7 +50,7 @@ pub fn get_dynamic_linker(
     )
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn get_library_dir(
     prefix_dir: Option<String>,
     target_arch: Option<String>,

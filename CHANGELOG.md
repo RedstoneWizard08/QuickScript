@@ -1,3 +1,9 @@
+# v0.5.2
+
+Changes:
+
+- Fixed Android (Termux) support.
+
 # v0.5.1
 
 This release just fixes a few bugs.

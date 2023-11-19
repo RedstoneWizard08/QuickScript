@@ -15,3 +15,6 @@ pub const ENV: &str = "musleabi";
 
 #[cfg(target_env = "musleabihf")]
 pub const ENV: &str = "musleabihf";
+
+#[cfg(target_os = "android")]
+pub const ENV: &str = "android";
