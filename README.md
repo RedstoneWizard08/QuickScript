@@ -25,17 +25,18 @@ Here's how you can do it:
 cargo install quickscript
 ```
 
+**Via GitHub Releases:**
+
+1. Head to https://github.com/RedstoneWizard08/QuickScript/releases
+2. Download the correct binary for your platform
+3. Run `chmod +x [path to binary here]`
+4. Run the binary!
+
 ## Usage
 
-Currently you just run `cargo run [file]`, where `[file]` represents the path to the input file. I know, very complex. For any other options, use `--help` or `-h`, as the CLI is built with Clap.
+For usage details, run `qsc --help`
 
-If you want to use the code as a library, feel free, I tried to document most of it. I may have forgotten some though, or I may just stop out of laziness later. :p (I will likely get to documenting it later anyway.)
-
-## New Parsing
-
-I'm working on a new parser implementation! To use it, run `cargo run -- new-parsing-demo [file]`.
-
-# Support
+## Support
 
 Currently, here is the support matrix:
 
@@ -44,6 +45,8 @@ Currently, here is the support matrix:
 |  0.0.0  | 🔴 | 🔴 | 🔴 | 🔴 | 🟢 |
 |  0.1.0  | 🔴 | 🟡 | 🔴 | 🔴 | 🟢 |
 |  0.3.0  | 🟢 | 🟢 | 🔴 | 🔴 | 🟢 |
+|  0.4.0  | 🟢 | 🟢 | 🔴 | 🔴 | 🟢 |
+|  0.5.x  | 🟢 | 🟢 | 🔴 | 🔴 | 🟢 |
 
 Note that armv7l and armhf support is dependent on Cranelift's support for it.
 See [cranelift#1173](https://github.com/bytecodealliance/wasmtime/issues/1173)
