@@ -9,7 +9,7 @@ use cranelift_frontend::{FunctionBuilder, Variable};
 use cranelift_module::{DataDescription, Linkage, Module};
 
 use crate::{
-    ast::expr::{Expression, Definition},
+    ast::expr::{Definition, Expression},
     codegen::data::create_data,
     types::{clif::IntoClifType, Type},
     util::random_string,
@@ -109,8 +109,8 @@ where
                     Ok(self.null())
                 }
 
-                _ => Ok(self.null())
-            }
+                _ => Ok(self.null()),
+            },
 
             Expression::String(val) => {
                 let name = random_string(32);
