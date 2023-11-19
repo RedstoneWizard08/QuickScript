@@ -7,10 +7,6 @@
 ```rs
 /// A resizable and movable array type.
 ///
-/// Note: This definition is fake, the real one is (or
-///       will be) written in assembly at the time of
-///       writing.
-///
 /// #[example]
 /// ```qs
 /// let mut arr: Array<i32> = Array::new();
