@@ -1,6 +1,6 @@
 [package]
 name = "quickscript"
-version = "0.5.3"
+version = "0.5.4"
 repository = "https://github.com/RedstoneWizard08/QuickScript"
 authors = ["RedstoneWizard08", "td5032"]
 description = "A quick programming language with a compiler implemented in Rust."
