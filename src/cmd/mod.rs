@@ -7,6 +7,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use const_format::formatcp;
+use log::LevelFilter;
 use pretty_env_logger::formatted_builder;
 
 use self::{
@@ -77,6 +78,7 @@ impl Command for Cli {
     fn execute(&mut self) -> Result<()> {
         formatted_builder()
             .filter_level(self.verbose.log_level_filter())
+            .filter(Some("cranelift_object::backend"), LevelFilter::Warn)
             .init();
 
         self.command.execute()

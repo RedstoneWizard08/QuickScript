@@ -1,3 +1,11 @@
+# v0.5.5
+
+Fixed `cranelift_object::backend` being shown in logs.
+
+# v0.5.4
+
+Fixed commit hash build errors.
+
 # v0.5.3
 
 Updated all dependencies.
