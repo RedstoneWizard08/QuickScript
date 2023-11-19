@@ -3,9 +3,7 @@
 ![Crates.io](https://img.shields.io/crates/v/quickscript?style=flat-square)
 ![Crates.io Downloads](https://img.shields.io/crates/d/quickscript?style=flat-square&label=downloads%20(crates.io))
 ![GitHub Downloads](https://img.shields.io/github/downloads/RedstoneWizard08/QuickScript/total?style=flat-square&label=downloads%20(GitHub)&color=red)
-![Build status](https://img.shields.io/github/actions/workflow/status/RedstoneWizard08/QuickScript/build.yml?style=flat-square)
-
-[![build](https://github.com/RedstoneWizard08/QuickScript/actions/workflows/build.yml/badge.svg)](https://nightly.link/RedstoneWizard08/QuickScript/workflows/build/main/binaries)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/RedstoneWizard08/QuickScript/build.yml?style=flat-square)](https://nightly.link/RedstoneWizard08/QuickScript/workflows/build/main/binaries)
 
 QuickScript is a language that I am creating to learn how to, well, create a language.
 The syntax is very similar to Rust, and it is a semicolon-based language, or at least it will be (I think). The compiler is written in Rust, and will translate into Assembly, which will then be compiled with either nasm or GNU as (probably the latter), and then linked with ld (I think I might use mold for it actually) internally. The standard library should hopefully be pretty good, but I haven't gotten around to that yet.
