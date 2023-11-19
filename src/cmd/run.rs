@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use anyhow::Result;
 use clap::Parser;
-use cranelift_jit::JITModule;
+use qsc_cranelift_jit::JITModule;
 use target_lexicon::Triple;
 
 use crate::{ast::AstParser, codegen::backend::CraneliftBackend, tokenizer::Tokenizer};

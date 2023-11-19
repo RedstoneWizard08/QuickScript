@@ -8,8 +8,8 @@ use std::{
 
 use anyhow::Result;
 use clap::Parser;
-use cranelift_jit::JITModule;
 use cranelift_object::ObjectModule;
+use qsc_cranelift_jit::JITModule;
 use target_lexicon::Triple;
 use tempfile::NamedTempFile;
 

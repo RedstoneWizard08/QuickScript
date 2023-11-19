@@ -4,8 +4,8 @@ use cranelift_codegen::settings::{self, Configurable};
 use cranelift_codegen::{ir::types::I16, Context};
 use cranelift_entity::EntityRef;
 use cranelift_frontend::*;
-use cranelift_jit::*;
 use cranelift_module::*;
+use qsc_cranelift_jit::*;
 
 #[test]
 fn error_on_incompatible_sig_in_declare_function() {

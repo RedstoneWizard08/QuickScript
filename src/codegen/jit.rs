@@ -6,8 +6,8 @@ use cranelift_codegen::{
     settings::{builder as flag_builder, Configurable, Flags},
 };
 use cranelift_frontend::FunctionBuilderContext;
-use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{default_libcall_names, DataDescription, DataId, FuncId, Module};
+use qsc_cranelift_jit::{JITBuilder, JITModule};
 use target_lexicon::Triple;
 
 use super::backend::CraneliftBackend;

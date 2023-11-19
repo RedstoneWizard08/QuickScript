@@ -14,7 +14,7 @@ const_format = "0.2.32"
 cranelift = { version = "0.101.0", features = ["core"] }
 cranelift-codegen = { version = "0.101.0", features = ["all-arch", "anyhow", "core", "bincode", "disas"] }
 cranelift-frontend = "0.101.0"
-cranelift-jit = { version = "0.104.0", path = "jit" }
+qsc-cranelift-jit = { version = "0.104.0", path = "jit" }
 cranelift-module = "0.101.0"
 cranelift-native = "0.101.0"
 cranelift-object = "0.101.0"

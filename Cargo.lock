@@ -336,27 +336,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "45bab6d69919d210a50331d35cc6ce111567bc040aebac63a8ae130d0400a075"
 
 [[package]]
-name = "cranelift-jit"
-version = "0.104.0"
-dependencies = [
- "anyhow",
- "cranelift",
- "cranelift-codegen",
- "cranelift-control",
- "cranelift-entity",
- "cranelift-frontend",
- "cranelift-module",
- "cranelift-native",
- "libc",
- "log",
- "memmap2",
- "region",
- "target-lexicon",
- "wasmtime-jit-icache-coherence",
- "windows-sys",
-]
-
-[[package]]
 name = "cranelift-module"
 version = "0.101.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -808,6 +787,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "qsc-cranelift-jit"
+version = "0.104.0"
+dependencies = [
+ "anyhow",
+ "cranelift",
+ "cranelift-codegen",
+ "cranelift-control",
+ "cranelift-entity",
+ "cranelift-frontend",
+ "cranelift-module",
+ "cranelift-native",
+ "libc",
+ "log",
+ "memmap2",
+ "region",
+ "target-lexicon",
+ "wasmtime-jit-icache-coherence",
+ "windows-sys",
+]
+
+[[package]]
 name = "quickscript"
 version = "0.5.2"
 dependencies = [
@@ -819,7 +819,6 @@ dependencies = [
  "cranelift",
  "cranelift-codegen",
  "cranelift-frontend",
- "cranelift-jit",
  "cranelift-module",
  "cranelift-native",
  "cranelift-object",
@@ -828,6 +827,7 @@ dependencies = [
  "object",
  "phf",
  "pretty_env_logger",
+ "qsc-cranelift-jit",
  "rand",
  "target-lexicon",
  "tempfile",

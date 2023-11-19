@@ -8,8 +8,8 @@ use std::{
 
 use anyhow::Result;
 use clap::Parser;
-use cranelift_jit::JITModule;
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
+use qsc_cranelift_jit::JITModule;
 use target_lexicon::Triple;
 
 use crate::{ast::AstParser, codegen::backend::CraneliftBackend, tokenizer::Tokenizer};
@@ -68,7 +68,7 @@ impl Command for WatchCommand {
                 Ok(ev) => {
                     if ev.kind.is_modify() || ev.kind.is_remove() || ev.kind.is_create() {
                         info!("File changes detected, rerunning.");
-                        
+
                         // Let the editor close the handle so we can read.
                         sleep(Duration::from_millis(5));
 

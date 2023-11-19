@@ -1,5 +1,5 @@
 [package]
-name = "cranelift-jit"
+name = "qsc-cranelift-jit"
 version = "0.104.0"
 authors = ["The Cranelift Project Developers"]
 description = "A JIT library backed by Cranelift"

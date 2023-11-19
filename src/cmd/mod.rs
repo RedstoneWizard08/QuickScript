@@ -5,7 +5,7 @@ pub mod watch;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use clap_verbosity_flag::{Verbosity, InfoLevel};
+use clap_verbosity_flag::{InfoLevel, Verbosity};
 use const_format::formatcp;
 use pretty_env_logger::formatted_builder;
 
