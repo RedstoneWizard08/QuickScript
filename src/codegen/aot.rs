@@ -35,6 +35,7 @@ impl CraneliftBackend<ObjectModule> {
             disasm,
             is_jit: false,
             bytecode: Vec::new(),
+            watch_mode: false,
         })
     }
 

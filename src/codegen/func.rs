@@ -80,7 +80,7 @@ where
         );
 
         for expr in content {
-            translator.translate(*expr)?;
+            translator.translate(*expr, self.watch_mode)?;
         }
 
         translator.builder.finalize();

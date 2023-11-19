@@ -1,3 +1,22 @@
+# v0.5.1
+
+This release just fixes a few bugs.
+
+- Watch mode now works.
+- Fixed default verbosity level.
+
+# v0.5.0
+
+This release brings a ton of new features!
+
+- A new CLI design.
+- A new compile subcommand.
+- A JIT run mode.
+- Complete refactor of all CLI logic.
+- Verbose mode.
+- Integration with the `log` crate.
+- A new watch mode (currently broken, will be fixed in 0.5.1)!
+
 # v0.4.1
 
 A quick patch that doesn't merit a full release:

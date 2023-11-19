@@ -66,17 +66,17 @@ where
         Value::from_u32(0)
     }
 
-    pub fn translate(&mut self, expr: Expression) -> Result<Value> {
+    pub fn translate(&mut self, expr: Expression, watch_mode: bool) -> Result<Value> {
         match expr {
             Expression::Return(val) => {
-                let val = self.translate(*val)?;
+                let val = self.translate(*val, watch_mode)?;
                 let var = self.create_var("__return__", self.ret_type.clone());
 
                 self.builder.def_var(var, val);
 
                 let val = self.builder.use_var(var);
 
-                if self.is_entry {
+                if self.is_entry && !watch_mode {
                     let mut sig = self.module.make_signature();
 
                     sig.params.push(AbiParam::new(types::I32));
@@ -102,7 +102,7 @@ where
             Expression::Define(def) => match def {
                 Definition::Variable(name, ty, val) => {
                     let var = self.create_var(&name, ty);
-                    let val = self.translate(*val)?;
+                    let val = self.translate(*val, watch_mode)?;
 
                     self.builder.def_var(var, val);
 
@@ -115,7 +115,7 @@ where
             Expression::String(val) => {
                 let name = random_string(32);
 
-                self.use_data(name, format!("{}\0", val))
+                self.use_data(name, format!("{}\0", val).replace("\\n", "\n"))
             }
 
             // TODO: Also include non-f32s.
@@ -144,12 +144,11 @@ where
                 // TODO: Returns
 
                 let callee = self.module.declare_function(&name, Linkage::Import, &sig)?;
-
                 let local_callee = self.module.declare_func_in_func(callee, self.builder.func);
                 let mut arg_values = Vec::new();
 
                 for arg in args {
-                    arg_values.push(self.translate(*arg)?);
+                    arg_values.push(self.translate(*arg, watch_mode)?);
                 }
 
                 let call = self.builder.ins().call(local_callee, &arg_values);

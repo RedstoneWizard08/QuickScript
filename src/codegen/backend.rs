@@ -15,6 +15,7 @@ where
     pub code: Vec<CompiledCode>,
     pub disasm: bool,
     pub is_jit: bool,
+    pub watch_mode: bool,
     pub bytecode: Vec<(String, *const u8, usize)>,
 }
 

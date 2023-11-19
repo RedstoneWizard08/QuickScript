@@ -11,7 +11,7 @@ use cranelift_module::{
     DataDescription, DataId, FuncId, Init, Linkage, Module, ModuleDeclarations, ModuleError,
     ModuleReloc, ModuleRelocTarget, ModuleResult,
 };
-use log::info;
+use log::debug;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
@@ -660,7 +660,7 @@ impl Module for JITModule {
         ctx: &mut cranelift_codegen::Context,
         ctrl_plane: &mut ControlPlane,
     ) -> ModuleResult<()> {
-        info!("defining function {}: {}", id, ctx.func.display());
+        debug!("defining function {}: {}", id, ctx.func.display());
         let decl = self.declarations.get_function_decl(id);
         if !decl.linkage.is_definable() {
             return Err(ModuleError::InvalidImportDefinition(
@@ -764,7 +764,7 @@ impl Module for JITModule {
         bytes: &[u8],
         relocs: &[FinalizedMachReloc],
     ) -> ModuleResult<()> {
-        info!("defining function {} with bytes", id);
+        debug!("defining function {} with bytes", id);
         let decl = self.declarations.get_function_decl(id);
         if !decl.linkage.is_definable() {
             return Err(ModuleError::InvalidImportDefinition(

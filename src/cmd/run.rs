@@ -16,7 +16,7 @@ pub struct RunCommand {
 }
 
 impl Command for RunCommand {
-    fn execute(&self) -> Result<()> {
+    fn execute(&mut self) -> Result<()> {
         let content = fs::read_to_string(self.file.clone())?;
         let mut tokenizer = Tokenizer::from(content);
 

@@ -59,7 +59,7 @@ pub struct CompileCommand {
 }
 
 impl Command for CompileCommand {
-    fn execute(&self) -> Result<()> {
+    fn execute(&mut self) -> Result<()> {
         let triple = self
             .target
             .clone()

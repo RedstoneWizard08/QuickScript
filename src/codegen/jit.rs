@@ -33,13 +33,14 @@ impl CraneliftBackend<JITModule> {
             disasm,
             is_jit: true,
             bytecode: Vec::new(),
+            watch_mode: false,
         })
     }
 
-    pub fn run(self) -> Result<i32> {
+    pub fn run(&self) -> Result<i32> {
         let mut main = None;
 
-        for (name, code, _) in self.bytecode {
+        for (name, code, _) in self.bytecode.clone() {
             if name == "_start" {
                 main = Some(code);
             }

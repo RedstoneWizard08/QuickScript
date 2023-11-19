@@ -1,6 +1,6 @@
 [package]
 name = "quickscript"
-version = "0.5.0"
+version = "0.5.1"
 repository = "https://github.com/RedstoneWizard08/QuickScript"
 authors = ["RedstoneWizard08", "td5032"]
 edition = "2021"

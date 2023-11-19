@@ -5,7 +5,7 @@ pub mod watch;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use clap_verbosity_flag::Verbosity;
+use clap_verbosity_flag::{Verbosity, InfoLevel};
 use const_format::formatcp;
 use pretty_env_logger::formatted_builder;
 
@@ -27,7 +27,7 @@ pub const LONG_VERSION: &str = formatcp!(
 );
 
 pub trait Command {
-    fn execute(&self) -> Result<()>;
+    fn execute(&mut self) -> Result<()>;
 }
 
 #[derive(Debug, Clone, Parser)]
@@ -44,7 +44,7 @@ pub trait Command {
 pub struct Cli {
     /// Enables verbose mode.
     #[command(flatten)]
-    pub verbose: Verbosity,
+    pub verbose: Verbosity<InfoLevel>,
 
     /// A sub-command.
     #[command(subcommand)]
@@ -74,7 +74,7 @@ pub enum Commands {
 }
 
 impl Command for Cli {
-    fn execute(&self) -> Result<()> {
+    fn execute(&mut self) -> Result<()> {
         formatted_builder()
             .filter_level(self.verbose.log_level_filter())
             .init();
@@ -84,12 +84,12 @@ impl Command for Cli {
 }
 
 impl Command for Commands {
-    fn execute(&self) -> Result<()> {
+    fn execute(&mut self) -> Result<()> {
         match self.clone() {
-            Commands::Run(cmd) => cmd.execute(),
-            Commands::Compile(cmd) => cmd.execute(),
-            Commands::Completions(cmd) => cmd.execute(),
-            Commands::Watch(cmd) => cmd.execute(),
+            Commands::Run(mut cmd) => cmd.execute(),
+            Commands::Compile(mut cmd) => cmd.execute(),
+            Commands::Completions(mut cmd) => cmd.execute(),
+            Commands::Watch(mut cmd) => cmd.execute(),
             Commands::Version => Ok(println!("{} {}", env!("PRODUCT_NAME"), VERSION)),
         }
     }

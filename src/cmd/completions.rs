@@ -13,7 +13,7 @@ pub struct CompletionsCommand {
 }
 
 impl Command for CompletionsCommand {
-    fn execute(&self) -> Result<()> {
+    fn execute(&mut self) -> Result<()> {
         let mut cmd = Cli::command();
         let name = cmd.get_name().to_string();
 
