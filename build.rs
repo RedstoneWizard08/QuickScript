@@ -1,4 +1,4 @@
-use std::{env, process::Command, path::PathBuf};
+use std::{env, path::PathBuf, process::Command};
 
 fn main() {
     if let Ok(git_hash) = env::var("GITHUB_SHA") {

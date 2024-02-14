@@ -9,10 +9,8 @@ use std::{
 use anyhow::Result;
 use clap::Parser;
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
-use qsc_cranelift_jit::JITModule;
-use target_lexicon::Triple;
 
-use crate::{ast::AstParser, codegen::backend::CraneliftBackend, tokenizer::Tokenizer};
+use crate::tokenizer::Tokenizer;
 
 use super::Command;
 
@@ -25,20 +23,10 @@ pub struct WatchCommand {
 impl WatchCommand {
     pub fn run(&self) -> Result<()> {
         let path = self.path.clone().join("main.qs");
-        let content = fs::read_to_string(path)?;
-        let mut tokenizer = Tokenizer::from(content);
+        let content = fs::read_to_string(path.clone())?;
+        let mut tokenizer = Tokenizer::new(path.to_str().unwrap(), content);
 
         tokenizer.tokenize();
-
-        let mut parser = AstParser::new(tokenizer.tokens);
-
-        parser.parse()?;
-
-        let mut back = CraneliftBackend::<JITModule>::new(Triple::host(), false)?;
-
-        back.watch_mode = true;
-        back.compile(parser.exprs)?;
-        back.run()?;
 
         Ok(())
     }

@@ -1,82 +1,43 @@
-use self::{
-    consumer::Cursor,
-    token::{
-        operator::{Operator, OPERATORS},
-        ttype::TokenType,
-    },
-};
+use self::{cursor::Cursor, data::TokenData, token::Token};
 
-pub mod consumer;
-pub mod parse;
-pub mod recurse;
+pub mod cursor;
+pub mod data;
+pub mod error;
+pub mod operator;
+pub mod punct;
 pub mod token;
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone)]
 pub struct Tokenizer {
-    pub content: Vec<char>,
-    pub tokens: Vec<TokenType>,
+    pub data: Cursor,
+    pub tokens: Vec<Token>,
 }
 
 impl Tokenizer {
-    pub fn tokenize(&mut self) {
-        let mut iter = Cursor::new(self.content.clone());
+    pub fn new(file: impl AsRef<str>, data: String) -> Self {
+        Self {
+            data: Cursor::new(file.as_ref().to_string(), data.chars().collect()),
+            tokens: Vec::new(),
+        }
+    }
 
-        while let Some(ch) = iter.next() {
+    pub fn tokenize(&mut self) -> Vec<Token> {
+        while let Some(ch) = self.data.peek() {
             if ch.is_whitespace() {
+                self.data.next();
                 continue;
             }
 
-            if ch == '"' {
-                self.tokens.push(TokenType::read_string(&mut iter));
-            } else if OPERATORS.contains(&ch) {
-                self.tokens.push(TokenType::Operator(Operator::from(ch)));
-            } else if ch.is_numeric() {
-                let mut buf = vec![ch.to_digit(10).unwrap() as u8];
-
-                while let Some(ch) = iter.next() {
-                    if !ch.is_numeric() {
-                        iter.prev();
-
-                        break;
-                    }
-
-                    buf.push(ch.to_digit(10).unwrap() as u8);
-                }
-
-                self.tokens.push(TokenType::Number(buf));
-            } else {
-                let mut buf = vec![ch];
-
-                while let Some(ch) = iter.next() {
-                    if OPERATORS.contains(&ch) || ch == '"' || ch.is_whitespace() {
-                        iter.prev();
-
-                        break;
-                    }
-
-                    buf.push(ch);
-                }
-
-                self.tokens.push(TokenType::Name(buf));
-            }
+            self.tokens.push(Token::read(&mut self.data));
         }
-    }
-}
 
-impl From<Vec<char>> for Tokenizer {
-    fn from(value: Vec<char>) -> Self {
-        Self {
-            content: value,
-            tokens: Vec::new(),
-        }
-    }
-}
+        self.tokens = self
+            .tokens
+            .iter()
+            .cloned()
+            .filter(|v| v.content != TokenData::None)
+            .collect();
 
-impl From<String> for Tokenizer {
-    fn from(value: String) -> Self {
-        Self {
-            content: value.chars().collect::<Vec<char>>(),
-            tokens: Vec::new(),
-        }
+        self.tokens.clone()
     }
 }

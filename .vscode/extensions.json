@@ -1,0 +1,19 @@
+{
+    "recommendations": [
+        "1yib.rust-bundle",
+        "polymeilex.rust-targets",
+        "zhangyue.rust-mod-generator",
+        "jscearcy.rust-doc-viewer",
+        "swellaby.vscode-rust-test-adapter",
+        "conradludgate.rust-playground",
+        "jedeop.crates-completer",
+        "belfz.search-crates-io",
+        "ms-azuretools.vscode-docker",
+        "formulahendry.docker-explorer",
+        "github.copilot",
+        "github.copilot-chat",
+        "github.vscode-github-actions",
+        "bierner.markdown-preview-github-styles",
+        "github.remotehub"
+    ]
+}
