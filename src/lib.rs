@@ -6,6 +6,7 @@ extern crate log;
 
 pub mod ast;
 pub mod cmd;
+pub mod lexer;
 pub mod linker;
 pub mod macros;
 pub mod strip;

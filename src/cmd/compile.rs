@@ -4,7 +4,10 @@ use anyhow::Result;
 use clap::Parser;
 use target_lexicon::Triple;
 
-use crate::tokenizer::Tokenizer;
+use crate::{
+    lexer::Lexer,
+    tokenizer::{cursor::Cursor, Tokenizer},
+};
 
 use super::Command;
 
@@ -37,6 +40,14 @@ pub struct CompileCommand {
     #[arg(short = 'S', long = "asm")]
     pub asm: bool,
 
+    /// Instead of compiling, dump the tokens.
+    #[arg(long = "dump-tokens")]
+    pub dump_tokens: bool,
+
+    /// Instead of compiling, dump the AST.
+    #[arg(long = "dump-ast")]
+    pub dump_ast: bool,
+
     /// The linker. Defaults to mold, lld, gold, ld, clang, gcc, or cc, in order of weight.
     #[arg(short = 'l', long = "linker")]
     pub linker: Option<String>,
@@ -51,11 +62,26 @@ impl Command for CompileCommand {
             .unwrap_or(Triple::host());
 
         let content = fs::read_to_string(self.file.clone())?;
-        let mut tokenizer = Tokenizer::new(self.file.clone().to_str().unwrap(), content);
+        let cursor = Cursor::new(
+            self.file.clone().to_str().unwrap().to_string(),
+            content.chars().collect(),
+        );
 
+        let mut tokenizer = Tokenizer::new(cursor.clone());
         let tokens = tokenizer.tokenize();
 
-        println!("tokens: {:#?}", tokens);
+        if self.dump_tokens {
+            println!("{:#?}", tokens);
+            return Ok(());
+        }
+
+        let mut lexer = Lexer::new(cursor, tokens);
+        let exprs = lexer.lex()?;
+
+        if self.dump_ast {
+            println!("{:#?}", exprs);
+            return Ok(());
+        }
 
         Ok(())
     }

@@ -10,7 +10,7 @@ use anyhow::Result;
 use clap::Parser;
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 
-use crate::tokenizer::Tokenizer;
+use crate::tokenizer::{cursor::Cursor, Tokenizer};
 
 use super::Command;
 
@@ -24,7 +24,13 @@ impl WatchCommand {
     pub fn run(&self) -> Result<()> {
         let path = self.path.clone().join("main.qs");
         let content = fs::read_to_string(path.clone())?;
-        let mut tokenizer = Tokenizer::new(path.to_str().unwrap(), content);
+
+        let cursor = Cursor::new(
+            path.to_str().unwrap().to_string(),
+            content.chars().collect(),
+        );
+
+        let mut tokenizer = Tokenizer::new(cursor);
 
         tokenizer.tokenize();
 
@@ -68,6 +74,7 @@ impl Command for WatchCommand {
                         }
                     }
                 }
+
                 Err(err) => return Err(anyhow!("The file watcher encountered an error: {}", err)),
             }
         }

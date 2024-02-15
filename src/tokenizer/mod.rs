@@ -14,9 +14,9 @@ pub struct Tokenizer {
 }
 
 impl Tokenizer {
-    pub fn new(file: impl AsRef<str>, data: String) -> Self {
+    pub fn new(data: Cursor) -> Self {
         Self {
-            data: Cursor::new(file.as_ref().to_string(), data.chars().collect()),
+            data,
             tokens: Vec::new(),
         }
     }

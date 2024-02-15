@@ -22,7 +22,7 @@ pub fn format_position(file: &String, data: &String, pos: &Range<usize>) -> Stri
 }
 
 #[derive(Debug, Clone, Error, PartialEq, Eq, Hash)]
-pub enum TokenizerError {
+pub enum Error {
     #[error("Unexpected character: {}\n{}", .ch, format_position(.file, .data, .pos))]
     UnexpectedChar {
         ch: char,

@@ -1,5 +1,3 @@
-use source_span::Position;
-
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Cursor {
     pub file: String,
@@ -34,25 +32,5 @@ impl Cursor {
 
     pub fn peek_at(&self, index: usize) -> Option<char> {
         self.data.get(index).cloned()
-    }
-
-    pub fn pos(&self, pos: usize) -> Position {
-        let mut lines = 0;
-        let mut chars = 0;
-
-        for (i, ch) in self.all_data.chars().enumerate() {
-            if i >= pos {
-                break;
-            }
-
-            if ch == '\n' {
-                lines += 1;
-                chars = 0;
-            } else {
-                chars += 1;
-            }
-        }
-
-        Position::new(lines, chars)
     }
 }

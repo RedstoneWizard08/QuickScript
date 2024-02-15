@@ -1,4 +1,4 @@
-use crate::{throw, tokenizer::error::TokenizerError};
+use crate::{throw, tokenizer::error::Error};
 
 use super::{cursor::Cursor, data::TokenData, operator::Operator, punct::Punct};
 use std::ops::Range;
@@ -441,7 +441,7 @@ impl Token {
                     }
 
                     if c == None {
-                        let err = TokenizerError::Expected {
+                        let err = Error::Expected {
                             expected: "'\"'".to_string(),
                             file: buf.file.clone(),
                             data: buf.all_data.clone(),
@@ -483,7 +483,7 @@ impl Token {
                     }
 
                     if c == None {
-                        let err = TokenizerError::Expected {
+                        let err = Error::Expected {
                             expected: "\"'\"".to_string(),
                             file: buf.file.clone(),
                             data: buf.all_data.clone(),
@@ -576,6 +576,48 @@ impl Token {
                                 end: buf.position,
                             },
                         },
+                    }
+                } else if t.is_numeric() {
+                    let mut content = String::new();
+
+                    content.push(t);
+
+                    loop {
+                        let c = buf.peek();
+
+                        if c.is_none() {
+                            break;
+                        }
+
+                        if c.unwrap().is_numeric() {
+                            content.push(buf.next().unwrap());
+                        } else {
+                            break;
+                        }
+                    }
+
+                    match content.parse::<i64>() {
+                        Ok(num) => Self {
+                            content: TokenData::Number(num),
+                            position: Range {
+                                start,
+                                end: buf.position,
+                            },
+                        },
+
+                        Err(_) => {
+                            let err = Error::UnexpectedToken {
+                                token: content,
+                                file: buf.file.clone(),
+                                data: buf.all_data.clone(),
+                                pos: Range {
+                                    start,
+                                    end: buf.position,
+                                },
+                            };
+
+                            throw!(err);
+                        }
                     }
                 } else {
                     Self {

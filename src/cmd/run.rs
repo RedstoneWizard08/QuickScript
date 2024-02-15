@@ -3,7 +3,7 @@ use std::{fs, path::PathBuf};
 use anyhow::Result;
 use clap::Parser;
 
-use crate::tokenizer::Tokenizer;
+use crate::tokenizer::{cursor::Cursor, Tokenizer};
 
 use super::Command;
 
@@ -16,7 +16,13 @@ pub struct RunCommand {
 impl Command for RunCommand {
     fn execute(&mut self) -> Result<()> {
         let content = fs::read_to_string(self.file.clone())?;
-        let mut tokenizer = Tokenizer::new(self.file.clone().to_str().unwrap(), content);
+
+        let cursor = Cursor::new(
+            self.file.clone().to_str().unwrap().to_string(),
+            content.chars().collect(),
+        );
+
+        let mut tokenizer = Tokenizer::new(cursor);
 
         tokenizer.tokenize();
 
