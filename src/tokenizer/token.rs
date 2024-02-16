@@ -596,7 +596,7 @@ impl Token {
                         }
                     }
 
-                    match content.parse::<i64>() {
+                    match content.parse::<i32>() {
                         Ok(num) => Self {
                             content: TokenData::Number(num),
                             position: Range {

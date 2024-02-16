@@ -8,8 +8,8 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Default)]
 pub enum Literal {
-    Integer(i64),
-    Float(f64),
+    Integer(i32),
+    Float(f32),
     String(String),
     Boolean(bool),
     Char(char),

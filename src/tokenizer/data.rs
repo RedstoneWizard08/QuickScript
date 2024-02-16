@@ -19,7 +19,7 @@ pub enum TokenData {
     String(String),
 
     /// A number.
-    Number(i64),
+    Number(i32),
 
     /// An operator. See the `Operator` enum for more information.
     Operator(Operator),
@@ -38,7 +38,7 @@ enum_export!(TokenData, as_name, Name, String);
 enum_export!(TokenData, as_char, Char, char);
 enum_export!(TokenData, as_boolean, Boolean, bool);
 enum_export!(TokenData, as_string, String, String);
-enum_export!(TokenData, as_number, Number, i64);
+enum_export!(TokenData, as_number, Number, i32);
 enum_export!(TokenData, as_operator, Operator, Operator);
 enum_export!(TokenData, as_punct, Punct, Punct);
 

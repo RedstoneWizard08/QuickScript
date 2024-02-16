@@ -78,6 +78,7 @@ impl Command for Cli {
     fn execute(&mut self) -> Result<()> {
         formatted_builder()
             .filter_level(self.verbose.log_level_filter())
+            .filter(Some("cranelift_jit::backend"), LevelFilter::Warn)
             .filter(Some("cranelift_object::backend"), LevelFilter::Warn)
             .init();
 

@@ -71,15 +71,31 @@ impl Expr {
                         },
                     },
 
+                    "return" => match Return::parse(tokens).map(ExprKind::Return) {
+                        Ok(ret) => Expr {
+                            content: ret,
+
+                            position: Range {
+                                start,
+                                end: tokens.position + 1,
+                            },
+                        },
+
+                        Err(_) => Expr {
+                            content: ExprKind::None,
+
+                            position: Range {
+                                start,
+                                end: tokens.position + 1,
+                            },
+                        },
+                    },
+
                     _ => Expr {
                         content: if tokens.peek_at(1).unwrap().content
                             == TokenData::Punct(Punct::OpenParen)
                         {
                             Call::parse(tokens).map(ExprKind::Call)?
-                        } else if tokens.peek_at(1).unwrap().content
-                            == TokenData::Name("return".to_string())
-                        {
-                            Return::parse(tokens).map(ExprKind::Return)?
                         } else {
                             ExprKind::Identifer(tokens.next().unwrap().content.as_name()?)
                         },
@@ -150,5 +166,20 @@ impl Expr {
         };
 
         self.clone()
+    }
+
+    pub fn type_name(&self) -> String {
+        match &self.content {
+            ExprKind::Literal(literal) => match literal {
+                Literal::None => "ptr".to_string(),
+                Literal::Boolean(_) => "bool".to_string(),
+                Literal::Integer(_) => "i32".to_string(),
+                Literal::Float(_) => "f32".to_string(),
+                Literal::String(_) => "str".to_string(),
+                Literal::Char(_) => "char".to_string(),
+            },
+
+            _ => "ptr".to_string(),
+        }
     }
 }

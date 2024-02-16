@@ -1,61 +1,49 @@
 use anyhow::Result;
-use cranelift_codegen::ir::{AbiParam, InstBuilder, Value};
-use cranelift_module::Linkage;
+use cranelift_codegen::ir::{InstBuilder, Value};
+use cranelift_module::Module;
 
 use crate::{
     ast::var::FunctionData,
-    codegen::backend::{Backend, RETURN_VAR},
+    codegen::{
+        backend::{Backend, RETURN_VAR},
+        context::{CodegenContext, CompilerContext},
+    },
 };
 
 use super::var::VariableCompiler;
 
-pub trait FunctionCompiler<'a>: Backend<'a> {
-    fn compile_fn(&mut self, func: FunctionData) -> Result<Value>;
+pub trait FunctionCompiler<'a, M: Module>: Backend<'a, M> {
+    fn compile_fn(
+        cctx: CompilerContext<'a, M>,
+        ctx: CodegenContext,
+        func: FunctionData,
+    ) -> Result<Value>;
 }
 
-impl<'a, T: Backend<'a>> FunctionCompiler<'a> for T {
-    fn compile_fn(&mut self, func: FunctionData) -> Result<Value> {
-        for arg in func.args {
-            self.ctx()
-                .func
-                .signature
-                .params
-                .push(AbiParam::new(Self::query_type(arg.type_)));
-        }
+impl<'a, M: Module, T: Backend<'a, M>> FunctionCompiler<'a, M> for T {
+    fn compile_fn(
+        mut cctx: CompilerContext<'a, M>,
+        mut ctx: CodegenContext,
+        func: FunctionData,
+    ) -> Result<Value> {
+        let entry = ctx.builder.create_block();
 
-        self.ctx()
-            .func
-            .signature
-            .returns
-            .push(AbiParam::new(Self::query_type(func.return_type)));
-
-        self.new_builder();
-
-        let entry = self.builder().borrow_mut().create_block();
-
-        self.builder().borrow_mut()
-            .append_block_params_for_function_params(entry);
-        
-        self.builder().borrow_mut().switch_to_block(entry);
-        self.builder().borrow_mut().seal_block(entry);
+        ctx.builder.append_block_params_for_function_params(entry);
+        ctx.builder.switch_to_block(entry);
+        ctx.builder.seal_block(entry);
 
         for expr in &*func.body {
-            self.compile(expr.content.clone())?;
+            Self::compile(&mut cctx, &mut ctx, expr.content.clone())?;
         }
 
-        if self.vars().contains_key(&RETURN_VAR.to_string()) {
-            let val = self.compile_named_var(RETURN_VAR.to_string())?;
+        if ctx.vars.contains_key(&RETURN_VAR.to_string()) {
+            let val = Self::compile_named_var(&mut cctx, &mut ctx, RETURN_VAR.to_string())?;
 
-            self.builder().borrow_mut().ins().return_(&[val]);
+            ctx.builder.ins().return_(&[val]);
         }
 
-        self.finalize_builder();
+        ctx.builder.finalize();
 
-        let id = self.declare_func(&func.name, Linkage::Export)?;
-
-        self.complete_define_func(id)?;
-        self.post_define()?;
-
-        Ok(self.nullptr())
+        Ok(Value::from_u32(0))
     }
 }

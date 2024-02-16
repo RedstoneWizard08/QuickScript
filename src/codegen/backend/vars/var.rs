@@ -1,69 +1,153 @@
 use anyhow::Result;
-use cranelift_codegen::{
-    entity::EntityRef,
-    ir::{InstBuilder, Value},
+use cranelift_codegen::ir::{InstBuilder, StackSlotData, StackSlotKind, Value};
+use cranelift_module::{DataId, Module};
+
+use crate::{
+    ast::var::VariableData,
+    codegen::{
+        backend::Backend,
+        context::{CodegenContext, CompilerContext},
+    },
 };
-use cranelift_frontend::Variable;
-use cranelift_module::DataId;
 
-use crate::{ast::var::VariableData, codegen::backend::Backend};
-
-pub trait VariableCompiler<'a>: Backend<'a> {
+pub trait VariableCompiler<'a, M: Module>: Backend<'a, M> {
     type O;
 
-    fn compile_var_data(&mut self, var: VariableData) -> Result<Self::O>;
-    fn compile_empty_var(&mut self, var: VariableData) -> Result<Self::O>;
-    fn compile_data_var(&mut self, var: VariableData, data: DataId) -> Result<Self::O>;
-    fn compile_value_var(&mut self, var: VariableData, value: Value) -> Result<Self::O>;
-    fn compile_named_var(&mut self, ident: String) -> Result<Self::O>;
+    fn compile_var(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext,
+        var: VariableData,
+    ) -> Result<Self::O>;
+
+    fn compile_empty_var(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext,
+        var: VariableData,
+    ) -> Result<Self::O>;
+
+    fn compile_data_var(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext,
+        var: VariableData,
+        data: DataId,
+    ) -> Result<Self::O>;
+
+    fn compile_value_var(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext,
+        var: VariableData,
+        value: Value,
+    ) -> Result<Self::O>;
+
+    fn compile_named_var(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext,
+        ident: String,
+    ) -> Result<Self::O>;
 }
 
-impl<'a, T: Backend<'a>> VariableCompiler<'a> for T {
+impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
     type O = Value;
 
-    fn compile_var_data(&mut self, var: VariableData) -> Result<Self::O> {
-        match var.value {
-            Some(value) => self.compile(value.content),
-            None => self.compile_empty_var(var),
+    fn compile_var(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext,
+        var: VariableData,
+    ) -> Result<Self::O> {
+        match var.clone().value {
+            Some(value) => {
+                let val = Self::compile(cctx, ctx, value.content)?;
+
+                Self::compile_value_var(cctx, ctx, var, val)
+            }
+
+            None => Self::compile_empty_var(cctx, ctx, var),
         }
     }
 
-    fn compile_empty_var(&mut self, var: VariableData) -> Result<Self::O> {
-        let ref_ = Variable::new(self.vars().len());
-        let null = self.builder().borrow_mut().ins().null(Self::query_type(var.type_));
+    fn compile_empty_var(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext,
+        var: VariableData,
+    ) -> Result<Self::O> {
+        let slot = ctx.builder.create_sized_stack_slot(StackSlotData::new(
+            StackSlotKind::ExplicitSlot,
+            Self::query_type(cctx, var.type_.clone()).bits(),
+        ));
 
-        self.builder().borrow_mut().def_var(ref_, null);
-        self.vars().insert(var.name.clone(), ref_);
+        let null = ctx
+            .builder
+            .ins()
+            .null(Self::query_type(cctx, var.type_.clone()));
 
-        Ok(self.builder().borrow_mut().use_var(ref_))
+        ctx.builder.ins().stack_store(null, slot, 0);
+        ctx.vars.insert(var.name.clone(), (slot, var.type_.clone()));
+
+        Ok(ctx
+            .builder
+            .ins()
+            .stack_load(Self::query_type(cctx, var.type_), slot, 0))
     }
 
-    fn compile_data_var(&mut self, var: VariableData, data: DataId) -> Result<Self::O> {
-        let ref_ = Variable::new(self.vars().len());
-        let ptr = self.ptr();
-        let val = self.get_global(data);
-        let val = self.builder().borrow_mut().ins().symbol_value(ptr, val);
+    fn compile_data_var(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext,
+        var: VariableData,
+        data: DataId,
+    ) -> Result<Self::O> {
+        let val = Self::get_global(cctx, ctx, data);
 
-        self.builder().borrow_mut().def_var(ref_, val);
-        self.vars().insert(var.name.clone(), ref_);
+        let val = ctx
+            .builder
+            .ins()
+            .symbol_value(Self::query_type(cctx, var.type_.clone()), val);
 
-        Ok(self.builder().borrow_mut().use_var(ref_))
+        let slot = ctx.builder.create_sized_stack_slot(StackSlotData::new(
+            StackSlotKind::ExplicitSlot,
+            Self::query_type(cctx, var.type_.clone()).bits(),
+        ));
+
+        ctx.builder.ins().stack_store(val, slot, 0);
+        ctx.vars.insert(var.name.clone(), (slot, var.type_.clone()));
+
+        Ok(ctx
+            .builder
+            .ins()
+            .stack_load(Self::query_type(cctx, var.type_), slot, 0))
     }
 
-    fn compile_value_var(&mut self, var: VariableData, value: Value) -> Result<Self::O> {
-        let ref_ = Variable::new(self.vars().len());
+    fn compile_value_var(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext,
+        var: VariableData,
+        value: Value,
+    ) -> Result<Self::O> {
+        let slot = ctx.builder.create_sized_stack_slot(StackSlotData::new(
+            StackSlotKind::ExplicitSlot,
+            Self::query_type(cctx, var.type_.clone()).bits(),
+        ));
 
-        self.builder().borrow_mut().def_var(ref_, value);
-        self.vars().insert(var.name.clone(), ref_);
+        ctx.builder.ins().stack_store(value, slot, 0);
+        ctx.vars.insert(var.name.clone(), (slot, var.type_.clone()));
 
-        Ok(self.builder().borrow_mut().use_var(ref_))
+        Ok(ctx
+            .builder
+            .ins()
+            .stack_load(Self::query_type(cctx, var.type_), slot, 0))
     }
 
-    fn compile_named_var(&mut self, ident: String) -> Result<Self::O> {
-        if self.vars().contains_key(&ident) {
-            let val = *self.vars().get(&ident).unwrap();
+    fn compile_named_var(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext,
+        ident: String,
+    ) -> Result<Self::O> {
+        if ctx.vars.contains_key(&ident) {
+            let (slot, ty) = ctx.vars.get(&ident).unwrap();
 
-            Ok(self.builder().borrow_mut().use_var(val))
+            Ok(ctx
+                .builder
+                .ins()
+                .stack_load(Self::query_type(cctx, ty.clone()), *slot, 0))
         } else {
             Err(anyhow::anyhow!("Variable {} not found", ident))
         }

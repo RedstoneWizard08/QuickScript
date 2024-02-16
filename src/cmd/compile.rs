@@ -3,9 +3,12 @@ use std::{fs, path::PathBuf, str::FromStr};
 use anyhow::Result;
 use clap::Parser;
 use target_lexicon::Triple;
+use tempfile::NamedTempFile;
 
 use crate::{
+    codegen::{aot::AotGenerator, simple::SimpleCompiler},
     lexer::Lexer,
+    linker::run_linker,
     tokenizer::{cursor::Cursor, Tokenizer},
 };
 
@@ -40,6 +43,10 @@ pub struct CompileCommand {
     #[arg(short = 'S', long = "asm")]
     pub asm: bool,
 
+    /// Output CLIF.
+    #[arg(short = 'i', long = "clif")]
+    pub clif: bool,
+
     /// Instead of compiling, dump the tokens.
     #[arg(long = "dump-tokens")]
     pub dump_tokens: bool,
@@ -55,13 +62,14 @@ pub struct CompileCommand {
 
 impl Command for CompileCommand {
     fn execute(&mut self) -> Result<()> {
-        let _triple = self
+        let triple = self
             .target
             .clone()
             .map(|v| Triple::from_str(v.as_str()).unwrap())
             .unwrap_or(Triple::host());
 
         let content = fs::read_to_string(self.file.clone())?;
+
         let cursor = Cursor::new(
             self.file.clone().to_str().unwrap().to_string(),
             content.chars().collect(),
@@ -82,6 +90,74 @@ impl Command for CompileCommand {
             println!("{:#?}", exprs);
             return Ok(());
         }
+
+        let mut compiler = SimpleCompiler::<AotGenerator>::new(triple.clone())?;
+
+        compiler.compile(exprs)?;
+
+        if self.vcode {
+            let mut file = self.file.clone();
+
+            file.set_extension("vcode");
+
+            fs::write(file, compiler.vcode())?;
+        }
+
+        if self.clif {
+            let mut file = self.file.clone();
+
+            file.set_extension("clif");
+
+            fs::write(file, compiler.clif()?)?;
+        }
+
+        // The compiler is consumed here, so we can't output both asm
+        // and object files at the same time.
+        if self.asm {
+            let mut file = self.file.clone();
+
+            file.set_extension("s");
+
+            fs::write(file, compiler.asm()?)?;
+
+            return Ok(());
+        }
+
+        if self.object {
+            let obj = compiler.finalize();
+            let data = obj.object.write()?;
+            let mut file = self.file.clone();
+
+            file.set_extension("o");
+
+            fs::write(file, data)?;
+
+            return Ok(());
+        }
+
+        let tmp_file = NamedTempFile::new()?;
+
+        let obj = compiler.finalize();
+        let data = obj.object.write()?;
+
+        fs::write(tmp_file.path(), data)?;
+
+        let out_path = self
+            .file
+            .clone()
+            .to_str()
+            .unwrap()
+            .split('.')
+            .next()
+            .unwrap()
+            .to_string();
+
+        run_linker(
+            PathBuf::from(out_path),
+            self.linker.clone(),
+            tmp_file.path().into(),
+            triple,
+        )?;
 
         Ok(())
     }

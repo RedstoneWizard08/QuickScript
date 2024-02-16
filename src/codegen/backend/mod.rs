@@ -1,17 +1,15 @@
 use anyhow::Result;
 use cranelift_codegen::ir::{types, GlobalValue, InstBuilder, Type, Value};
-use cranelift_module::DataId;
+use cranelift_module::{DataId, Module};
 
-use crate::ast::expr::ExprKind;
+use crate::ast::{expr::ExprKind, var::Variable};
 
 use self::{
-    call::CallCompiler,
-    literal::LiteralCompiler,
-    ops::OperationCompiler,
-    ret::ReturnCompiler,
-    unify::BackendInternal,
-    vars::{var::VariableCompiler, VariableExprCompiler},
+    call::CallCompiler, literal::LiteralCompiler, ops::OperationCompiler, ret::ReturnCompiler,
+    unify::BackendInternal, vars::var::VariableCompiler,
 };
+
+use super::context::{CodegenContext, CompilerContext};
 
 pub mod call;
 pub mod literal;
@@ -22,17 +20,30 @@ pub mod vars;
 
 pub const RETURN_VAR: &str = "__func_return__";
 
-pub trait Backend<'a>: BackendInternal<'a> {
-    fn query_type(ty: String) -> Type;
-    fn ptr(&mut self) -> Type;
-    fn null(&mut self) -> Value;
-    fn nullptr(&mut self) -> Value;
-    fn compile(&mut self, expr: ExprKind) -> Result<Value>;
-    fn get_global(&mut self, id: DataId) -> GlobalValue;
+pub trait Backend<'a, M: Module>: BackendInternal<M> {
+    fn query_type(cctx: &mut CompilerContext<'a, M>, ty: String) -> Type;
+    fn query_type_with_pointer(ptr: Type, ty: String) -> Type;
+    fn ptr(cctx: &mut CompilerContext<'a, M>) -> Type;
+    fn null(ctx: &mut CodegenContext) -> Value;
+    fn nullptr(cctx: &mut CompilerContext<'a, M>, ctx: &mut CodegenContext) -> Value;
+    fn compile(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext,
+        expr: ExprKind,
+    ) -> Result<Value>;
+    fn get_global(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext,
+        id: DataId,
+    ) -> GlobalValue;
 }
 
-impl<'a, T: BackendInternal<'a>> Backend<'a> for T {
-    fn query_type(ty: String) -> Type {
+impl<'a, M: Module, T: BackendInternal<M>> Backend<'a, M> for T {
+    fn query_type(cctx: &mut CompilerContext<'a, M>, ty: String) -> Type {
+        Self::query_type_with_pointer(Self::ptr(cctx), ty)
+    }
+
+    fn query_type_with_pointer(ptr: Type, ty: String) -> Type {
         match ty.as_str() {
             "i8" | "u8" => types::I8,
             "i16" | "u16" => types::I16,
@@ -42,57 +53,54 @@ impl<'a, T: BackendInternal<'a>> Backend<'a> for T {
             "f32" => types::F32,
             "f64" => types::F64,
             "bool" => Type::int(1).unwrap(),
-            "char" => Type::int(32).unwrap(),
-            "str" => Type::int(32).unwrap(),
+            "char" => types::I32,
+            "str" | "ptr" => ptr,
 
             _ => types::I32,
         }
     }
 
-    fn ptr(&mut self) -> Type {
-        self.module().target_config().pointer_type()
+    fn ptr(cctx: &mut CompilerContext<'a, M>) -> Type {
+        cctx.module.target_config().pointer_type()
     }
 
-    fn null(&mut self) -> Value {
-        self.builder().borrow_mut().ins().null(types::I8)
+    fn null(ctx: &mut CodegenContext) -> Value {
+        ctx.builder.ins().null(types::I8)
     }
 
-    fn nullptr(&mut self) -> Value {
-        let ptr = self.ptr();
-        
-        self.builder().borrow_mut().ins().null(ptr)
+    fn nullptr(cctx: &mut CompilerContext<'a, M>, ctx: &mut CodegenContext) -> Value {
+        let ptr = Self::ptr(cctx);
+
+        ctx.builder.ins().null(ptr)
     }
 
-    fn get_global(&mut self, id: DataId) -> GlobalValue {
-        let mut func = self.builder().borrow_mut().func.clone();
-        let res = self.module().declare_data_in_func(id, &mut func);
-
-        *self.builder().borrow_mut().func = func;
-
-        res
+    fn get_global(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext,
+        id: DataId,
+    ) -> GlobalValue {
+        cctx.module.declare_data_in_func(id, &mut ctx.builder.func)
     }
 
-    fn compile(&mut self, expr: ExprKind) -> Result<Value> {
+    fn compile(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext,
+        expr: ExprKind,
+    ) -> Result<Value> {
         match expr {
-            ExprKind::None => Ok(self.null()),
+            ExprKind::None => Ok(Self::null(ctx)),
 
-            ExprKind::Literal(literal) => {
-                let id = self.compile_literal(literal)?;
-                let ptr = self.ptr();
-                let data = self.get_global(id);
+            ExprKind::Literal(literal) => Self::compile_literal(cctx, ctx, literal),
+            ExprKind::Call(call) => Self::compile_call(cctx, ctx, call),
+            ExprKind::Eof => Ok(Self::null(ctx)),
+            ExprKind::Identifer(ident) => Self::compile_named_var(cctx, ctx, ident),
+            ExprKind::Operation(op) => Self::compile_op(cctx, ctx, op),
+            ExprKind::Return(ret) => Self::compile_return(cctx, ctx, ret),
 
-                Ok(self
-                    .builder()
-                    .borrow_mut().ins()
-                    .symbol_value(ptr, data))
-            }
-
-            ExprKind::Call(call) => self.compile_call(call),
-            ExprKind::Eof => Ok(self.null()),
-            ExprKind::Identifer(ident) => self.compile_named_var(ident),
-            ExprKind::Operation(op) => self.compile_op(op),
-            ExprKind::Return(ret) => self.compile_return(ret),
-            ExprKind::Variable(var) => self.compile_var(var),
+            ExprKind::Variable(var) => match var {
+                Variable::Variable(var) => Self::compile_var(cctx, ctx, var),
+                _ => Ok(Self::null(ctx)),
+            },
         }
     }
 }

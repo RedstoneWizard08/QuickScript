@@ -1,31 +1,40 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::collections::HashMap;
 
 use anyhow::Result;
 use cranelift_codegen::{
+    ir::{AbiParam, Function},
+    isa::lookup,
     settings::{self, Configurable, Flags},
-    Context,
+    CompiledCode, Context,
 };
-use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
-use cranelift_module::{default_libcall_names, DataDescription, DataId, FuncId, Linkage, Module};
-use cranelift_native::builder;
-use cranelift_object::{ObjectBuilder, ObjectModule};
+use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
+use cranelift_module::{default_libcall_names, DataDescription, DataId, Linkage, Module};
+use cranelift_object::{ObjectBuilder, ObjectModule, ObjectProduct};
+use target_lexicon::Triple;
 
-use crate::ast::var::FunctionData;
+use crate::{
+    ast::var::FunctionData,
+    codegen::backend::{unify::BackendInternal, vars::func::FunctionCompiler, Backend},
+};
 
-pub struct AotGenerator<'a> {
+use super::context::{CodegenContext, CompilerContext};
+
+pub struct AotGenerator {
     pub builder_ctx: FunctionBuilderContext,
     pub ctx: Context,
     pub data_desc: DataDescription,
     pub module: ObjectModule,
     pub functions: HashMap<String, FunctionData>,
-    pub builder: Option<Rc<RefCell<FunctionBuilder<'a>>>>,
     pub globals: HashMap<String, DataId>,
-    pub locals: HashMap<String, DataId>,
-    pub vars: HashMap<String, Variable>,
+    pub fns: Vec<Function>,
+    pub vcode: Vec<CompiledCode>,
+
+    /// This isn't actually used, but it's required to make a `CompilerContext`
+    pub code: Vec<(String, *const u8)>,
 }
 
-impl<'a> AotGenerator<'a> {
-    pub fn new() -> Result<Self> {
+impl AotGenerator {
+    pub fn new(triple: Triple) -> Result<Self> {
         let mut flags = settings::builder();
 
         flags.set("use_colocated_libcalls", "false")?;
@@ -35,10 +44,9 @@ impl<'a> AotGenerator<'a> {
         flags.set("enable_alias_analysis", "true")?;
         flags.set("enable_verifier", "true")?;
         flags.set("enable_probestack", "false")?;
+        flags.set("unwind_info", "true")?;
 
-        let isa = builder().map_err(|msg| anyhow!("Host machine is not supported: {}", msg))?;
-        let isa = isa.finish(Flags::new(flags))?;
-
+        let isa = lookup(triple)?.finish(Flags::new(flags))?;
         let builder = ObjectBuilder::new(isa, "qsc", default_libcall_names())?;
         let module = ObjectModule::new(builder);
 
@@ -48,44 +56,82 @@ impl<'a> AotGenerator<'a> {
             data_desc: DataDescription::new(),
             module,
             functions: HashMap::new(),
-            builder: None,
             globals: HashMap::new(),
-            locals: HashMap::new(),
-            vars: HashMap::new(),
+            code: Vec::new(),
+            fns: Vec::new(),
+            vcode: Vec::new(),
         })
     }
 
-    pub(crate) fn internal_finalize_builder(&mut self) -> Result<()> {
-        if self.builder.is_some() {
-            unsafe {
-                Rc::try_unwrap(self.builder.clone().unwrap()).unwrap_unchecked().into_inner().finalize();
-            }
+    pub fn create_context<'a>(
+        &'a mut self,
+        func: FunctionData,
+    ) -> (CompilerContext<'a, ObjectModule>, CodegenContext) {
+        let builder = FunctionBuilder::new(&mut self.ctx.func, &mut self.builder_ctx);
 
-            self.builder = None;
-        }
-
-        Ok(())
+        (
+            CompilerContext {
+                module: &mut self.module,
+                data_desc: &mut self.data_desc,
+                functions: &mut self.functions,
+                globals: &mut self.globals,
+                code: &mut self.code,
+            },
+            CodegenContext {
+                builder,
+                locals: HashMap::new(),
+                vars: HashMap::new(),
+                ret: func.return_type,
+            },
+        )
     }
 
-    pub(crate) fn internal_complete_define_func(&mut self, id: FuncId) -> Result<()> {
+    pub fn compile_function<'a>(&'a mut self, mut func: FunctionData) -> Result<()> {
+        if func.name == "main" {
+            // Make ld happy :)
+            func.name = "_start".to_string();
+        }
+
+        let (mut cctx, ctx) = self.create_context(func.clone());
+
+        for arg in func.args.clone() {
+            ctx.builder
+                .func
+                .signature
+                .params
+                .push(AbiParam::new(Self::query_type(&mut cctx, arg.type_)));
+        }
+
+        ctx.builder
+            .func
+            .signature
+            .returns
+            .push(AbiParam::new(Self::query_type(
+                &mut cctx,
+                func.return_type.clone(),
+            )));
+
+        Self::compile_fn(cctx, ctx, func.clone())?;
+
+        let id =
+            self.module
+                .declare_function(&func.name, Linkage::Export, &self.ctx.func.signature)?;
+
         self.module.define_function(id, &mut self.ctx)?;
+        self.fns.push(self.ctx.func.clone());
+        self.vcode.push(self.ctx.compiled_code().unwrap().clone());
         self.module.clear_context(&mut self.ctx);
 
         Ok(())
     }
 
-    pub(crate) fn internal_declare_func(&mut self, name: &str, linkage: Linkage) -> Result<FuncId> {
-        Ok(self.module.declare_function(
-            &name,
-            linkage,
-            &self.ctx.func.signature,
-        )?)
+    pub fn finalize(self) -> ObjectProduct {
+        self.module.finish()
     }
+}
 
-    pub(crate) fn internal_new_builder(&mut self) {
-        let b = FunctionBuilder::new(&mut self.ctx.func, &mut self.builder_ctx);
-        let c = RefCell::new(b);
-        
-        self.builder = Some(Rc::new(c));
+impl BackendInternal<ObjectModule> for AotGenerator {
+    fn post_define<'a>(_cctx: &mut CompilerContext<'a, ObjectModule>, _id: DataId) -> Result<()> {
+        Ok(())
     }
 }

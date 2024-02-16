@@ -6,3 +6,6 @@
 *.jit
 /*.asm
 /*.S
+*.clif
+*.s
+/dev/main

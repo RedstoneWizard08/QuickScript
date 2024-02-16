@@ -1,62 +1,87 @@
 use anyhow::Result;
 use cranelift_codegen::ir::{AbiParam, InstBuilder, Value};
-use cranelift_module::Linkage;
+use cranelift_module::{Linkage, Module};
 
-use crate::ast::call::Call;
+use crate::{
+    ast::{call::Call, expr::ExprKind},
+    codegen::context::{CodegenContext, CompilerContext},
+};
 
 use super::Backend;
 
-pub trait CallCompiler<'a>: Backend<'a> {
-    fn compile_call(&mut self, call: Call) -> Result<Value>;
+pub trait CallCompiler<'a, M: Module>: Backend<'a, M> {
+    fn compile_call(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext,
+        call: Call,
+    ) -> Result<Value>;
 }
 
-impl<'a, T: Backend<'a>> CallCompiler<'a> for T {
-    fn compile_call(&mut self, call: Call) -> Result<Value> {
-        let mut sig = self.module().make_signature();
+impl<'a, M: Module, T: Backend<'a, M>> CallCompiler<'a, M> for T {
+    fn compile_call(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext,
+        call: Call,
+    ) -> Result<Value> {
+        let mut sig = cctx.module.make_signature();
 
-        if self.functions().contains_key(&call.name) {
-            let func = self.functions().get(&call.name).unwrap();
+        if cctx.functions.contains_key(&call.name) {
+            let ptr = Self::ptr(cctx);
+            let func = cctx.functions.get(&call.name).unwrap();
 
             sig.params.append(
                 &mut func
                     .args
                     .iter()
-                    .map(|p| AbiParam::new(Self::query_type(p.type_.clone())))
+                    .map(|p| AbiParam::new(Self::query_type_with_pointer(ptr, p.type_.clone())))
                     .collect(),
             );
 
-            sig.returns
-                .push(AbiParam::new(Self::query_type(func.return_type.clone())));
+            sig.returns.push(AbiParam::new(Self::query_type(
+                cctx,
+                func.return_type.clone(),
+            )));
         } else {
             sig.params.append(
                 &mut call
                     .args
                     .iter()
-                    .map(|_| AbiParam::new(Self::query_type("i32".to_string())))
+                    .map(|arg| {
+                        if let ExprKind::Identifer(ident) = arg.content.clone() {
+                            if ctx.vars.contains_key(&ident) {
+                                return AbiParam::new(Self::query_type(
+                                    cctx,
+                                    ctx.vars.get(&ident).unwrap().1.clone(),
+                                ));
+                            }
+                        }
+
+                        AbiParam::new(Self::query_type(cctx, arg.type_name()))
+                    })
                     .collect(),
             );
 
             sig.returns
-                .push(AbiParam::new(Self::query_type("i32".to_string())));
+                .push(AbiParam::new(Self::query_type(cctx, "i32".to_string())));
         }
 
-        let callee = self
-            .module()
+        let callee = cctx
+            .module
             .declare_function(&call.name, Linkage::Import, &sig)?;
 
-        let mut func = self.builder().borrow_mut().func.clone();
-        let local_callee = self.module().declare_func_in_func(callee, &mut func);
-        
-        *self.builder().borrow_mut().func = func;
+        let mut func = ctx.builder.func.clone();
+        let local_callee = cctx.module.declare_func_in_func(callee, &mut func);
+
+        *ctx.builder.func = func;
 
         let mut args = Vec::new();
 
         for arg in call.args {
-            args.push(self.compile(arg.content)?);
+            args.push(Self::compile(cctx, ctx, arg.content)?);
         }
 
-        let call = self.builder().borrow_mut().ins().call(local_callee, &args);
-        let result = self.builder().borrow_mut().inst_results(call)[0];
+        let call = ctx.builder.ins().call(local_callee, &args);
+        let result = ctx.builder.inst_results(call)[0];
 
         Ok(result)
     }
