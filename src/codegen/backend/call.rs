@@ -72,7 +72,7 @@ impl<'a, M: Module, T: Backend<'a, M>> CallCompiler<'a, M> for T {
         let local_callee = cctx
             .module
             .declare_func_in_func(callee, &mut ctx.builder.func);
-        
+
         let mut args = Vec::new();
 
         for arg in call.args {
