@@ -195,6 +195,24 @@ impl Token {
                             end: buf.position,
                         },
                     }
+                } else if buf.peek() == Some('/') {
+                    buf.next();
+
+                    loop {
+                        let c = buf.next();
+
+                        if c == Some('\n') || c == None {
+                            break;
+                        }
+                    }
+
+                    Self {
+                        content: TokenData::None,
+                        position: Range {
+                            start,
+                            end: buf.position,
+                        },
+                    }
                 } else {
                     Self {
                         content: TokenData::Operator(Operator::Div),

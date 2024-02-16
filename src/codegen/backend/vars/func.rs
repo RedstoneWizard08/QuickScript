@@ -37,7 +37,7 @@ impl<'a, M: Module, T: Backend<'a, M>> FunctionCompiler<'a, M> for T {
         }
 
         if ctx.vars.contains_key(&RETURN_VAR.to_string()) {
-            let val = Self::compile_named_var(&mut cctx, &mut ctx, RETURN_VAR.to_string())?;
+            let val = Self::compile_named_var(&mut ctx, RETURN_VAR.to_string())?;
 
             ctx.builder.ins().return_(&[val]);
         }

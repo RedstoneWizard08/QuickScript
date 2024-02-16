@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
-use cranelift_codegen::ir::StackSlot;
-use cranelift_frontend::FunctionBuilder;
+use cranelift_frontend::{FunctionBuilder, Variable};
 use cranelift_module::{DataDescription, DataId, Module};
 
 use crate::ast::var::FunctionData;
@@ -16,7 +15,8 @@ pub struct CompilerContext<'a, M: Module> {
 
 pub struct CodegenContext<'a> {
     pub locals: HashMap<String, DataId>,
-    pub vars: HashMap<String, (StackSlot, String)>,
+    pub vars: HashMap<String, (Variable, String)>,
     pub builder: FunctionBuilder<'a>,
     pub ret: String,
+    pub func: FunctionData,
 }

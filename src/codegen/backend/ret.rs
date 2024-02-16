@@ -1,13 +1,14 @@
 use anyhow::Result;
-use cranelift_codegen::ir::{InstBuilder, StackSlotData, StackSlotKind, Value};
+use cranelift_codegen::{entity::EntityRef, ir::Value};
+use cranelift_frontend::Variable;
 use cranelift_module::Module;
 
 use crate::{
-    ast::ret::Return,
+    ast::{call::Call, ret::Return},
     codegen::context::{CodegenContext, CompilerContext},
 };
 
-use super::{Backend, RETURN_VAR};
+use super::{Backend, CallCompiler, RETURN_VAR};
 
 pub trait ReturnCompiler<'a, M: Module>: Backend<'a, M> {
     fn compile_return(
@@ -24,22 +25,28 @@ impl<'a, M: Module, T: Backend<'a, M>> ReturnCompiler<'a, M> for T {
         expr: Return,
     ) -> Result<Value> {
         if let Some(data) = expr.data {
+            if ctx.func.name == "main" || ctx.func.name == "_start" {
+                Self::compile_call(
+                    cctx,
+                    ctx,
+                    Call {
+                        name: "exit".to_string(),
+                        args: vec![*data.clone()],
+                    },
+                )?;
+            }
+
             let val = Self::compile(cctx, ctx, data.content)?;
+            let ty = Self::query_type(cctx, ctx.ret.clone());
+            let ref_ = Variable::new(ctx.vars.len());
 
-            let slot = ctx.builder.create_sized_stack_slot(StackSlotData::new(
-                StackSlotKind::ExplicitSlot,
-                Self::query_type(cctx, ctx.ret.clone()).bits(),
-            ));
-
-            ctx.builder.ins().stack_store(val, slot, 0);
+            ctx.builder.declare_var(ref_, ty);
+            ctx.builder.def_var(ref_, val);
 
             ctx.vars
-                .insert(RETURN_VAR.to_string(), (slot, ctx.ret.clone()));
+                .insert(RETURN_VAR.to_string(), (ref_, ctx.ret.clone()));
 
-            Ok(ctx
-                .builder
-                .ins()
-                .stack_load(Self::query_type(cctx, ctx.ret.clone()), slot, 0))
+            Ok(ctx.builder.use_var(ref_))
         } else {
             Ok(Self::null(ctx))
         }

@@ -44,7 +44,6 @@ impl AotGenerator {
         flags.set("enable_alias_analysis", "true")?;
         flags.set("enable_verifier", "true")?;
         flags.set("enable_probestack", "false")?;
-        flags.set("unwind_info", "true")?;
 
         let isa = lookup(triple)?.finish(Flags::new(flags))?;
         let builder = ObjectBuilder::new(isa, "qsc", default_libcall_names())?;
@@ -81,7 +80,8 @@ impl AotGenerator {
                 builder,
                 locals: HashMap::new(),
                 vars: HashMap::new(),
-                ret: func.return_type,
+                ret: func.return_type.clone(),
+                func,
             },
         )
     }

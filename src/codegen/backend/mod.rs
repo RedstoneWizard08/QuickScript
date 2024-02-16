@@ -65,6 +65,7 @@ impl<'a, M: Module, T: BackendInternal<M>> Backend<'a, M> for T {
     }
 
     fn null(ctx: &mut CodegenContext) -> Value {
+        // one null byte
         ctx.builder.ins().null(types::I8)
     }
 
@@ -87,13 +88,15 @@ impl<'a, M: Module, T: BackendInternal<M>> Backend<'a, M> for T {
         ctx: &mut CodegenContext,
         expr: ExprKind,
     ) -> Result<Value> {
-        match expr {
+        debug!("Trying to compile: {:?}", expr);
+
+        let res = match expr {
             ExprKind::None => Ok(Self::null(ctx)),
 
             ExprKind::Literal(literal) => Self::compile_literal(cctx, ctx, literal),
             ExprKind::Call(call) => Self::compile_call(cctx, ctx, call),
             ExprKind::Eof => Ok(Self::null(ctx)),
-            ExprKind::Identifer(ident) => Self::compile_named_var(cctx, ctx, ident),
+            ExprKind::Identifer(ident) => Self::compile_named_var(ctx, ident),
             ExprKind::Operation(op) => Self::compile_op(cctx, ctx, op),
             ExprKind::Return(ret) => Self::compile_return(cctx, ctx, ret),
 
@@ -101,6 +104,10 @@ impl<'a, M: Module, T: BackendInternal<M>> Backend<'a, M> for T {
                 Variable::Variable(var) => Self::compile_var(cctx, ctx, var),
                 _ => Ok(Self::null(ctx)),
             },
-        }
+        };
+
+        debug!("Compiled: {:?}", res);
+
+        res
     }
 }

@@ -73,7 +73,8 @@ impl JitGenerator {
                 builder,
                 locals: HashMap::new(),
                 vars: HashMap::new(),
-                ret: func.return_type,
+                ret: func.return_type.clone(),
+                func,
             },
         )
     }

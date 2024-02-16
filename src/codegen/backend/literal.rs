@@ -81,7 +81,7 @@ impl<'a, M: Module, T: Backend<'a, M>> LiteralCompiler<'a, M> for T {
 
         let local_id = cctx.module.declare_data_in_func(id, ctx.builder.func);
 
-        Ok(ctx.builder.ins().symbol_value(Self::ptr(cctx), local_id))
+        Ok(ctx.builder.ins().global_value(Self::ptr(cctx), local_id))
     }
 
     fn compile_char(ctx: &mut CodegenContext, value: char) -> Value {

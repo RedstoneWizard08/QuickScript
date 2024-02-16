@@ -1,5 +1,9 @@
 use anyhow::Result;
-use cranelift_codegen::ir::{InstBuilder, StackSlotData, StackSlotKind, Value};
+use cranelift_codegen::{
+    entity::EntityRef,
+    ir::{InstBuilder, Value},
+};
+use cranelift_frontend::Variable;
 use cranelift_module::{DataId, Module};
 
 use crate::{
@@ -39,11 +43,7 @@ pub trait VariableCompiler<'a, M: Module>: Backend<'a, M> {
         value: Value,
     ) -> Result<Self::O>;
 
-    fn compile_named_var(
-        cctx: &mut CompilerContext<'a, M>,
-        ctx: &mut CodegenContext,
-        ident: String,
-    ) -> Result<Self::O>;
+    fn compile_named_var(ctx: &mut CodegenContext, ident: String) -> Result<Self::O>;
 }
 
 impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
@@ -70,23 +70,15 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
         ctx: &mut CodegenContext,
         var: VariableData,
     ) -> Result<Self::O> {
-        let slot = ctx.builder.create_sized_stack_slot(StackSlotData::new(
-            StackSlotKind::ExplicitSlot,
-            Self::query_type(cctx, var.type_.clone()).bits(),
-        ));
+        let ty = Self::query_type(cctx, var.type_.clone());
+        let null = ctx.builder.ins().null(ty);
+        let ref_ = Variable::new(ctx.vars.len());
 
-        let null = ctx
-            .builder
-            .ins()
-            .null(Self::query_type(cctx, var.type_.clone()));
+        ctx.builder.declare_var(ref_, ty);
+        ctx.builder.def_var(ref_, null);
+        ctx.vars.insert(var.name.clone(), (ref_, var.type_.clone()));
 
-        ctx.builder.ins().stack_store(null, slot, 0);
-        ctx.vars.insert(var.name.clone(), (slot, var.type_.clone()));
-
-        Ok(ctx
-            .builder
-            .ins()
-            .stack_load(Self::query_type(cctx, var.type_), slot, 0))
+        Ok(ctx.builder.use_var(ref_))
     }
 
     fn compile_data_var(
@@ -102,52 +94,37 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
             .ins()
             .symbol_value(Self::query_type(cctx, var.type_.clone()), val);
 
-        let slot = ctx.builder.create_sized_stack_slot(StackSlotData::new(
-            StackSlotKind::ExplicitSlot,
-            Self::query_type(cctx, var.type_.clone()).bits(),
-        ));
+        let ty = Self::query_type(cctx, var.type_.clone());
+        let ref_ = Variable::new(ctx.vars.len());
 
-        ctx.builder.ins().stack_store(val, slot, 0);
-        ctx.vars.insert(var.name.clone(), (slot, var.type_.clone()));
+        ctx.builder.declare_var(ref_, ty);
+        ctx.builder.def_var(ref_, val);
+        ctx.vars.insert(var.name.clone(), (ref_, var.type_.clone()));
 
-        Ok(ctx
-            .builder
-            .ins()
-            .stack_load(Self::query_type(cctx, var.type_), slot, 0))
+        Ok(ctx.builder.use_var(ref_))
     }
 
     fn compile_value_var(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext,
         var: VariableData,
-        value: Value,
+        val: Value,
     ) -> Result<Self::O> {
-        let slot = ctx.builder.create_sized_stack_slot(StackSlotData::new(
-            StackSlotKind::ExplicitSlot,
-            Self::query_type(cctx, var.type_.clone()).bits(),
-        ));
+        let ty = Self::query_type(cctx, var.type_.clone());
+        let ref_ = Variable::new(ctx.vars.len());
 
-        ctx.builder.ins().stack_store(value, slot, 0);
-        ctx.vars.insert(var.name.clone(), (slot, var.type_.clone()));
+        ctx.builder.declare_var(ref_, ty);
+        ctx.builder.def_var(ref_, val);
+        ctx.vars.insert(var.name.clone(), (ref_, var.type_.clone()));
 
-        Ok(ctx
-            .builder
-            .ins()
-            .stack_load(Self::query_type(cctx, var.type_), slot, 0))
+        Ok(ctx.builder.use_var(ref_))
     }
 
-    fn compile_named_var(
-        cctx: &mut CompilerContext<'a, M>,
-        ctx: &mut CodegenContext,
-        ident: String,
-    ) -> Result<Self::O> {
+    fn compile_named_var(ctx: &mut CodegenContext, ident: String) -> Result<Self::O> {
         if ctx.vars.contains_key(&ident) {
-            let (slot, ty) = ctx.vars.get(&ident).unwrap();
+            let (ref_, _) = *ctx.vars.get(&ident).unwrap();
 
-            Ok(ctx
-                .builder
-                .ins()
-                .stack_load(Self::query_type(cctx, ty.clone()), *slot, 0))
+            Ok(ctx.builder.use_var(ref_))
         } else {
             Err(anyhow::anyhow!("Variable {} not found", ident))
         }
