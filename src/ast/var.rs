@@ -21,9 +21,16 @@ pub enum Variable {
 #[derive(Debug, Clone, PartialEq)]
 pub struct FunctionData {
     pub name: String,
-    pub args: Vec<Variable>,
+    pub args: Vec<FunctionArg>,
     pub body: Box<Vec<Expr>>,
     pub return_type: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FunctionArg {
+    pub name: String,
+    pub type_: String,
+    pub is_mutable: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -70,12 +77,11 @@ impl Variable {
 
                             let type_ = tokens.next().unwrap().content.as_name()?;
 
-                            args.push(Variable::Variable(VariableData {
+                            args.push(FunctionArg {
                                 name,
                                 type_,
-                                value: None,
                                 is_mutable,
-                            }));
+                            });
 
                             match tokens.peek().unwrap().content {
                                 TokenData::Punct(Punct::Comma) => {
@@ -206,16 +212,6 @@ impl Variable {
 
 impl FunctionData {
     pub fn clean(&mut self) -> Self {
-        let mut new_args = Vec::new();
-
-        for mut arg in self.args.clone() {
-            if arg == Variable::None {
-                continue;
-            }
-
-            new_args.push(arg.clean());
-        }
-
         let mut new_body = Vec::new();
 
         for mut expr in (&*self.body).clone() {
@@ -228,7 +224,7 @@ impl FunctionData {
 
         FunctionData {
             name: self.name.clone(),
-            args: new_args,
+            args: self.args.clone(),
             body: Box::new(new_body),
             return_type: self.return_type.clone(),
         }

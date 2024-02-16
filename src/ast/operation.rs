@@ -88,6 +88,42 @@ impl Operation {
             Operation::None => Operation::None,
         }
     }
+
+    pub fn data(&self) -> &OperationData {
+        match self {
+            Operation::Add(data) => data,
+            Operation::Subtract(data) => data,
+            Operation::Multiply(data) => data,
+            Operation::Divide(data) => data,
+            Operation::Modulo(data) => data,
+            Operation::Power(data) => data,
+            Operation::And(data) => data,
+            Operation::Or(data) => data,
+            Operation::Xor(data) => data,
+            Operation::Not(data) => data,
+            Operation::BitwiseAnd(data) => data,
+            Operation::BitwiseOr(data) => data,
+            Operation::BitwiseNot(data) => data,
+            Operation::Equal(data) => data,
+            Operation::NotEqual(data) => data,
+            Operation::Greater(data) => data,
+            Operation::Less(data) => data,
+            Operation::GreaterEqual(data) => data,
+            Operation::LessEqual(data) => data,
+            Operation::Assign(data) => data,
+            Operation::AddAssign(data) => data,
+            Operation::SubtractAssign(data) => data,
+            Operation::MultiplyAssign(data) => data,
+            Operation::DivideAssign(data) => data,
+            Operation::ModuloAssign(data) => data,
+            Operation::BitwiseAndAssign(data) => data,
+            Operation::BitwiseOrAssign(data) => data,
+            Operation::BitwiseNotAssign(data) => data,
+            Operation::XorAssign(data) => data,
+
+            Operation::None => panic!("Operation::None has no data!"),
+        }
+    }
 }
 
 impl OperationData {
