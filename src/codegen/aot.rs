@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use anyhow::Result;
 use cranelift_codegen::{
@@ -18,7 +18,7 @@ pub struct AotGenerator<'a> {
     pub data_desc: DataDescription,
     pub module: ObjectModule,
     pub functions: HashMap<String, FunctionData>,
-    pub builder: Option<Rc<RefCell<Arc<FunctionBuilder<'a>>>>>,
+    pub builder: Option<Rc<RefCell<FunctionBuilder<'a>>>>,
     pub globals: HashMap<String, DataId>,
     pub locals: HashMap<String, DataId>,
     pub vars: HashMap<String, Variable>,
@@ -84,7 +84,7 @@ impl<'a> AotGenerator<'a> {
 
     pub(crate) fn internal_new_builder(&mut self) {
         let b = FunctionBuilder::new(&mut self.ctx.func, &mut self.builder_ctx);
-        let c = RefCell::new(Arc::new(b));
+        let c = RefCell::new(b);
         
         self.builder = Some(Rc::new(c));
     }

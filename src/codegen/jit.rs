@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use anyhow::Result;
 use cranelift_codegen::{
