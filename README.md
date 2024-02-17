@@ -45,12 +45,13 @@ Currently, here is the support matrix:
 |  0.3.0  | 🟢 | 🟢 | 🔴 | 🔴 | 🟢 |
 |  0.4.0  | 🟢 | 🟢 | 🔴 | 🔴 | 🟢 |
 |  0.5.x  | 🟢 | 🟢 | 🔴 | 🔴 | 🟢 |
+|  0.6.x  | 🟢 | 🟢 | 🔴 | 🔴 | 🟢 |
 
 Note that armv7l and armhf support is dependent on Cranelift's support for it.
 See [cranelift#1173](https://github.com/bytecodealliance/wasmtime/issues/1173)
 for more details.
 
-Musl builds for i686 are also not supported due to a big in cargo zigbuild.
+Musl builds for i686 are also not supported due to a bug in cargo zigbuild.
 See [cargo-zigbuild#96](https://github.com/rust-cross/cargo-zigbuild/issues/96)
 for more details.
 
