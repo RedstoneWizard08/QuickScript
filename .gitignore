@@ -2,6 +2,7 @@
 /bin
 /main
 *.o
+*.obj
 *.vcode
 *.jit
 /*.asm
@@ -9,3 +10,4 @@
 *.clif
 *.s
 /dev/main
+/dev/main.exe

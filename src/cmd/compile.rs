@@ -128,7 +128,17 @@ impl Command for CompileCommand {
             let data = obj.object.write()?;
             let mut file = self.file.clone();
 
-            file.set_extension("o");
+            {
+                #[cfg(windows)]
+                {
+                    file.set_extension("obj");
+                }
+
+                #[cfg(not(windows))]
+                {
+                    file.set_extension("o");
+                }
+            }
 
             fs::write(file, data)?;
 
@@ -136,21 +146,39 @@ impl Command for CompileCommand {
         }
 
         let tmp_file = NamedTempFile::new()?;
-
         let obj = compiler.finalize();
         let data = obj.object.write()?;
 
         fs::write(tmp_file.path(), data)?;
 
-        let out_path = self
-            .file
-            .clone()
-            .to_str()
-            .unwrap()
-            .split('.')
-            .next()
-            .unwrap()
-            .to_string();
+        let out_path = {
+            #[cfg(windows)]
+            {
+                format!(
+                    "{}.exe",
+                    self.file
+                        .clone()
+                        .to_str()
+                        .unwrap()
+                        .split('.')
+                        .next()
+                        .unwrap()
+                        .to_string()
+                )
+            }
+
+            #[cfg(not(windows))]
+            {
+                self.file
+                    .clone()
+                    .to_str()
+                    .unwrap()
+                    .split('.')
+                    .next()
+                    .unwrap()
+                    .to_string()
+            }
+        };
 
         run_linker(
             PathBuf::from(out_path),
