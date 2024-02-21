@@ -68,7 +68,7 @@ impl<'a, M: Module, T: Backend<'a, M>> LiteralCompiler<'a, M> for T {
         value: String,
     ) -> Result<Value> {
         cctx.data_desc
-            .define(value.as_bytes().to_vec().into_boxed_slice());
+            .define(format!("{}\0", value).as_bytes().to_vec().into_boxed_slice());
 
         let name = format!("literal_string_{}", random_string(10));
 

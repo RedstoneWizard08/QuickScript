@@ -50,7 +50,7 @@ pub fn get_dynamic_linker(
     let env = target_env.unwrap_or(ENV.to_string());
 
     if env == "android" {
-        return "/system/lib/ld-android.so".to_string();
+        return "/system/bin/linker64".to_string();
     }
 
     #[cfg(target_arch = "x86_64")]
@@ -99,6 +99,12 @@ pub fn get_library_dir(
         ),
         "--dynamic-linker".to_string(),
         get_dynamic_linker(prefix, target_arch, target_env),
+        "--pie".to_string(),
+
+        #[cfg(target_os = "android")]
+        {
+            "-L/system/lib64".to_string()
+        }
     ]
 }
 
