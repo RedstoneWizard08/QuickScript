@@ -64,3 +64,11 @@ inspiration for this project.
 
 Another huge thanks for the [cranelift-jit-demo](https://github.com/bytecodealliance/cranelift-jit-demo),
 as it helped me implement the code generator with Cranelift.
+
+# Roadmap
+
+Future plans for QuickScript:
+
+- Add `if` statements, `while` and `for` loops, function definitions as variables, constant (or static) variables, and more.
+- Create a language server and syntax for VS Code.
+- Port the (mold)[https://github.com/rui314/mold] linker to Rust and use it internally (programmatically) instead of using an external command call.

@@ -28,6 +28,7 @@ tempfile = "3.10.0"
 which = "6.0.0"
 thiserror = "1.0.57"
 lnk = "0.5.1"
+tower-lsp = "0.20.0"
 qsc-ast = { path = "./crates/qsc-ast" }
 qsc-cli = { path = "./crates/qsc-cli" }
 qsc-codegen = { path = "./crates/qsc-codegen" }
