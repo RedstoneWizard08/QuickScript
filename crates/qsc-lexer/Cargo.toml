@@ -1,0 +1,13 @@
+[package]
+name = "qsc-lexer"
+version.workspace = true
+repository.workspace = true
+authors.workspace = true
+description.workspace = true
+license.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+qsc-ast = { workspace = true }
+qsc-tokenizer = { workspace = true }

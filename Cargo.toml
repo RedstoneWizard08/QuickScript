@@ -1,5 +1,4 @@
-[package]
-name = "quickscript"
+[workspace.package]
 version = "0.6.0"
 repository = "https://github.com/RedstoneWizard08/QuickScript"
 authors = ["RedstoneWizard08", "td5032"]
@@ -7,7 +6,7 @@ description = "A quick programming language with a compiler implemented in Rust.
 license = "MIT"
 edition = "2021"
 
-[dependencies]
+[workspace.dependencies]
 anyhow = "1.0.79"
 clap = { version = "4.5.1", features = ["derive"] }
 clap-verbosity-flag = "2.2.0"
@@ -21,20 +20,22 @@ cranelift-native = "0.104.1"
 cranelift-object = "0.104.1"
 log = "0.4.20"
 notify = "6.1.1"
-object = "0.32.2"
+object = { version = "0.32.2", features = ["write"] }
 pretty_env_logger = "0.5.0"
 rand = "0.8.5"
 target-lexicon = "0.12.13"
 tempfile = "3.10.0"
 which = "6.0.0"
 thiserror = "1.0.57"
-
-[target.'cfg(target_os = "windows")'.dependencies]
 lnk = "0.5.1"
-
-[[bin]]
-name = "qsc"
-path = "src/main.rs"
+qsc-ast = { path = "./crates/qsc-ast" }
+qsc-cli = { path = "./crates/qsc-cli" }
+qsc-codegen = { path = "./crates/qsc-codegen" }
+qsc-core = { path = "./crates/qsc-core" }
+qsc-lexer = { path = "./crates/qsc-lexer" }
+qsc-linker = { path = "./crates/qsc-linker" }
+qsc-lsp = { path = "./crates/qsc-lsp" }
+qsc-tokenizer = { path = "./crates/qsc-tokenizer" }
 
 [profile.release]
 strip = true
@@ -42,3 +43,16 @@ opt-level = "z"
 lto = true
 codegen-units = 1
 panic = "abort"
+
+[workspace]
+resolver = "2"
+members = [
+    "crates/qsc-ast",
+    "crates/qsc-cli",
+    "crates/qsc-codegen",
+    "crates/qsc-core",
+    "crates/qsc-lexer",
+    "crates/qsc-linker",
+    "crates/qsc-lsp",
+    "crates/qsc-tokenizer"
+]
