@@ -27,7 +27,7 @@ pub const VERSION: &str = formatcp!(
 );
 
 pub const LONG_VERSION: &str = formatcp!(
-    "\nVersion: {}\nCommit: {}\nSource: {}\n",
+    "\nVersion: {}\nCommit: {}\nSource: {}",
     env!("CARGO_PKG_VERSION"),
     env!("COMMIT_HASH"),
     env!("CARGO_PKG_REPOSITORY")
