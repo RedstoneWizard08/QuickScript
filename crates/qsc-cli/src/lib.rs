@@ -79,6 +79,7 @@ pub enum Commands {
     #[command(alias = "w")]
     Watch(WatchCommand),
 
+    /// Print version information.
     #[command(alias = "v")]
     Version,
 }
