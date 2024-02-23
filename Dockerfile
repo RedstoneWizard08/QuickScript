@@ -1,9 +1,9 @@
 FROM rust:bookworm
 
-ADD . /usr/src/qsc
+RUN mkdir -p /usr/src/qsc
 WORKDIR /usr/src/qsc
 
-ARG ZIG_VERSION=0.12.0-dev.1538+3f10b3ee1
+ARG ZIG_VERSION=0.12.0-dev.2834+30f15e3af
 
 RUN curl -fsSLo /zig.tar.xz \
         "https://ziglang.org/builds/zig-linux-$(uname -m)-${ZIG_VERSION}.tar.xz"
@@ -39,24 +39,4 @@ RUN rustup target add \
         i686-unknown-linux-musl \
         i686-unknown-linux-gnu
 
-RUN cargo zigbuild --target aarch64-unknown-linux-gnu
-RUN cargo zigbuild --target aarch64-unknown-linux-musl
-# RUN cargo zigbuild --target arm-unknown-linux-gnueabi
-# RUN cargo zigbuild --target arm-unknown-linux-musleabi
-# RUN cargo zigbuild --target arm-unknown-linux-gnueabihf
-# RUN cargo zigbuild --target arm-unknown-linux-musleabihf
-RUN cargo zigbuild --target x86_64-unknown-linux-gnu
-RUN cargo zigbuild --target x86_64-unknown-linux-musl
-RUN cargo zigbuild --target i686-unknown-linux-gnu
-# RUN cargo zigbuild --target i686-unknown-linux-musl
-
-RUN cargo zigbuild --target aarch64-unknown-linux-gnu --release
-RUN cargo zigbuild --target aarch64-unknown-linux-musl --release
-# RUN cargo zigbuild --target arm-unknown-linux-gnueabi --release
-# RUN cargo zigbuild --target arm-unknown-linux-musleabi --release
-# RUN cargo zigbuild --target arm-unknown-linux-gnueabihf --release
-# RUN cargo zigbuild --target arm-unknown-linux-musleabihf --release
-RUN cargo zigbuild --target x86_64-unknown-linux-gnu --release
-RUN cargo zigbuild --target x86_64-unknown-linux-musl --release
-RUN cargo zigbuild --target i686-unknown-linux-gnu --release
-# RUN cargo zigbuild --target i686-unknown-linux-musl --release
+VOLUME [ "/usr/src/qsc" ]
