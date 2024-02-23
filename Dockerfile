@@ -4,6 +4,7 @@ RUN mkdir -p /usr/src/qsc
 WORKDIR /usr/src/qsc
 
 ARG ZIG_VERSION=0.12.0-dev.2834+30f15e3af
+ARG ZIGBUILD_VERSION=0.18.3
 
 RUN curl -fsSLo /zig.tar.xz \
         "https://ziglang.org/builds/zig-linux-$(uname -m)-${ZIG_VERSION}.tar.xz"
@@ -16,7 +17,9 @@ RUN echo "#!/bin/bash" > /usr/local/bin/zigcc && \
     echo '/usr/local/bin/zig cc "$@"' >> /usr/local/bin/zigcc && \
     chmod a+rx /usr/local/bin/zigcc
 
-RUN cargo install cargo-zigbuild
+# RUN cargo install cargo-zigbuild
+RUN curl -fsSL "https://github.com/rust-cross/cargo-zigbuild/releases/download/v${ZIGBUILD_VERSION}/cargo-zigbuild-v${ZIGBUILD_VERSION}.$(uname -m)-unknown-linux-musl.tar.gz" | \
+    tar -xzC /usr/local/bin
 
 # RUN apt-get update && \
 #     apt-get -y install \
