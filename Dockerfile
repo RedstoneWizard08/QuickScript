@@ -17,7 +17,6 @@ RUN echo "#!/bin/bash" > /usr/local/bin/zigcc && \
     echo '/usr/local/bin/zig cc "$@"' >> /usr/local/bin/zigcc && \
     chmod a+rx /usr/local/bin/zigcc
 
-# RUN cargo install cargo-zigbuild
 RUN curl -fsSL "https://github.com/rust-cross/cargo-zigbuild/releases/download/v${ZIGBUILD_VERSION}/cargo-zigbuild-v${ZIGBUILD_VERSION}.$(uname -m)-unknown-linux-musl.tar.gz" | \
     tar -xzC /usr/local/bin
 
@@ -43,3 +42,4 @@ RUN rustup target add \
         i686-unknown-linux-gnu
 
 VOLUME [ "/usr/src/qsc" ]
+VOLUME [ "/root/.cargo" ]
