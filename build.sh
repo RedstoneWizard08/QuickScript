@@ -8,6 +8,7 @@ docker run -d \
     --name qsc-builder \
     -v "$(pwd):/usr/src/qsc" \
     -v "$HOME/.cargo:/root/.cargo" \
+    -e "GITHUB_SHA=$GITHUB_SHA" \
     ghcr.io/redstonewizard08/quickscript/builder:latest \
     sleep infinity
 
