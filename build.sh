@@ -6,7 +6,7 @@ mkdir bin
 
 docker run -it -d \
     --name qsc-builder \
-    -v "$(pwd)/target:/usr/src/qsc/target" \
+    -v "$(pwd):/usr/src/qsc" \
     ghcr.io/redstonewizard08/quickscript/builder:latest \
     sleep infinity
 
