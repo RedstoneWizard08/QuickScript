@@ -8,7 +8,7 @@ use cranelift_codegen::{
     CompiledCode, Context,
 };
 
-use crate::backend::{unify::BackendInternal, vars::func::FunctionCompiler, Backend};
+use crate::generator::{unify::BackendInternal, vars::func::FunctionCompiler, Backend};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{default_libcall_names, DataDescription, DataId, Linkage, Module};
 use cranelift_object::{ObjectBuilder, ObjectModule, ObjectProduct};

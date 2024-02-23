@@ -15,8 +15,8 @@ use target_lexicon::Triple;
 use qsc_ast::func::Function as Func;
 
 use super::{
-    backend::{unify::BackendInternal, vars::func::FunctionCompiler, Backend},
     context::{CodegenContext, CompilerContext},
+    generator::{unify::BackendInternal, vars::func::FunctionCompiler, Backend},
 };
 
 pub struct JitGenerator {

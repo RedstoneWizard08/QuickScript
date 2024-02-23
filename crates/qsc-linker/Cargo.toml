@@ -8,11 +8,11 @@ license.workspace = true
 edition.workspace = true
 
 [dependencies]
-anyhow = { workspace = true }
-target-lexicon = { workspace = true }
-which = { workspace = true }
-qsc-core = { workspace = true }
-log = { workspace = true }
+anyhow.workspace = true
+target-lexicon.workspace = true
+which.workspace = true
+qsc-core.workspace = true
+log.workspace = true
 
 [target.'cfg(target_os = "windows")'.dependencies]
-lnk = { workspace = true }
+lnk.workspace = true

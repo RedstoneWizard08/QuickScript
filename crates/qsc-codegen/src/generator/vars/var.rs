@@ -9,8 +9,8 @@ use cranelift_module::{DataId, Module};
 use qsc_ast::var::Variable as Var;
 
 use crate::{
-    backend::Backend,
     context::{CodegenContext, CompilerContext},
+    generator::Backend,
 };
 
 pub trait VariableCompiler<'a, M: Module>: Backend<'a, M> {

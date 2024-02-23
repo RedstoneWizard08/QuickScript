@@ -3,8 +3,8 @@ use cranelift_codegen::ir::{InstBuilder, Value};
 use cranelift_module::Module;
 
 use crate::{
-    backend::{Backend, RETURN_VAR},
     context::{CodegenContext, CompilerContext},
+    generator::{Backend, RETURN_VAR},
 };
 
 use qsc_ast::func::Function;

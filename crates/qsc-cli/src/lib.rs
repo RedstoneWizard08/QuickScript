@@ -7,6 +7,7 @@ extern crate log;
 pub mod compile;
 pub mod completions;
 pub mod run;
+pub mod style;
 pub mod watch;
 
 use anyhow::Result;

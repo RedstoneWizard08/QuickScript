@@ -8,5 +8,5 @@ license.workspace = true
 edition.workspace = true
 
 [dependencies]
-object = { workspace = true }
-rand = { workspace = true }
+object.workspace = true
+rand.workspace = true
