@@ -4,12 +4,12 @@ use cranelift_codegen::ir::Value;
 use cranelift_frontend::{FunctionBuilder, Variable};
 use cranelift_module::{DataDescription, DataId, Module};
 
-use qsc_ast::var::FunctionData;
+use qsc_ast::func::Function;
 
 pub struct CompilerContext<'a, M: Module> {
     pub module: &'a mut M,
     pub data_desc: &'a mut DataDescription,
-    pub functions: &'a mut HashMap<String, FunctionData>,
+    pub functions: &'a mut HashMap<String, Function>,
     pub globals: &'a mut HashMap<String, DataId>,
     pub code: &'a mut Vec<(String, *const u8)>,
 }
@@ -20,5 +20,5 @@ pub struct CodegenContext<'a> {
     pub values: HashMap<String, (Value, String)>,
     pub builder: FunctionBuilder<'a>,
     pub ret: String,
-    pub func: FunctionData,
+    pub func: Function,
 }

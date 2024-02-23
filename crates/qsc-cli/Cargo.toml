@@ -17,7 +17,6 @@ pretty_env_logger = { workspace = true }
 target-lexicon = { workspace = true }
 qsc-codegen = { workspace = true }
 qsc-lexer = { workspace = true }
-qsc-tokenizer = { workspace = true }
 qsc-linker = { workspace = true }
 const_format = { workspace = true }
 notify = { workspace = true }

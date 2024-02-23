@@ -4,9 +4,8 @@ use anyhow::Result;
 use clap::Parser;
 use target_lexicon::Triple;
 
-    use qsc_codegen::{jit::JitGenerator, simple::SimpleCompiler};
-    use qsc_lexer::Lexer;
-    use qsc_tokenizer::{cursor::Cursor, Tokenizer};
+use qsc_codegen::{jit::JitGenerator, simple::SimpleCompiler};
+use qsc_lexer::parser::Lexer;
 
 use super::Command;
 
@@ -28,25 +27,9 @@ impl Command for RunCommand {
     fn execute(&mut self) -> Result<()> {
         let content = fs::read_to_string(self.file.clone())?;
 
-        let cursor = Cursor::new(
-            self.file.clone().to_str().unwrap().to_string(),
-            content.chars().collect(),
-        );
-
-        debug!("Tokenizing file: {}", self.file.to_str().unwrap());
-
-        let mut tokenizer = Tokenizer::new(cursor.clone());
-        let tokens = tokenizer.tokenize();
-
-        if self.dump_tokens {
-            println!("{:#?}", tokens);
-            return Ok(());
-        }
-
         debug!("Lexing file: {}", self.file.to_str().unwrap());
 
-        let mut lexer = Lexer::new(cursor, tokens);
-        let exprs = lexer.lex()?;
+        let exprs = Lexer::new().lex(content)?;
 
         if self.dump_ast {
             println!("{:#?}", exprs);

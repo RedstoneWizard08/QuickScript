@@ -6,7 +6,7 @@ use cranelift_codegen::{
 use cranelift_frontend::Variable;
 use cranelift_module::{DataId, Module};
 
-use qsc_ast::var::VariableData;
+use qsc_ast::var::Variable as Var;
 
 use crate::{
     backend::Backend,
@@ -19,32 +19,32 @@ pub trait VariableCompiler<'a, M: Module>: Backend<'a, M> {
     fn compile_var(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext,
-        var: VariableData,
+        var: Var,
     ) -> Result<Self::O>;
 
     fn declare_var(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext,
-        var: VariableData,
+        var: Var,
     ) -> Result<Variable>;
 
     fn compile_empty_var(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext,
-        var: VariableData,
+        var: Var,
     ) -> Result<Self::O>;
 
     fn compile_data_var(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext,
-        var: VariableData,
+        var: Var,
         data: DataId,
     ) -> Result<Self::O>;
 
     fn compile_value_var(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext,
-        var: VariableData,
+        var: Var,
         value: Value,
     ) -> Result<Self::O>;
 
@@ -57,7 +57,7 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
     fn compile_var(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext,
-        var: VariableData,
+        var: Var,
     ) -> Result<Self::O> {
         match var.clone().value {
             Some(value) => {
@@ -73,7 +73,7 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
     fn declare_var(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext,
-        var: VariableData,
+        var: Var,
     ) -> Result<Variable> {
         let ty = Self::query_type(cctx, var.type_.clone());
         let ref_ = Variable::new(ctx.vars.len());
@@ -87,7 +87,7 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
     fn compile_empty_var(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext,
-        var: VariableData,
+        var: Var,
     ) -> Result<Self::O> {
         let ty = Self::query_type(cctx, var.type_.clone());
         let null = ctx.builder.ins().null(ty);
@@ -103,7 +103,7 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
     fn compile_data_var(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext,
-        var: VariableData,
+        var: Var,
         data: DataId,
     ) -> Result<Self::O> {
         let val = Self::get_global(cctx, ctx, data);
@@ -126,7 +126,7 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
     fn compile_value_var(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext,
-        var: VariableData,
+        var: Var,
         val: Value,
     ) -> Result<Self::O> {
         let ty = Self::query_type(cctx, var.type_.clone());

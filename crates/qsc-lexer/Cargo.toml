@@ -9,5 +9,6 @@ edition.workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
+pest = { workspace = true }
+pest_derive = { workspace = true }
 qsc-ast = { workspace = true }
-qsc-tokenizer = { workspace = true }

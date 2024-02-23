@@ -1,0 +1,41 @@
+main = { SOI ~ function* ~ EOI }
+
+function  = { "fn" ~ ident ~ "(" ~ params? ~ ")" ~ ("->" ~ type)? ~ block }
+block     = { "{" ~ statement* ~ "}" }
+expr      = { binary_op | term }
+term      = { call | literal | ident }
+statement = { real_stmt ~ ";"? | COMMENT | WHITESPACE }
+real_stmt = { ret | var | expr | block }
+
+var = { "let" ~ "mut"? ~ ident ~ (":" ~ type)? ~ "=" ~ expr ~ ";" }
+ret = { "return" ~ expr? ~ ";" }
+
+params  =  { param ~ ("," ~ param)* }
+param   =  { "mut"? ~ ident ~ ":" ~ type }
+type    =  { ident ~ ("<" ~ type ~ ">")? }
+call    =  { ident ~ "(" ~ expr ~ ("," ~ expr)* ~ ")" }
+literal =  { number | string | char | bool }
+number  =  { int | float }
+ident   = ${ ('a'..'z' | 'A'..'Z') ~ ident_char* }
+bool    =  { "true" | "false" }
+
+int        = { digit+ }
+float      = { digit+ ~ "." ~ digit+ }
+string     = { "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+char       = { "'" ~ (!"'" ~ ANY) ~ "'" }
+digit      = { '0'..'9' }
+ident_char = { 'a'..'z' | 'A'..'Z' | digit | "_" }
+binary_op  = { unary_op ~ operator ~ unary_op }
+unary_op   = { (("+" | "-") ~ term) | term }
+
+operator   = {
+    "+" | "-" | "*" | "/" | "%" | "==" | "!=" | "<" | ">" | "<=" | ">=" |
+    "&&" | "||" | "&" | "|" | "~" | "^" | "+=" | "*=" | "/=" | "%=" | "&=" |
+    "|=" | "~=" | "^="
+}
+
+__comment_block = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
+__comment_line  = _{ "//" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
+
+WHITESPACE = _{ " " | "\n" }
+COMMENT    = _{ __comment_block | __comment_line }

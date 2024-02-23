@@ -12,7 +12,7 @@ use crate::backend::{unify::BackendInternal, vars::func::FunctionCompiler, Backe
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{default_libcall_names, DataDescription, DataId, Linkage, Module};
 use cranelift_object::{ObjectBuilder, ObjectModule, ObjectProduct};
-use qsc_ast::var::FunctionData;
+use qsc_ast::func::Function as Func;
 use target_lexicon::Triple;
 
 use super::context::{CodegenContext, CompilerContext};
@@ -22,7 +22,7 @@ pub struct AotGenerator {
     pub ctx: Context,
     pub data_desc: DataDescription,
     pub module: ObjectModule,
-    pub functions: HashMap<String, FunctionData>,
+    pub functions: HashMap<String, Func>,
     pub globals: HashMap<String, DataId>,
     pub fns: Vec<Function>,
     pub vcode: Vec<CompiledCode>,
@@ -62,7 +62,7 @@ impl AotGenerator {
 
     pub fn create_context<'a>(
         &'a mut self,
-        func: FunctionData,
+        func: Func,
     ) -> (CompilerContext<'a, ObjectModule>, CodegenContext) {
         let builder = FunctionBuilder::new(&mut self.ctx.func, &mut self.builder_ctx);
 
@@ -85,7 +85,7 @@ impl AotGenerator {
         )
     }
 
-    pub fn compile_function<'a>(&'a mut self, mut func: FunctionData) -> Result<()> {
+    pub fn compile_function<'a>(&'a mut self, mut func: Func) -> Result<()> {
         if func.name == "main" {
             // Make the linker happy :)
             func.name = "_start".to_string();

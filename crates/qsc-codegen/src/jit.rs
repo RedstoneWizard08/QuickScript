@@ -12,7 +12,7 @@ use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{default_libcall_names, DataDescription, DataId, Linkage, Module};
 use target_lexicon::Triple;
 
-use qsc_ast::var::FunctionData;
+use qsc_ast::func::Function as Func;
 
 use super::{
     backend::{unify::BackendInternal, vars::func::FunctionCompiler, Backend},
@@ -24,7 +24,7 @@ pub struct JitGenerator {
     pub ctx: Context,
     pub data_desc: DataDescription,
     pub module: JITModule,
-    pub functions: HashMap<String, FunctionData>,
+    pub functions: HashMap<String, Func>,
     pub globals: HashMap<String, DataId>,
     pub fns: Vec<Function>,
     pub vcode: Vec<CompiledCode>,
@@ -57,7 +57,7 @@ impl JitGenerator {
 
     pub fn create_context<'a>(
         &'a mut self,
-        func: FunctionData,
+        func: Func,
     ) -> (CompilerContext<'a, JITModule>, CodegenContext) {
         let builder = FunctionBuilder::new(&mut self.ctx.func, &mut self.builder_ctx);
 
@@ -80,7 +80,7 @@ impl JitGenerator {
         )
     }
 
-    pub fn compile_function<'a>(&'a mut self, func: FunctionData) -> Result<()> {
+    pub fn compile_function<'a>(&'a mut self, func: Func) -> Result<()> {
         debug!("Compiling function: {}", func.name);
 
         for arg in func.args.clone() {

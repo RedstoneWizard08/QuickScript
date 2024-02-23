@@ -4,7 +4,7 @@ use cranelift_frontend::Variable;
 use cranelift_module::Module;
 
 use crate::context::{CodegenContext, CompilerContext};
-use qsc_ast::{call::Call, ret::Return};
+use qsc_ast::{call::Call, expr::Expr};
 
 use super::{Backend, CallCompiler, RETURN_VAR};
 
@@ -12,7 +12,7 @@ pub trait ReturnCompiler<'a, M: Module>: Backend<'a, M> {
     fn compile_return(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext,
-        expr: Return,
+        expr: Option<Expr>,
     ) -> Result<Value>;
 }
 
@@ -20,9 +20,9 @@ impl<'a, M: Module, T: Backend<'a, M>> ReturnCompiler<'a, M> for T {
     fn compile_return(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext,
-        expr: Return,
+        expr: Option<Expr>,
     ) -> Result<Value> {
-        if let Some(data) = expr.data {
+        if let Some(data) = expr {
             if ctx.func.name == "main" || ctx.func.name == "_start" {
                 // main or _start need to exit instead of returning
 
@@ -31,7 +31,7 @@ impl<'a, M: Module, T: Backend<'a, M>> ReturnCompiler<'a, M> for T {
                     ctx,
                     Call {
                         name: "exit".to_string(),
-                        args: vec![*data.clone()],
+                        args: vec![data.clone()],
                     },
                 )?;
             }

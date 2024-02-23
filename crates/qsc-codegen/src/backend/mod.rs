@@ -2,11 +2,15 @@ use anyhow::Result;
 use cranelift_codegen::ir::{types, GlobalValue, InstBuilder, Type, Value};
 use cranelift_module::{DataId, Module};
 
-use qsc_ast::{expr::ExprKind, var::Variable};
+use qsc_ast::expr::ExprKind;
 
 use self::{
-    call::CallCompiler, literal::LiteralCompiler, ops::OperationCompiler, ret::ReturnCompiler,
-    unify::BackendInternal, vars::var::VariableCompiler,
+    call::CallCompiler,
+    literal::LiteralCompiler,
+    ops::OperationCompiler,
+    ret::ReturnCompiler,
+    unify::BackendInternal,
+    vars::{func::FunctionCompiler, var::VariableCompiler},
 };
 
 use super::context::{CodegenContext, CompilerContext};
@@ -26,11 +30,13 @@ pub trait Backend<'a, M: Module>: BackendInternal<M> {
     fn ptr(cctx: &mut CompilerContext<'a, M>) -> Type;
     fn null(ctx: &mut CodegenContext) -> Value;
     fn nullptr(cctx: &mut CompilerContext<'a, M>, ctx: &mut CodegenContext) -> Value;
+
     fn compile(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext,
         expr: ExprKind,
     ) -> Result<Value>;
+
     fn get_global(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext,
@@ -98,12 +104,28 @@ impl<'a, M: Module, T: BackendInternal<M>> Backend<'a, M> for T {
             ExprKind::Eof => Ok(Self::null(ctx)),
             ExprKind::Identifer(ident) => Self::compile_named_var(ctx, ident),
             ExprKind::Operation(op) => Self::compile_op(cctx, ctx, op),
-            ExprKind::Return(ret) => Self::compile_return(cctx, ctx, ret),
+            ExprKind::Return(ret) => Self::compile_return(cctx, ctx, ret.map(|v| *v.clone())),
+            ExprKind::Type(_, _) => Ok(Self::null(ctx)),
 
-            ExprKind::Variable(var) => match var {
-                Variable::Variable(var) => Self::compile_var(cctx, ctx, var),
-                _ => Ok(Self::null(ctx)),
-            },
+            ExprKind::Unary(negative, val) => Ok(if negative {
+                // ctx.builder.ins().neg()
+                todo!()
+            } else {
+                Self::compile(cctx, ctx, *val)?
+            }),
+
+            ExprKind::Variable(var) => Self::compile_var(cctx, ctx, var),
+            ExprKind::Function(func) => Self::compile_fn(cctx, ctx, func),
+
+            ExprKind::Block(block) => {
+                let mut res = Self::null(ctx);
+
+                for expr in block {
+                    res = Self::compile(cctx, ctx, expr.content)?;
+                }
+
+                Ok(res)
+            }
         };
 
         debug!("Compiled: {:?}", res);
