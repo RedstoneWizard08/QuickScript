@@ -18,7 +18,8 @@ use log::LevelFilter;
 use pretty_env_logger::formatted_builder;
 
 use self::{
-    compile::CompileCommand, completions::CompletionsCommand, run::RunCommand, watch::WatchCommand,
+    compile::CompileCommand, completions::CompletionsCommand, run::RunCommand, style::get_styles,
+    watch::WatchCommand,
 };
 
 pub const VERSION: &str = formatcp!(
@@ -47,7 +48,8 @@ pub trait Command {
     long_version = LONG_VERSION,
     about,
     long_about = None,
-    propagate_version = true
+    propagate_version = true,
+    styles = get_styles()
 )]
 pub struct Cli {
     /// Enables verbose mode.

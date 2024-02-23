@@ -8,7 +8,7 @@ edition = "2021"
 
 [workspace.dependencies]
 anyhow = "1.0.79"
-clap = { version = "4.5.1", features = ["derive"] }
+clap = { version = "4.5.1", features = ["derive", "color"] }
 clap-verbosity-flag = "2.2.0"
 clap_complete = "4.5.0"
 const_format = "0.2.32"
