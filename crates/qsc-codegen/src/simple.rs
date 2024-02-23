@@ -1,6 +1,6 @@
-use qsc_ast::expr::{Expr, ExprKind};
 use anyhow::Result;
 use cranelift_object::ObjectProduct;
+use qsc_ast::expr::{Expr, ExprKind};
 use target_lexicon::Triple;
 
 use super::unify::CodegenBackend;

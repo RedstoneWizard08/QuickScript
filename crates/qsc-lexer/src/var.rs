@@ -20,10 +20,9 @@ impl Lexer {
 
         let type_ = if inner
             .peek()
-            .map(|pair| pair.as_str().trim() == ":")
+            .map(|pair| pair.as_rule() == Rule::r#type)
             .unwrap_or(false)
         {
-            inner.next();
             inner.next().unwrap().as_str().trim().to_string()
         } else {
             String::new()

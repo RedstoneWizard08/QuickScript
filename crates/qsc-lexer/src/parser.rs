@@ -60,11 +60,17 @@ impl Lexer {
             Rule::literal => self.parse_kind(pair.into_inner().next().unwrap()),
 
             // Primitives (literals)
-            Rule::char => {
-                ExprKind::Literal(Literal::Char(pair.as_str().trim().chars().nth(0).unwrap()))
-            }
+            Rule::char => ExprKind::Literal(Literal::Char(
+                self.interp_literal(pair.as_str().trim().trim_matches('\''))
+                    .chars()
+                    .nth(0)
+                    .unwrap(),
+            )),
 
-            Rule::string => ExprKind::Literal(Literal::String(pair.as_str().trim().to_string())),
+            Rule::string => ExprKind::Literal(Literal::String(
+                self.interp_literal(pair.as_str().trim().trim_matches('"')),
+            )),
+
             Rule::float => ExprKind::Literal(Literal::Float(pair.as_str().trim().parse().unwrap())),
             Rule::int => ExprKind::Literal(Literal::Integer(pair.as_str().trim().parse().unwrap())),
 
@@ -137,12 +143,8 @@ impl Lexer {
             ),
 
             // Simple ones
-            Rule::ret => ExprKind::Return(if let Some(pair) = pair.into_inner().nth(1) {
-                if pair.as_rule() == Rule::ret {
-                    Some(Box::new(self.parse_expr(pair)))
-                } else {
-                    None
-                }
+            Rule::ret => ExprKind::Return(if let Some(pair) = pair.into_inner().next() {
+                Some(Box::new(self.parse_expr(pair)))
             } else {
                 None
             }),
