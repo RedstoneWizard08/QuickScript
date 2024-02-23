@@ -4,7 +4,7 @@
 
 mkdir bin
 
-docker run -d \
+docker run -it -d \
     --name qsc-builder \
     -v "$(pwd)/target:/usr/src/qsc/target" \
     ghcr.io/redstonewizard08/quickscript/builder:latest \
