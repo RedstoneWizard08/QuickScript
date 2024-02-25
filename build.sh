@@ -1,12 +1,38 @@
 #!/bin/bash
 
-docker buildx build -t qsc-builder --load .
-
 [[ -d "bin" ]] && rm -rf bin
 
 mkdir bin
 
-docker create --name qsc-builder qsc-builder
+docker run -d \
+    --name qsc-builder \
+    -v "$(pwd):/usr/src/qsc" \
+    -v "$HOME/.cargo:/root/.cargo" \
+    -e "GITHUB_SHA=$GITHUB_SHA" \
+    ghcr.io/redstonewizard08/quickscript/builder:latest \
+    sleep infinity
+
+docker exec qsc-builder cargo zigbuild --target aarch64-unknown-linux-gnu
+docker exec qsc-builder cargo zigbuild --target aarch64-unknown-linux-musl
+# docker exec qsc-builder cargo zigbuild --target arm-unknown-linux-gnueabi
+# docker exec qsc-builder cargo zigbuild --target arm-unknown-linux-musleabi
+# docker exec qsc-builder cargo zigbuild --target arm-unknown-linux-gnueabihf
+# docker exec qsc-builder cargo zigbuild --target arm-unknown-linux-musleabihf
+docker exec qsc-builder cargo zigbuild --target x86_64-unknown-linux-gnu
+docker exec qsc-builder cargo zigbuild --target x86_64-unknown-linux-musl
+docker exec qsc-builder cargo zigbuild --target i686-unknown-linux-gnu
+# docker exec qsc-builder cargo zigbuild --target i686-unknown-linux-musl
+
+docker exec qsc-builder cargo zigbuild --target aarch64-unknown-linux-gnu --release
+docker exec qsc-builder cargo zigbuild --target aarch64-unknown-linux-musl --release
+# docker exec qsc-builder cargo zigbuild --target arm-unknown-linux-gnueabi --release
+# docker exec qsc-builder cargo zigbuild --target arm-unknown-linux-musleabi --release
+# docker exec qsc-builder cargo zigbuild --target arm-unknown-linux-gnueabihf --release
+# docker exec qsc-builder cargo zigbuild --target arm-unknown-linux-musleabihf --release
+docker exec qsc-builder cargo zigbuild --target x86_64-unknown-linux-gnu --release
+docker exec qsc-builder cargo zigbuild --target x86_64-unknown-linux-musl --release
+docker exec qsc-builder cargo zigbuild --target i686-unknown-linux-gnu --release
+# docker exec qsc-builder cargo zigbuild --target i686-unknown-linux-musl --release
 
 docker cp qsc-builder:/usr/src/qsc/target/aarch64-unknown-linux-gnu/debug/qsc bin/qsc-aarch64-gnu-debug
 docker cp qsc-builder:/usr/src/qsc/target/aarch64-unknown-linux-musl/debug/qsc bin/qsc-aarch64-musl-debug
@@ -20,4 +46,5 @@ docker cp qsc-builder:/usr/src/qsc/target/x86_64-unknown-linux-gnu/release/qsc b
 docker cp qsc-builder:/usr/src/qsc/target/x86_64-unknown-linux-musl/release/qsc bin/qsc-x86_64-musl-release
 docker cp qsc-builder:/usr/src/qsc/target/i686-unknown-linux-gnu/release/qsc bin/qsc-i686-gnu-release
 
+docker stop qsc-builder
 docker rm qsc-builder

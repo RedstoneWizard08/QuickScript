@@ -8,6 +8,8 @@
 QuickScript is a language that I am creating to learn how to, well, create a language.
 The syntax is very similar to Rust, and it is a semicolon-based language, or at least it will be (I think). The compiler is written in Rust, and uses Cranelift as a backend, with AOT and JIT modes supported, and allows any `libc` function to be called in code. The standard library is pretty nonexistent right now, but it'll get better in the future.
 
+This can also serve as a way to learn how to create your own language with Rust.
+
 ## License
 
 This project is licensed under the MIT license. Feel free to use the code for whatever you want.
@@ -47,11 +49,11 @@ Currently, here is the support matrix:
 |  0.5.x  | 🟢 | 🟢 | 🔴 | 🔴 | 🟢 |
 |  0.6.x  | 🟢 | 🟢 | 🔴 | 🔴 | 🟢 |
 
-Note that armv7l and armhf support is dependent on Cranelift's support for it.
+Note that armv7l and armhf support are dependent on Cranelift's support for it.
 See [cranelift#1173](https://github.com/bytecodealliance/wasmtime/issues/1173)
 for more details.
 
-Musl builds for i686 are also not supported due to a bug in cargo zigbuild.
+Musl builds for i686 are also not supported due to a bug in `cargo-zigbuild`.
 See [cargo-zigbuild#96](https://github.com/rust-cross/cargo-zigbuild/issues/96)
 for more details.
 

@@ -8,15 +8,15 @@ license.workspace = true
 edition.workspace = true
 
 [dependencies]
-anyhow = { workspace = true }
-cranelift-codegen = { workspace = true }
-cranelift-frontend = { workspace = true }
-cranelift-jit = { workspace = true }
-cranelift-module = { workspace = true }
-cranelift-native = { workspace = true }
-cranelift-object = { workspace = true }
-log = { workspace = true }
-object = { workspace = true }
-target-lexicon = { workspace = true }
-qsc-ast = { workspace = true }
-qsc-core = { workspace = true }
+anyhow.workspace = true
+cranelift-codegen.workspace = true
+cranelift-frontend.workspace = true
+cranelift-jit.workspace = true
+cranelift-module.workspace = true
+cranelift-native.workspace = true
+cranelift-object.workspace = true
+log.workspace = true
+object.workspace = true
+target-lexicon.workspace = true
+qsc-ast.workspace = true
+qsc-core.workspace = true

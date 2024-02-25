@@ -1,10 +1,6 @@
-use qsc_ast::{
-    expr::{Expr, ExprKind},
-    var::Variable,
-};
-
 use anyhow::Result;
 use cranelift_object::ObjectProduct;
+use qsc_ast::expr::{Expr, ExprKind};
 use target_lexicon::Triple;
 
 use super::unify::CodegenBackend;
@@ -24,10 +20,8 @@ impl<T: CodegenBackend> SimpleCompiler<T> {
         let mut funcs = Vec::new();
 
         for expr in exprs {
-            if let ExprKind::Variable(var) = expr.content {
-                if let Variable::Function(func) = var {
-                    funcs.push(func);
-                }
+            if let ExprKind::Function(func) = expr.content {
+                funcs.push(func);
             }
         }
 

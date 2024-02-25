@@ -11,9 +11,8 @@ use clap::Parser;
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 use target_lexicon::Triple;
 
-    use qsc_codegen::{jit::JitGenerator, simple::SimpleCompiler};
-    use qsc_lexer::Lexer;
-    use qsc_tokenizer::{cursor::Cursor, Tokenizer};
+use qsc_codegen::{jit::JitGenerator, simple::SimpleCompiler};
+use qsc_lexer::parser::Lexer;
 
 use super::Command;
 
@@ -27,17 +26,7 @@ impl WatchCommand {
     pub fn run(&self) -> Result<()> {
         let path = self.path.clone().join("main.qs");
         let content = fs::read_to_string(path.clone())?;
-
-        let cursor = Cursor::new(
-            path.clone().to_str().unwrap().to_string(),
-            content.chars().collect(),
-        );
-
-        let mut tokenizer = Tokenizer::new(cursor.clone());
-        let tokens = tokenizer.tokenize();
-        let mut lexer = Lexer::new(cursor, tokens);
-        let exprs = lexer.lex()?;
-
+        let exprs = Lexer::new().lex(content)?;
         let mut compiler = SimpleCompiler::<JitGenerator>::new(Triple::host())?;
 
         compiler.compile(exprs)?;

@@ -3,10 +3,11 @@ use cranelift_codegen::ir::{InstBuilder, Value};
 use cranelift_module::Module;
 
 use crate::{
-    backend::{Backend, RETURN_VAR},
     context::{CodegenContext, CompilerContext},
+    generator::{Backend, RETURN_VAR},
 };
-use qsc_ast::var::FunctionData;
+
+use qsc_ast::func::Function;
 
 use super::var::VariableCompiler;
 
@@ -14,7 +15,7 @@ pub trait FunctionCompiler<'a, M: Module>: Backend<'a, M> {
     fn compile_fn(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext,
-        func: FunctionData,
+        func: Function,
     ) -> Result<Value>;
 }
 
@@ -22,7 +23,7 @@ impl<'a, M: Module, T: Backend<'a, M>> FunctionCompiler<'a, M> for T {
     fn compile_fn(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext,
-        func: FunctionData,
+        func: Function,
     ) -> Result<Value> {
         let entry = ctx.builder.create_block();
 

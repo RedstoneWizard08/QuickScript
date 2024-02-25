@@ -5,8 +5,8 @@ extern crate anyhow;
 extern crate log;
 
 pub mod aot;
-pub mod backend;
 pub mod context;
+pub mod generator;
 pub mod jit;
 pub mod simple;
 pub mod unify;

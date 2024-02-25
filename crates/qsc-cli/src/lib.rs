@@ -7,6 +7,7 @@ extern crate log;
 pub mod compile;
 pub mod completions;
 pub mod run;
+pub mod style;
 pub mod watch;
 
 use anyhow::Result;
@@ -17,7 +18,8 @@ use log::LevelFilter;
 use pretty_env_logger::formatted_builder;
 
 use self::{
-    compile::CompileCommand, completions::CompletionsCommand, run::RunCommand, watch::WatchCommand,
+    compile::CompileCommand, completions::CompletionsCommand, run::RunCommand, style::get_styles,
+    watch::WatchCommand,
 };
 
 pub const VERSION: &str = formatcp!(
@@ -46,7 +48,8 @@ pub trait Command {
     long_version = LONG_VERSION,
     about,
     long_about = None,
-    propagate_version = true
+    propagate_version = true,
+    styles = get_styles()
 )]
 pub struct Cli {
     /// Enables verbose mode.
@@ -76,6 +79,7 @@ pub enum Commands {
     #[command(alias = "w")]
     Watch(WatchCommand),
 
+    /// Print version information.
     #[command(alias = "v")]
     Version,
 }

@@ -8,20 +8,19 @@ license.workspace = true
 edition.workspace = true
 
 [dependencies]
-anyhow = { workspace = true }
-clap = { workspace = true }
-log = { workspace = true }
-clap-verbosity-flag = { workspace = true }
-clap_complete = { workspace = true }
-pretty_env_logger = { workspace = true }
-target-lexicon = { workspace = true }
-qsc-codegen = { workspace = true }
-qsc-lexer = { workspace = true }
-qsc-tokenizer = { workspace = true }
-qsc-linker = { workspace = true }
-const_format = { workspace = true }
-notify = { workspace = true }
-tempfile = { workspace = true }
+anyhow.workspace = true
+clap.workspace = true
+log.workspace = true
+clap-verbosity-flag.workspace = true
+clap_complete.workspace = true
+pretty_env_logger.workspace = true
+target-lexicon.workspace = true
+qsc-codegen.workspace = true
+qsc-lexer.workspace = true
+qsc-linker.workspace = true
+const_format.workspace = true
+notify.workspace = true
+tempfile.workspace = true
 
 [[bin]]
 name = "qsc"
