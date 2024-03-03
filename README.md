@@ -32,6 +32,12 @@ cargo install quickscript
 3. Run `chmod +x [path to binary here]`
 4. Run the binary!
 
+**Via GitHub Actions:**
+
+1. Head to https://nightly.link/RedstoneWizard08/QuickScript/workflows/build/main/binaries
+2. Download it
+3. Run it!
+
 ## Usage
 
 For usage details, run `qsc --help`
