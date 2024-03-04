@@ -10,15 +10,6 @@ use log::debug;
 use target_lexicon::Triple;
 use which::which;
 
-#[macro_export]
-macro_rules! exists_return {
-    ($cmd: expr) => {
-        if command_exists($cmd) {
-            return $cmd;
-        }
-    };
-}
-
 pub fn command_exists<T>(cmd: T) -> bool
 where
     T: AsRef<str>,
@@ -28,14 +19,18 @@ where
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn get_default_linker() -> &'static str {
-    exists_return!("mold");
-    exists_return!("ld.lld");
-    exists_return!("ld.gold");
-    exists_return!("ld");
-    exists_return!("clang");
-    exists_return!("gcc");
+    for cmd in &[
+        "mold",
+        "ld.lld",
+        "ld.gold",
+        "ld",
+    ] {
+        if command_exists(cmd) {
+            return cmd;
+        }
+    }
 
-    "cc"
+    panic!("Could not find a linker!");
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
