@@ -47,22 +47,21 @@
 ///
 /// A note on endianness:
 /// Endianness is represented as 0 being little, and 1 being big.
-@Stub
 @Since(0.1, status = Status::Stable, feat = "arrays")
 @Apply(Format, Clone, Sized)
 @Cond(T: Copy, @Apply(Copy))
 @Cond(T: Sync, @Apply(Sync))
-pub struct Array<T> where T: Sized {
-    internal mut len: u32,
-    internal mut base_ptr: u32,
-    internal mut alloc: Allocator,
+pub struct Array<T, A> where T: Sized, A: Allocator {
+    mut len: u32,
+    mut base_ptr: u32,
+    mut alloc: A,
 }
 
 @Since(0.1, status = Status::Stable, feat = "arrays")
-impl<T> Array<T> {
+impl<T, A> Array<T, A> where T: Sized, A: Allocator {
     @Constructor
     pub fn new() -> Self {
-        let alloc = Allocator::new();
+        let alloc = A::get();
 
         Self {
             len: 0,
@@ -71,11 +70,10 @@ impl<T> Array<T> {
         }
     }
 
-    pub fn of(...items: Array<T>) -> Self {
+    pub fn of(...items: Slice<T>) -> Self {
         let mut me = Self::new();
 
         me.push(items);
-
         me
     }
 
@@ -109,22 +107,40 @@ impl<T> Array<T> {
     }
 
     @Overload
-    @OperandAlias(Operands::Add)
-    pub fn push(&mut self, item: T, idx: Option<i32 | u32>) -> &mut self;
+    @OperandAlias(Operands::IndexedSet)
+    pub fn push(&mut self, item: T, idx: i32 | u32) -> &mut self;
 
-    @Overload
     @OperandAlias(Operands::Add)
-    pub fn push(&mut self, item: Array<T>) -> &mut self;
+    pub fn push(&self, item: Array<T, ?> | Slice<T>) -> &self {
+        &*self.clone().push(item)
+    }
+
+    @Cast(Slice<T>)
+    pub fn as_slice(&self) -> Slice<T> {
+        let mut slice = Slice::from_length(self.len);
+
+        for i in 0..self.len {
+            slice[i] = self.get(i);
+        }
+
+        slice
+    }
     
-    fn push(&mut self, item: T | Array<T>, idx: Option<i32 | u32>) -> &mut self {
-        if (core::types::is_type::<Array<T>>(item)) {
-            for (item in item) {
-                self.push(item);
+    pub fn push(&mut self, item: T | Array<T, ?> | Slice<T>, idx: Option<i32 | u32>) -> &mut self {
+        if (core::types::is_type::<Array<T, ?>>(item) || core::types::is_type::<Array<T, ?>>(item)) {
+            let len = self.len;
+
+            for (i, item) in item.as_slice().enumerate() {
+                self.push_one(item, idx.or(len) + i);
 
                 return self;
             }
         }
 
+        self.push_one(item, idx)
+    }
+
+    fn push_one(&mut self, item: T, idx: Option<i32 | u32>) -> &mut self {
         let idx = idx.or(self.len);
 
         self.alloc.reserve(&mut self.base_ptr, self.get_item_size());
@@ -138,7 +154,7 @@ impl<T> Array<T> {
 
     @OperandAlias(Operands::Subtract)
     pub fn pop(&mut self, idx: Option<i32 | u32>) -> &mut self {
-        if (let Some(idx) = idx) {
+        if let Some(idx) = idx {
             let pos = self.base_ptr + (self.get_item_size() * idx);
 
             self.alloc.pop(pos, self.get_item_size());
@@ -151,12 +167,12 @@ impl<T> Array<T> {
 
         self.alloc.pop(pos, self.get_item_size());
         self.len--;
-            
+        
         self
     }
 
     const fn get_item_size(&self) -> u32 {
-        size_of_type::<T>()
+        core::types::size_of::<T>()
     }
 }
 ```
