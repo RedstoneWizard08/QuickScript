@@ -146,6 +146,7 @@ pub fn run_linker(
 #[cfg(target_os = "windows")]
 pub const WINDOWS_LIBS: [&str; 2] = ["legacy_stdio_definitions.lib", "ucrt.lib"];
 
+/// This doesn't really work but don't worry about it.
 #[cfg(target_os = "windows")]
 pub fn run_linker(
     out_path: PathBuf,
