@@ -14,7 +14,7 @@ var = { "let" ~ "mut"? ~ ident ~ (":" ~ type)? ~ "=" ~ expr ~ ";" }
 ret = { "return" ~ expr? ~ ";" }
 
 // Types
-call    =  { ident ~ "(" ~ args ~ ")" }
+call    =  { ident ~ "(" ~ args? ~ ")" }
 literal =  { number | string | char | bool }
 number  =  { int | float }
 ident   = ${ ('a'..'z' | 'A'..'Z') ~ ident_char* }

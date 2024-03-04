@@ -99,10 +99,8 @@ pub fn get_library_dir(
         ),
         "--dynamic-linker".to_string(),
         get_dynamic_linker(prefix, target_arch, target_env),
-        #[cfg(target_os = "android")]
-        {
-            "--pie".to_string()
-        },
+        "--pie".to_string(),
+        "-O2".to_string(),
         #[cfg(target_os = "android")]
         {
             "-L/system/lib64".to_string()
