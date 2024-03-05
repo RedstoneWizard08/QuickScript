@@ -108,8 +108,9 @@ impl<'a, M: Module, T: BackendInternal<M>> Backend<'a, M> for T {
             ExprKind::Type(_, _) => Ok(Self::null(ctx)),
 
             ExprKind::Unary(negative, val) => Ok(if negative {
-                // ctx.builder.ins().neg()
-                todo!()
+                let val = Self::compile(cctx, ctx, *val)?;
+                
+                ctx.builder.ins().ineg(val)
             } else {
                 Self::compile(cctx, ctx, *val)?
             }),
