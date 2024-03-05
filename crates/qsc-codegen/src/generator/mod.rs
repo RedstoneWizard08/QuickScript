@@ -1,8 +1,12 @@
 use anyhow::Result;
 use cranelift_codegen::ir::{types, GlobalValue, InstBuilder, Type, Value};
 use cranelift_module::{DataId, Module};
-
-use qsc_ast::expr::ExprKind;
+use qsc_ast::ast::{
+    decl::DeclarationNode,
+    expr::{unary::UnaryExpr, ExpressionNode},
+    node::{data::NodeData, Node},
+    stmt::StatementNode,
+};
 
 use self::{
     call::CallCompiler,
@@ -10,7 +14,7 @@ use self::{
     ops::OperationCompiler,
     ret::ReturnCompiler,
     unify::BackendInternal,
-    vars::{func::FunctionCompiler, var::VariableCompiler},
+    vars::{func::FunctionCompiler, var::VariableCompiler, global::GlobalVariableCompiler},
 };
 
 use super::context::{CodegenContext, CompilerContext};
@@ -24,28 +28,28 @@ pub mod vars;
 
 pub const RETURN_VAR: &str = "__func_return__";
 
-pub trait Backend<'a, M: Module>: BackendInternal<M> {
-    fn query_type(cctx: &mut CompilerContext<'a, M>, ty: String) -> Type;
+pub trait Backend<'i, 'a, M: Module>: BackendInternal<'i, 'a, M> {
+    fn query_type(cctx: &mut CompilerContext<'i, 'a, M>, ty: String) -> Type;
     fn query_type_with_pointer(ptr: Type, ty: String) -> Type;
-    fn ptr(cctx: &mut CompilerContext<'a, M>) -> Type;
+    fn ptr(cctx: &mut CompilerContext<'i, 'a, M>) -> Type;
     fn null(ctx: &mut CodegenContext) -> Value;
-    fn nullptr(cctx: &mut CompilerContext<'a, M>, ctx: &mut CodegenContext) -> Value;
+    fn nullptr(cctx: &mut CompilerContext<'i, 'a, M>, ctx: &mut CodegenContext) -> Value;
 
     fn compile(
-        cctx: &mut CompilerContext<'a, M>,
+        cctx: &mut CompilerContext<'i, 'a, M>,
         ctx: &mut CodegenContext,
-        expr: ExprKind,
+        node: Node<'i>,
     ) -> Result<Value>;
 
     fn get_global(
-        cctx: &mut CompilerContext<'a, M>,
+        cctx: &mut CompilerContext<'i, 'a, M>,
         ctx: &mut CodegenContext,
         id: DataId,
     ) -> GlobalValue;
 }
 
-impl<'a, M: Module, T: BackendInternal<M>> Backend<'a, M> for T {
-    fn query_type(cctx: &mut CompilerContext<'a, M>, ty: String) -> Type {
+impl<'i, 'a, M: Module, T: BackendInternal<'i, 'a, M>> Backend<'i, 'a, M> for T {
+    fn query_type(cctx: &mut CompilerContext<'i, 'a, M>, ty: String) -> Type {
         Self::query_type_with_pointer(Self::ptr(cctx), ty)
     }
 
@@ -66,7 +70,7 @@ impl<'a, M: Module, T: BackendInternal<M>> Backend<'a, M> for T {
         }
     }
 
-    fn ptr(cctx: &mut CompilerContext<'a, M>) -> Type {
+    fn ptr(cctx: &mut CompilerContext<'i, 'a, M>) -> Type {
         cctx.module.target_config().pointer_type()
     }
 
@@ -75,14 +79,14 @@ impl<'a, M: Module, T: BackendInternal<M>> Backend<'a, M> for T {
         ctx.builder.ins().null(types::I8)
     }
 
-    fn nullptr(cctx: &mut CompilerContext<'a, M>, ctx: &mut CodegenContext) -> Value {
+    fn nullptr(cctx: &mut CompilerContext<'i, 'a, M>, ctx: &mut CodegenContext) -> Value {
         let ptr = Self::ptr(cctx);
 
         ctx.builder.ins().null(ptr)
     }
 
     fn get_global(
-        cctx: &mut CompilerContext<'a, M>,
+        cctx: &mut CompilerContext<'i, 'a, M>,
         ctx: &mut CodegenContext,
         id: DataId,
     ) -> GlobalValue {
@@ -90,39 +94,49 @@ impl<'a, M: Module, T: BackendInternal<M>> Backend<'a, M> for T {
     }
 
     fn compile(
-        cctx: &mut CompilerContext<'a, M>,
+        cctx: &mut CompilerContext<'i, 'a, M>,
         ctx: &mut CodegenContext,
-        expr: ExprKind,
+        node: Node<'i>,
     ) -> Result<Value> {
-        debug!("Trying to compile: {:?}", expr);
+        debug!("Trying to compile: {:?}", node);
 
-        let res = match expr {
-            ExprKind::None => Ok(Self::null(ctx)),
+        let res = match *node.data {
+            NodeData::Literal(literal) => Self::compile_literal(cctx, ctx, literal),
+            NodeData::Symbol(symbol) => Self::compile_named_var(cctx, ctx, symbol.value),
+            NodeData::Type(_) => Ok(Self::null(ctx)),
 
-            ExprKind::Literal(literal) => Self::compile_literal(cctx, ctx, literal),
-            ExprKind::Call(call) => Self::compile_call(cctx, ctx, call),
-            ExprKind::Eof => Ok(Self::null(ctx)),
-            ExprKind::Identifer(ident) => Self::compile_named_var(ctx, ident),
-            ExprKind::Operation(op) => Self::compile_op(cctx, ctx, op),
-            ExprKind::Return(ret) => Self::compile_return(cctx, ctx, ret.map(|v| *v.clone())),
-            ExprKind::Type(_, _) => Ok(Self::null(ctx)),
+            NodeData::Expr(expr) => match expr {
+                ExpressionNode::Unary(UnaryExpr {
+                    negative,
+                    value,
+                    span: _,
+                }) => Ok(if negative {
+                    let val = Self::compile(cctx, ctx, value)?;
 
-            ExprKind::Unary(negative, val) => Ok(if negative {
-                let val = Self::compile(cctx, ctx, *val)?;
-                
-                ctx.builder.ins().ineg(val)
-            } else {
-                Self::compile(cctx, ctx, *val)?
-            }),
+                    ctx.builder.ins().ineg(val)
+                } else {
+                    Self::compile(cctx, ctx, value)?
+                }),
 
-            ExprKind::Variable(var) => Self::compile_var(cctx, ctx, var),
-            ExprKind::Function(func) => Self::compile_fn(cctx, ctx, func),
+                ExpressionNode::Binary(op) => Self::compile_binary_expr(cctx, ctx, op),
+            },
 
-            ExprKind::Block(block) => {
+            NodeData::Statement(stmt) => match stmt {
+                StatementNode::Call(call) => Self::compile_call(cctx, ctx, call),
+                StatementNode::Return(ret) => Self::compile_return(cctx, ctx, ret),
+            },
+
+            NodeData::Declaration(decl) => match decl {
+                DeclarationNode::Variable(var) => Self::compile_var(cctx, ctx, var),
+                DeclarationNode::Function(func) => Self::compile_fn(cctx, ctx, func),
+                DeclarationNode::Global(global) => unimplemented!(),
+            },
+
+            NodeData::Block(block) => {
                 let mut res = Self::null(ctx);
 
-                for expr in block {
-                    res = Self::compile(cctx, ctx, expr.content)?;
+                for node in block.data {
+                    res = Self::compile(cctx, ctx, node)?;
                 }
 
                 Ok(res)

@@ -12,26 +12,26 @@ use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{default_libcall_names, DataDescription, DataId, Linkage, Module};
 use target_lexicon::Triple;
 
-use qsc_ast::func::Function as Func;
+use qsc_ast::ast::decl::func::FunctionNode as Func;
 
 use super::{
     context::{CodegenContext, CompilerContext},
     generator::{unify::BackendInternal, vars::func::FunctionCompiler, Backend},
 };
 
-pub struct JitGenerator {
+pub struct JitGenerator<'i> {
     pub builder_ctx: FunctionBuilderContext,
     pub ctx: Context,
     pub data_desc: DataDescription,
     pub module: JITModule,
-    pub functions: HashMap<String, Func>,
+    pub functions: HashMap<String, Func<'i>>,
     pub globals: HashMap<String, DataId>,
     pub fns: Vec<Function>,
     pub vcode: Vec<CompiledCode>,
     pub code: Vec<(String, *const u8)>,
 }
 
-impl JitGenerator {
+impl<'i, 'a> JitGenerator<'i> {
     pub fn new(triple: Triple) -> Result<Self> {
         let mut flags = settings::builder();
 
@@ -55,10 +55,10 @@ impl JitGenerator {
         })
     }
 
-    pub fn create_context<'a>(
+    pub fn create_context(
         &'a mut self,
         func: Func,
-    ) -> (CompilerContext<'a, JITModule>, CodegenContext) {
+    ) -> (CompilerContext<'i, 'a, JITModule>, CodegenContext) {
         let builder = FunctionBuilder::new(&mut self.ctx.func, &mut self.builder_ctx);
 
         (
@@ -74,13 +74,13 @@ impl JitGenerator {
                 locals: HashMap::new(),
                 vars: HashMap::new(),
                 values: HashMap::new(),
-                ret: func.return_type.clone(),
+                ret: func.ret,
                 func,
             },
         )
     }
 
-    pub fn compile_function<'a>(&'a mut self, func: Func) -> Result<()> {
+    pub fn compile_function(&'a mut self, func: Func) -> Result<()> {
         debug!("Compiling function: {}", func.name);
 
         for arg in func.args.clone() {
@@ -90,7 +90,7 @@ impl JitGenerator {
                 .params
                 .push(AbiParam::new(Self::query_type_with_pointer(
                     self.module.isa().pointer_type(),
-                    arg.type_,
+                    arg.type_.as_str(),
                 )));
         }
 
@@ -100,7 +100,7 @@ impl JitGenerator {
             .returns
             .push(AbiParam::new(Self::query_type_with_pointer(
                 self.module.isa().pointer_type(),
-                func.return_type.clone(),
+                func.ret.map(|v| v.as_str()).unwrap_or("void".to_string()),
             )));
 
         let (mut cctx, mut ctx) = self.create_context(func.clone());
@@ -115,14 +115,14 @@ impl JitGenerator {
 
         self.module.define_function(id, &mut self.ctx)?;
         self.fns.push(self.ctx.func.clone());
-        self.functions.insert(func.name.clone(), func.clone());
+        self.functions.insert(func.name.to_string(), func.clone());
         self.vcode.push(self.ctx.compiled_code().unwrap().clone());
         self.module.clear_context(&mut self.ctx);
         self.module.finalize_definitions()?;
 
         let code = self.module.get_finalized_function(id);
 
-        self.code.push((func.name.clone(), code));
+        self.code.push((func.name.to_string(), code));
 
         debug!("Compiled function: {}", func.name);
 
@@ -132,9 +132,9 @@ impl JitGenerator {
     pub fn exec(&self) -> Result<i32> {
         let mut main = None;
 
-        for (name, code) in &self.code {
+        for (name, code) in self.code {
             if name == "main" {
-                main = Some(unsafe { std::mem::transmute::<_, fn() -> i32>(*code) });
+                main = Some(unsafe { std::mem::transmute::<_, fn() -> i32>(code) });
 
                 debug!("Found main function!");
             }
@@ -150,8 +150,8 @@ impl JitGenerator {
     }
 }
 
-impl BackendInternal<JITModule> for JitGenerator {
-    fn post_define<'a>(cctx: &mut CompilerContext<'a, JITModule>, id: DataId) -> Result<()> {
+impl<'i, 'a> BackendInternal<'i, 'a, JITModule> for JitGenerator<'i> {
+    fn post_define(cctx: &mut CompilerContext<'i, 'a, JITModule>, id: DataId) -> Result<()> {
         cctx.module.finalize_definitions()?;
 
         let (code, _) = cctx.module.get_finalized_data(id);

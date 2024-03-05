@@ -1,18 +1,21 @@
 use pest::iterators::Pair;
-use qsc_ast::{expr::ExprKind, var::Variable};
+use qsc_ast::ast::decl::var::VariableNode;
 
-use crate::parser::{Lexer, Rule};
+use crate::{
+    lexer::{Lexer, Result},
+    parser::Rule,
+};
 
-impl Lexer {
-    pub fn var<'i>(&self, pair: &Pair<'i, Rule>) -> ExprKind {
+impl<'i> Lexer<'i> {
+    pub fn var(&'i self, pair: &Pair<'i, Rule>) -> Result<VariableNode<'i>> {
         let mut inner = pair.clone().into_inner();
 
-        let is_mutable = inner
+        let mutable = inner
             .peek()
             .map(|pair| pair.as_str().trim() == "mut")
             .unwrap_or(false);
 
-        if is_mutable {
+        if mutable {
             inner.next();
         }
 
@@ -23,18 +26,19 @@ impl Lexer {
             .map(|pair| pair.as_rule() == Rule::r#type)
             .unwrap_or(false)
         {
-            inner.next().unwrap().as_str().trim().to_string()
+            Some(self.ty(&inner.next().unwrap())?)
         } else {
-            String::new()
+            None
         };
 
-        let value = inner.next().map(|pair| Box::new(self.parse_expr(pair)));
+        let value = inner.next().map(|pair| self.parse(pair).unwrap());
 
-        ExprKind::Variable(Variable {
+        Ok(VariableNode {
+            span: pair.as_span(),
             name,
             type_,
             value,
-            is_mutable,
+            mutable,
         })
     }
 }

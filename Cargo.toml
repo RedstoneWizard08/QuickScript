@@ -31,6 +31,8 @@ lnk = "0.5.1"
 tower-lsp = "0.20.0"
 pest = { version = "2.7.7", features = ["pretty-print"] }
 pest_derive = "2.7.7"
+strum = { version = "0.26.1", features = ["derive"] }
+miette = { version = "7.1.0", features = ["fancy"] }
 
 qsc-ast = { path = "./crates/qsc-ast" }
 qsc-cli = { path = "./crates/qsc-cli" }
@@ -39,6 +41,8 @@ qsc-core = { path = "./crates/qsc-core" }
 qsc-lexer = { path = "./crates/qsc-lexer" }
 qsc-linker = { path = "./crates/qsc-linker" }
 qsc-lsp = { path = "./crates/qsc-lsp" }
+qsc-processor = { path = "./crates/qsc-processor" }
+qsc-preprocessor = { path = "./crates/qsc-preprocessor" }
 
 [profile.release]
 strip = true
@@ -57,4 +61,6 @@ members = [
     "crates/qsc-lexer",
     "crates/qsc-linker",
     "crates/qsc-lsp",
+    "crates/qsc-preprocessor",
+    "crates/qsc-processor",
 ]

@@ -1,4 +1,5 @@
 {
     "rust-analyzer.showUnlinkedFileNotification": false,
-    "files.autoSave": "off"
+    "files.autoSave": "off",
+    "nuxt.isNuxtApp": false
 }

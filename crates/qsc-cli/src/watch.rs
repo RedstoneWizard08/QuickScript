@@ -12,7 +12,7 @@ use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 use target_lexicon::Triple;
 
 use qsc_codegen::{jit::JitGenerator, simple::SimpleCompiler};
-use qsc_lexer::parser::Lexer;
+use qsc_lexer::lexer::Lexer;
 
 use super::Command;
 

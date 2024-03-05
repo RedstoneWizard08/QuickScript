@@ -3,33 +3,32 @@ use cranelift_codegen::ir::{InstBuilder, Value};
 use cranelift_module::Module;
 
 use crate::context::{CodegenContext, CompilerContext};
-use qsc_ast::operation::Operation;
+use qsc_ast::ast::expr::{binary::BinaryExpr, operator::Operator};
 
 use super::Backend;
 
-pub trait OperationCompiler<'a, M: Module>: Backend<'a, M> {
-    fn compile_op(
-        cctx: &mut CompilerContext<'a, M>,
+pub trait OperationCompiler<'i, 'a, M: Module>: Backend<'i, 'a, M> {
+    fn compile_binary_expr(
+        cctx: &mut CompilerContext<'i, 'a, M>,
         ctx: &mut CodegenContext,
-        expr: Operation,
+        expr: BinaryExpr,
     ) -> Result<Value>;
 }
 
-impl<'a, M: Module, T: Backend<'a, M>> OperationCompiler<'a, M> for T {
-    fn compile_op(
-        cctx: &mut CompilerContext<'a, M>,
+impl<'i, 'a, M: Module, T: Backend<'i, 'a, M>> OperationCompiler<'i, 'a, M> for T {
+    fn compile_binary_expr(
+        cctx: &mut CompilerContext<'i, 'a, M>,
         ctx: &mut CodegenContext,
-        expr: Operation,
+        expr: BinaryExpr,
     ) -> Result<Value> {
-        let data = expr.data();
-        let left = Self::compile(cctx, ctx, data.left.content.clone())?;
-        let right = Self::compile(cctx, ctx, data.right.content.clone())?;
+        let left = Self::compile(cctx, ctx, expr.lhs)?;
+        let right = Self::compile(cctx, ctx, expr.rhs)?;
 
-        match expr {
-            Operation::Add(_) => Ok(ctx.builder.ins().iadd(left, right)),
-            Operation::Subtract(_) => Ok(ctx.builder.ins().isub(left, right)),
-            Operation::Multiply(_) => Ok(ctx.builder.ins().imul(left, right)),
-            Operation::Divide(_) => Ok(ctx.builder.ins().fdiv(left, right)),
+        match expr.operator {
+            Operator::Add => Ok(ctx.builder.ins().iadd(left, right)),
+            Operator::Subtract => Ok(ctx.builder.ins().isub(left, right)),
+            Operator::Multiply => Ok(ctx.builder.ins().imul(left, right)),
+            Operator::Divide => Ok(ctx.builder.ins().fdiv(left, right)),
 
             _ => todo!("This operation is not implemented yet!"),
         }

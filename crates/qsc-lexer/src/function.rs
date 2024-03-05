@@ -1,11 +1,17 @@
-use crate::parser::{Lexer, Rule};
+use crate::{
+    lexer::{Lexer, Result},
+    parser::Rule,
+};
 use pest::iterators::Pair;
-use qsc_ast::{expr::ExprKind, func::Function};
+use qsc_ast::ast::{
+    decl::func::FunctionNode,
+    node::{block::Block, vis::Visibility},
+};
 
-impl Lexer {
-    pub fn function<'i>(&self, pair: &Pair<'i, Rule>) -> ExprKind {
+impl<'i> Lexer<'i> {
+    pub fn function(&self, pair: &Pair<'i, Rule>) -> Result<FunctionNode> {
         let mut inner = pair.clone().into_inner();
-        let name = inner.next().unwrap().as_str().trim().to_string();
+        let name = inner.next().unwrap().as_str().trim();
 
         let args = if inner.peek().map(|v| v.as_rule()) == Some(Rule::params) {
             self.params(inner.next().unwrap())
@@ -13,24 +19,29 @@ impl Lexer {
             Vec::new()
         };
 
-        let return_type = if inner.peek().map(|v| v.as_rule()) == Some(Rule::r#type) {
-            inner.next().unwrap().as_str().trim().to_string()
+        let ret = if inner.peek().map(|v| v.as_rule()) == Some(Rule::r#type) {
+            Some(self.ty(&inner.next().unwrap())?)
         } else {
-            "void".to_string()
+            None
         };
 
-        let body = inner
-            .next()
-            .unwrap()
-            .into_inner()
-            .map(|pair| self.parse_expr(pair))
-            .collect();
+        let body_pair = inner.next().unwrap();
 
-        ExprKind::Function(Function {
+        let body = Block {
+            span: body_pair.as_span(),
+            data: body_pair
+                .into_inner()
+                .map(|pair| self.parse(pair).unwrap())
+                .collect(),
+        };
+
+        Ok(FunctionNode {
+            span: pair.as_span(),
             name,
             args,
-            body: Box::new(body),
-            return_type,
+            content: body,
+            ret,
+            vis: Visibility::Public,
         })
     }
 }

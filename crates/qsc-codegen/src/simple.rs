@@ -1,27 +1,36 @@
+use std::marker::PhantomData;
+
 use anyhow::Result;
 use cranelift_object::ObjectProduct;
-use qsc_ast::expr::{Expr, ExprKind};
+use qsc_ast::ast::node::Node;
 use target_lexicon::Triple;
 
 use super::unify::CodegenBackend;
 
-pub struct SimpleCompiler<T: CodegenBackend> {
+pub struct SimpleCompiler<'i, 'a, T: CodegenBackend<'i, 'a>> {
     pub backend: T,
+
+    _pdata0: PhantomData<&'i ()>,
+    _pdata1: PhantomData<&'a ()>,
 }
 
-impl<T: CodegenBackend> SimpleCompiler<T> {
+impl<'i, 'a, T: CodegenBackend<'i, 'a>> SimpleCompiler<'i, 'a, T> {
     pub fn new(triple: Triple) -> Result<Self> {
         Ok(Self {
             backend: T::new(triple)?,
+            _pdata0: PhantomData,
+            _pdata1: PhantomData,
         })
     }
 
-    pub fn compile(&mut self, exprs: Vec<Expr>) -> Result<()> {
+    pub fn compile(&mut self, nodes: Vec<Node>) -> Result<()> {
         let mut funcs = Vec::new();
 
-        for expr in exprs {
-            if let ExprKind::Function(func) = expr.content {
-                funcs.push(func);
+        for node in nodes {
+            if let Ok(decl) = node.data.as_decl() {
+                if let Ok(func) = decl.as_function() {
+                    funcs.push(func);
+                }
             }
         }
 

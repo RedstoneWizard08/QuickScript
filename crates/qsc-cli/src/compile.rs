@@ -6,7 +6,7 @@ use target_lexicon::Triple;
 use tempfile::NamedTempFile;
 
 use qsc_codegen::{aot::AotGenerator, simple::SimpleCompiler};
-use qsc_lexer::parser::Lexer;
+use qsc_lexer::lexer::Lexer;
 use qsc_linker::run_linker;
 
 use super::Command;

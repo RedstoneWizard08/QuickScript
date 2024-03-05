@@ -12,26 +12,26 @@ use crate::generator::{unify::BackendInternal, vars::func::FunctionCompiler, Bac
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{default_libcall_names, DataDescription, DataId, Linkage, Module};
 use cranelift_object::{ObjectBuilder, ObjectModule, ObjectProduct};
-use qsc_ast::func::Function as Func;
+use qsc_ast::ast::decl::func::FunctionNode as Func;
 use target_lexicon::Triple;
 
 use super::context::{CodegenContext, CompilerContext};
 
-pub struct AotGenerator {
+pub struct AotGenerator<'i> {
     pub builder_ctx: FunctionBuilderContext,
     pub ctx: Context,
     pub data_desc: DataDescription,
     pub module: ObjectModule,
-    pub functions: HashMap<String, Func>,
+    pub functions: HashMap<String, Func<'i>>,
     pub globals: HashMap<String, DataId>,
     pub fns: Vec<Function>,
     pub vcode: Vec<CompiledCode>,
 
-    /// This isn't actually used, but it's required to make a `CompilerContext`
+    /// This isn't actually used, but it's required to make a `CompilerContext` because JIT needs it.
     pub code: Vec<(String, *const u8)>,
 }
 
-impl AotGenerator {
+impl<'i, 'a> AotGenerator<'i> {
     pub fn new(triple: Triple) -> Result<Self> {
         let mut flags = settings::builder();
 
@@ -60,10 +60,10 @@ impl AotGenerator {
         })
     }
 
-    pub fn create_context<'a>(
+    pub fn create_context(
         &'a mut self,
         func: Func,
-    ) -> (CompilerContext<'a, ObjectModule>, CodegenContext) {
+    ) -> (CompilerContext<'i, 'a, ObjectModule>, CodegenContext) {
         let builder = FunctionBuilder::new(&mut self.ctx.func, &mut self.builder_ctx);
 
         (
@@ -79,16 +79,16 @@ impl AotGenerator {
                 locals: HashMap::new(),
                 vars: HashMap::new(),
                 values: HashMap::new(),
-                ret: func.return_type.clone(),
+                ret: func.ret,
                 func,
             },
         )
     }
 
-    pub fn compile_function<'a>(&'a mut self, mut func: Func) -> Result<()> {
+    pub fn compile_function(&'a mut self, mut func: Func) -> Result<()> {
         if func.name == "main" {
             // Make the linker happy :)
-            func.name = "_start".to_string();
+            func.name = "_start";
 
             debug!("Compiling function: _start (main)");
         } else {
@@ -102,7 +102,7 @@ impl AotGenerator {
                 .params
                 .push(AbiParam::new(Self::query_type_with_pointer(
                     self.module.isa().pointer_type(),
-                    arg.type_,
+                    arg.type_.as_str(),
                 )));
         }
 
@@ -112,7 +112,7 @@ impl AotGenerator {
             .returns
             .push(AbiParam::new(Self::query_type_with_pointer(
                 self.module.isa().pointer_type(),
-                func.return_type.clone(),
+                func.ret.map(|v| v.as_str()).unwrap_or("void".to_string()),
             )));
 
         let (mut cctx, mut ctx) = self.create_context(func.clone());
@@ -127,7 +127,7 @@ impl AotGenerator {
 
         self.module.define_function(id, &mut self.ctx)?;
         self.fns.push(self.ctx.func.clone());
-        self.functions.insert(func.name.clone(), func.clone());
+        self.functions.insert(func.name.to_string(), func.clone());
         self.vcode.push(self.ctx.compiled_code().unwrap().clone());
         self.module.clear_context(&mut self.ctx);
 
@@ -141,8 +141,8 @@ impl AotGenerator {
     }
 }
 
-impl BackendInternal<ObjectModule> for AotGenerator {
-    fn post_define<'a>(_cctx: &mut CompilerContext<'a, ObjectModule>, _id: DataId) -> Result<()> {
+impl<'i, 'a> BackendInternal<'i, 'a, ObjectModule> for AotGenerator<'i> {
+    fn post_define(_cctx: &mut CompilerContext<'i, 'a, ObjectModule>, _id: DataId) -> Result<()> {
         Ok(())
     }
 }

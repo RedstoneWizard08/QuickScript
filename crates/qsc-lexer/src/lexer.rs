@@ -1,0 +1,200 @@
+use miette::NamedSource;
+use pest::{iterators::Pair, Parser};
+use qsc_ast::ast::{
+    decl::DeclarationNode,
+    expr::{unary::UnaryExpr, ExpressionNode},
+    literal::{
+        boolean::BoolNode, char::CharNode, float::FloatNode, int::IntNode, string::StringNode,
+        LiteralNode,
+    },
+    node::{block::Block, data::NodeData, sym::SymbolNode, Node},
+    stmt::{ret::ReturnNode, StatementNode},
+    AbstractTree,
+};
+
+use crate::{
+    conv::IntoSourceSpan,
+    error::LexerError,
+    parser::{CodeParser, Rule},
+};
+
+pub type Result<T> = std::result::Result<T, LexerError>;
+
+pub struct Lexer<'i> {
+    pub src: &'i str,
+    pub name: &'i str,
+    pub err_src: NamedSource<String>,
+}
+
+impl<'i> Lexer<'i> {
+    pub fn new(name: &'i impl AsRef<str>, source: &'i impl AsRef<str>) -> Self {
+        let src = source.as_ref();
+        let name = name.as_ref();
+        let err_src = NamedSource::new(name, src.to_string());
+
+        Self { src, name, err_src }
+    }
+
+    pub fn lex(&'i self) -> Result<AbstractTree<'i>> {
+        let data = CodeParser::parse(Rule::main, self.src).unwrap();
+        let mut tree = AbstractTree::new(self.src);
+
+        for pair in data {
+            if let Rule::main = pair.as_rule() {
+                for pair in pair.into_inner() {
+                    tree.data.push(self.parse(pair)?);
+                }
+            }
+        }
+
+        Ok(tree)
+    }
+
+    pub fn parse(&'i self, pair: Pair<'i, Rule>) -> Result<Node<'i>> {
+        Ok(Node {
+            span: pair.as_span(),
+            data: Box::new(self.parse_data(pair)?),
+        })
+    }
+
+    pub fn parse_data(&'i self, pair: Pair<'i, Rule>) -> Result<NodeData<'i>> {
+        Ok(match pair.as_rule() {
+            Rule::function => {
+                NodeData::Declaration(DeclarationNode::Function(self.function(&pair)?))
+            }
+
+            Rule::binary_op => NodeData::Expr(ExpressionNode::Binary(self.binary_op(&pair)?)),
+            Rule::call => NodeData::Statement(StatementNode::Call(self.call(&pair)?)),
+            Rule::var => NodeData::Declaration(DeclarationNode::Variable(self.var(&pair)?)),
+            Rule::r#type => NodeData::Type(self.ty(&pair)?),
+
+            Rule::ident => NodeData::Symbol(SymbolNode {
+                span: pair.as_span(),
+                value: pair.as_str().trim(),
+            }),
+
+            Rule::unary_op => NodeData::Expr(ExpressionNode::Unary(UnaryExpr {
+                span: pair.as_span(),
+                negative: pair.as_str().trim().starts_with("-"),
+                value: self.parse(pair.into_inner().last().unwrap())?,
+            })),
+
+            // Redirects
+            Rule::literal => self.parse_data(pair.into_inner().next().unwrap())?,
+
+            // Primitives (literals)
+            Rule::char => NodeData::Literal(LiteralNode::Char(CharNode {
+                span: pair.as_span(),
+                value: self.interp_literal(pair.as_str().trim().trim_matches('\''))
+                    .chars()
+                    .nth(0)
+                    .unwrap(),
+            })),
+
+            Rule::string => NodeData::Literal(LiteralNode::String(StringNode {
+                span: pair.as_span(),
+                value: self.interp_literal(pair.as_str().trim().trim_matches('"')),
+            })),
+
+            Rule::float => NodeData::Literal(LiteralNode::Float(FloatNode {
+                span: pair.as_span(),
+                value: pair.as_str().trim().parse().unwrap(),
+            })),
+
+            Rule::int => NodeData::Literal(LiteralNode::Int(IntNode {
+                span: pair.as_span(),
+                value: pair.as_str().trim().parse().unwrap(),
+            })),
+
+            Rule::bool => NodeData::Literal(LiteralNode::Bool(BoolNode {
+                span: pair.as_span(),
+                value: pair.as_str().trim().parse().unwrap(),
+            })),
+
+            // Groups
+            Rule::term => {
+                let pair = pair.into_inner().next().unwrap();
+
+                match pair.as_rule() {
+                    Rule::call => NodeData::Statement(StatementNode::Call(self.call(&pair)?)),
+                    Rule::literal => self.parse_data(pair)?,
+                    Rule::ident => self.parse_data(pair)?,
+
+                    _ => unreachable!(),
+                }
+            }
+
+            Rule::expr => {
+                let pair = pair.into_inner().next().unwrap();
+
+                match pair.as_rule() {
+                    Rule::term => self.parse_data(pair)?,
+                    Rule::binary_op => {
+                        NodeData::Expr(ExpressionNode::Binary(self.binary_op(&pair)?))
+                    }
+
+                    _ => unreachable!(),
+                }
+            }
+
+            Rule::number => {
+                let pair = pair.into_inner().next().unwrap();
+
+                match pair.as_rule() {
+                    Rule::int => self.parse_data(pair)?,
+                    Rule::float => self.parse_data(pair)?,
+
+                    _ => {
+                        return Err(LexerError {
+                            src: self.err_src.clone(),
+                            location: pair.as_span().into_source_span(),
+                        })
+                    }
+                }
+            }
+
+            Rule::statement => {
+                let pair = pair.into_inner().next().unwrap();
+
+                match pair.as_rule() {
+                    Rule::real_stmt => self.parse_data(pair)?,
+
+                    _ => unreachable!(),
+                }
+            }
+
+            Rule::real_stmt => {
+                let pair = pair.into_inner().next().unwrap();
+
+                match pair.as_rule() {
+                    Rule::ret => self.parse_data(pair)?,
+                    Rule::var => self.parse_data(pair)?,
+                    Rule::expr => self.parse_data(pair)?,
+                    Rule::block => self.parse_data(pair)?,
+
+                    _ => unreachable!(),
+                }
+            }
+
+            Rule::block => NodeData::Block(Block {
+                span: pair.as_span(),
+                data: pair
+                    .into_inner()
+                    .map(|pair| self.parse(pair).unwrap())
+                    .collect::<Vec<_>>(),
+            }),
+
+            // Simple ones
+            Rule::ret => NodeData::Statement(StatementNode::Return(ReturnNode {
+                span: pair.as_span(),
+                value: if let Some(pair) = pair.into_inner().next() {
+                    Some(self.parse(pair)?)
+                } else {
+                    None
+                },
+            })),
+
+            _ => unreachable!(),
+        })
+    }
+}

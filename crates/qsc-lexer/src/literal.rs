@@ -1,6 +1,6 @@
-use crate::parser::Lexer;
+use crate::lexer::Lexer;
 
-impl Lexer {
+impl<'i> Lexer<'i> {
     pub fn interp_literal(&self, val: impl AsRef<str>) -> String {
         val.as_ref()
             .replace("\\n", "\n")

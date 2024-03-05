@@ -5,7 +5,7 @@ use clap::Parser;
 use target_lexicon::Triple;
 
 use qsc_codegen::{jit::JitGenerator, simple::SimpleCompiler};
-use qsc_lexer::parser::Lexer;
+use qsc_lexer::lexer::Lexer;
 
 use super::Command;
 

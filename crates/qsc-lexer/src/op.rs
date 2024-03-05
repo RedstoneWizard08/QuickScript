@@ -1,160 +1,218 @@
 use pest::iterators::Pair;
-use qsc_ast::{
-    expr::ExprKind,
-    operation::{Operation, OperationData},
-};
+use qsc_ast::ast::expr::{binary::BinaryExpr, operator::Operator};
 
-use crate::parser::{Lexer, Rule};
+use crate::{conv::IntoSourceSpan, error::LexerError, lexer::{Lexer, Result}, parser::Rule};
 
-impl Lexer {
-    pub fn binary_op<'i>(&self, pair: &Pair<'i, Rule>) -> ExprKind {
+impl<'i> Lexer<'i> {
+    pub fn binary_op(&'i self, pair: &Pair<'i, Rule>) -> Result<BinaryExpr<'i>> {
         let mut inner = pair.clone().into_inner();
-        let left = self.parse_expr(inner.next().unwrap());
+        
+        let span = pair.as_span();
+        let lhs = self.parse(inner.next().unwrap())?;
         let op = inner.next().unwrap().as_str().trim().to_string();
-        let right = self.parse_expr(inner.next().unwrap());
+        let rhs = self.parse(inner.next().unwrap())?;
 
-        ExprKind::Operation(match op.as_str() {
-            "+" => Operation::Add(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
+        Ok(match op.as_str() {
+            "+" => BinaryExpr {
+                operator: Operator::Add,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "-" => BinaryExpr {
+                operator: Operator::Subtract,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "*" => BinaryExpr {
+                operator: Operator::Multiply,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "/" => BinaryExpr {
+                operator: Operator::Divide,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "%" => BinaryExpr {
+                operator: Operator::Modulo,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "&&" => BinaryExpr {
+                operator: Operator::And,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "||" => BinaryExpr {
+                operator: Operator::Or,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "^" => BinaryExpr {
+                operator: Operator::BitwiseXor,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "!" => BinaryExpr {
+                operator: Operator::Not,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "&" => BinaryExpr {
+                operator: Operator::BitwiseAnd,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "|" => BinaryExpr {
+                operator: Operator::BitwiseOr,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "~" => BinaryExpr {
+                operator: Operator::BitwiseNot,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "==" => BinaryExpr {
+                operator: Operator::Equal,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "!=" => BinaryExpr {
+                operator: Operator::NotEqual,
+                span,
+                lhs,
+                rhs,
+            },
+
+            ">" => BinaryExpr {
+                operator: Operator::Greater,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "<" => BinaryExpr {
+                operator: Operator::Less,
+                span,
+                lhs,
+                rhs,
+            },
+
+            ">=" => BinaryExpr {
+                operator: Operator::GreaterEqual,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "<=" => BinaryExpr {
+                operator: Operator::LessEqual,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "=>" => BinaryExpr {
+                operator: Operator::Assign,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "+=" => BinaryExpr {
+                operator: Operator::AddAssign,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "-=" => BinaryExpr {
+                operator: Operator::SubtractAssign,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "*=" => BinaryExpr {
+                operator: Operator::MultiplyAssign,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "/=" => BinaryExpr {
+                operator: Operator::DivideAssign,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "%=" => BinaryExpr {
+                operator: Operator::ModuloAssign,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "&=" => BinaryExpr {
+                operator: Operator::BitwiseAndAssign,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "|=" => BinaryExpr {
+                operator: Operator::BitwiseOrAssign,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "~=" => BinaryExpr {
+                operator: Operator::BitwiseNotAssign,
+                span,
+                lhs,
+                rhs,
+            },
+
+            "^=" => BinaryExpr {
+                operator: Operator::BitwiseXorAssign,
+                span,
+                lhs,
+                rhs,
+            },
+
+            _ => return Err(LexerError {
+                src: self.err_src.clone(),
+                location: pair.as_span().into_source_span(),
             }),
-
-            "-" => Operation::Subtract(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "*" => Operation::Multiply(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "/" => Operation::Divide(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "%" => Operation::Modulo(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "&&" => Operation::And(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "||" => Operation::Or(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "^" => Operation::Xor(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "!" => Operation::Not(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "&" => Operation::BitwiseAnd(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "|" => Operation::BitwiseOr(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "~" => Operation::BitwiseNot(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "==" => Operation::Equal(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "!=" => Operation::NotEqual(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            ">" => Operation::Greater(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "<" => Operation::Less(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            ">=" => Operation::GreaterEqual(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "<=" => Operation::LessEqual(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "=>" => Operation::Assign(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "+=" => Operation::AddAssign(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "-=" => Operation::SubtractAssign(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "*=" => Operation::MultiplyAssign(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "/=" => Operation::DivideAssign(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "%=" => Operation::ModuloAssign(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "&=" => Operation::BitwiseAndAssign(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "|=" => Operation::BitwiseOrAssign(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "~=" => Operation::BitwiseNotAssign(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            "^=" => Operation::XorAssign(OperationData {
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-
-            _ => unreachable!(),
         })
     }
 }

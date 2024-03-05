@@ -3,15 +3,15 @@ use anyhow::Result;
 use cranelift_codegen::write_function;
 use cranelift_module::Module;
 use cranelift_object::ObjectProduct;
-use qsc_ast::func::Function;
+use qsc_ast::ast::decl::func::FunctionNode;
 use std::any::Any;
 use target_lexicon::Triple;
 
-pub trait CodegenBackend {
+pub trait CodegenBackend<'i, 'a> {
     fn new(triple: Triple) -> Result<Self>
     where
         Self: Sized;
-    fn compile(&mut self, funcs: Vec<Function>) -> Result<()>;
+    fn compile(&mut self, funcs: Vec<FunctionNode<'i>>) -> Result<()>;
     fn is_jit(&self) -> bool;
     fn run(&self) -> Result<i32>;
     fn finalize(self) -> ObjectProduct;
@@ -21,12 +21,12 @@ pub trait CodegenBackend {
     fn asm(self) -> Result<String>;
 }
 
-impl CodegenBackend for AotGenerator {
+impl<'i, 'a> CodegenBackend<'i, 'a> for AotGenerator<'i> {
     fn new(triple: Triple) -> Result<Self> {
         Ok(Self::new(triple)?)
     }
 
-    fn compile(&mut self, funcs: Vec<Function>) -> Result<()> {
+    fn compile(&mut self, funcs: Vec<FunctionNode<'i>>) -> Result<()> {
         for func in funcs {
             self.compile_function(func)?;
         }
@@ -104,12 +104,12 @@ impl CodegenBackend for AotGenerator {
     }
 }
 
-impl CodegenBackend for JitGenerator {
+impl<'i, 'a> CodegenBackend<'i, 'a> for JitGenerator<'i> {
     fn new(triple: Triple) -> Result<Self> {
         Ok(Self::new(triple)?)
     }
 
-    fn compile(&mut self, funcs: Vec<Function>) -> Result<()> {
+    fn compile(&mut self, funcs: Vec<FunctionNode<'i>>) -> Result<()> {
         for func in funcs {
             self.compile_function(func)?;
         }

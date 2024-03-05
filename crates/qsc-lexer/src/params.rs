@@ -1,29 +1,30 @@
 use pest::iterators::Pair;
-use qsc_ast::func::FunctionArg;
+use qsc_ast::ast::decl::func::FunctionArgument;
 
-use crate::parser::{Lexer, Rule};
+use crate::{lexer::{Lexer, Result}, parser::Rule};
 
-impl Lexer {
-    pub fn params<'i>(&self, pair: Pair<'i, Rule>) -> Vec<FunctionArg> {
-        pair.into_inner().map(|pair| self.param(pair)).collect()
+impl<'i> Lexer<'i> {
+    pub fn params(&'i self, pair: Pair<'i, Rule>) -> Vec<FunctionArgument<'i>> {
+        pair.into_inner().map(|pair| self.param(&pair).unwrap()).collect()
     }
 
-    pub fn param<'i>(&self, pair: Pair<'i, Rule>) -> FunctionArg {
-        let mut inner = pair.into_inner();
+    pub fn param(&self, pair: &Pair<'i, Rule>) -> Result<FunctionArgument> {
+        let mut inner = pair.clone().into_inner();
 
-        let is_mutable = inner.peek().unwrap().as_str().trim() == "mut";
+        let mutable = inner.peek().unwrap().as_str().trim() == "mut";
 
-        if is_mutable {
+        if mutable {
             inner.next();
         }
 
-        let name = inner.next().unwrap().as_str().trim().to_string();
-        let type_ = inner.next().unwrap().as_str().trim().to_string();
+        let name = inner.next().unwrap().as_str().trim();
+        let type_ = self.ty(&inner.next().unwrap())?;
 
-        FunctionArg {
+        Ok(FunctionArgument {
+            span: pair.as_span(),
             name,
             type_,
-            is_mutable,
-        }
+            mutable,
+        })
     }
 }
