@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+
 use cranelift_codegen::ir::{types, InstBuilder, Type, Value};
 use cranelift_module::{Linkage, Module};
 use miette::{IntoDiagnostic, Result};
@@ -18,13 +20,13 @@ pub trait LiteralCompiler<'a, M: Module>: Backend<'a, M> {
     fn compile_char(ctx: &mut CodegenContext<'a>, value: CharNode<'a>) -> Value;
 
     fn compile_string(
-        cctx: &mut CompilerContext<'a, M>,
+        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
         ctx: &mut CodegenContext<'a>,
         value: StringNode<'a>,
     ) -> Result<Value>;
 
     fn compile_literal(
-        cctx: &mut CompilerContext<'a, M>,
+        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
         ctx: &mut CodegenContext<'a>,
         node: LiteralNode<'a>,
     ) -> Result<Value>;
@@ -32,7 +34,7 @@ pub trait LiteralCompiler<'a, M: Module>: Backend<'a, M> {
 
 impl<'a, M: Module, T: Backend<'a, M>> LiteralCompiler<'a, M> for T {
     fn compile_literal(
-        cctx: &mut CompilerContext<'a, M>,
+        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
         ctx: &mut CodegenContext<'a>,
         expr: LiteralNode<'a>,
     ) -> Result<Value> {
@@ -47,24 +49,34 @@ impl<'a, M: Module, T: Backend<'a, M>> LiteralCompiler<'a, M> for T {
 
     fn compile_bool(ctx: &mut CodegenContext<'a>, value: BoolNode<'a>) -> Value {
         ctx.builder
+            .write()
+            .unwrap()
             .ins()
             .iconst(Type::int(1).unwrap(), i64::from(value.value))
     }
 
     fn compile_int(ctx: &mut CodegenContext<'a>, value: IntNode<'a>) -> Value {
-        ctx.builder.ins().iconst(types::I32, value.value)
+        ctx.builder
+            .write()
+            .unwrap()
+            .ins()
+            .iconst(types::I32, value.value)
     }
 
     fn compile_float(ctx: &mut CodegenContext<'a>, value: FloatNode<'a>) -> Value {
-        ctx.builder.ins().f64const(value.value)
+        ctx.builder.write().unwrap().ins().f64const(value.value)
     }
 
     fn compile_string(
-        cctx: &mut CompilerContext<'a, M>,
+        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
         ctx: &mut CodegenContext<'a>,
         value: StringNode<'a>,
     ) -> Result<Value> {
-        cctx.data_desc.define(
+        let ddesc = cctx.read().unwrap().data_desc.clone();
+        let mut bctx = ctx.builder.write().unwrap();
+        let mut wctx = cctx.write().unwrap();
+
+        wctx.data_desc.define(
             format!("{}\0", value.value)
                 .as_bytes()
                 .to_vec()
@@ -73,24 +85,24 @@ impl<'a, M: Module, T: Backend<'a, M>> LiteralCompiler<'a, M> for T {
 
         let name = format!("literal_string_{}", random_string(10));
 
-        let id = cctx
+        let id = wctx
             .module
             .declare_data(&name, Linkage::Export, true, false)
             .into_diagnostic()?;
 
-        cctx.module
-            .define_data(id, &cctx.data_desc)
-            .into_diagnostic()?;
+        wctx.module.define_data(id, &ddesc).into_diagnostic()?;
 
-        cctx.data_desc.clear();
+        wctx.data_desc.clear();
 
-        let local_id = cctx.module.declare_data_in_func(id, ctx.builder.func);
+        let local_id = wctx.module.declare_data_in_func(id, bctx.func);
 
-        Ok(ctx.builder.ins().global_value(Self::ptr(cctx), local_id))
+        Ok(bctx.ins().global_value(Self::ptr(cctx.clone()), local_id))
     }
 
     fn compile_char(ctx: &mut CodegenContext<'a>, value: CharNode<'a>) -> Value {
         ctx.builder
+            .write()
+            .unwrap()
             .ins()
             .iconst(types::I32, i64::from(value.value as u32))
     }

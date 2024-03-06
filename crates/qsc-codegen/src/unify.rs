@@ -1,4 +1,4 @@
-use std::cell::Cell;
+use std::sync::Arc;
 
 use super::{aot::AotGenerator, jit::JitGenerator};
 use cranelift_codegen::write_function;
@@ -9,11 +9,11 @@ use qsc_ast::ast::AbstractTree;
 use target_lexicon::Triple;
 
 pub trait CodegenBackend<'a> {
-    fn new(triple: Triple) -> Result<Self>
+    fn new(triple: Triple, name: String) -> Result<Self>
     where
         Self: Sized;
 
-    fn compile(&'a mut self, tree: AbstractTree<'a>) -> Result<()>;
+    fn compile(&mut self, tree: AbstractTree<'a>) -> Result<()>;
     fn is_jit(&self) -> bool;
     fn run(&self) -> Result<i32>;
     fn finalize(self) -> ObjectProduct;
@@ -23,21 +23,15 @@ pub trait CodegenBackend<'a> {
 }
 
 impl<'a> CodegenBackend<'a> for AotGenerator<'a> {
-    fn new(triple: Triple) -> Result<Self> {
-        Ok(Self::new(triple)?)
+    fn new(triple: Triple, name: String) -> Result<Self> {
+        Ok(Self::new(triple, name)?)
     }
 
-    fn compile(&'a mut self, tree: AbstractTree<'a>) -> Result<()> {
-        let me = Cell::new(self);
-
+    fn compile(&mut self, tree: AbstractTree<'a>) -> Result<()> {
         for node in tree.data {
             if let Ok(decl) = node.data.as_decl() {
                 if let Ok(func) = decl.as_function() {
-                    unsafe {
-                        let me_ref = me.as_ptr().as_mut().unwrap();
-
-                        me_ref.compile_function(func)?;
-                    }
+                    self.compile_function(func)?;
                 }
             }
         }
@@ -54,18 +48,23 @@ impl<'a> CodegenBackend<'a> for AotGenerator<'a> {
     }
 
     fn finalize(self) -> ObjectProduct {
-        self.module.finish()
+        unsafe { Arc::try_unwrap(self.ctx).unwrap_unchecked() }
+            .into_inner()
+            .unwrap()
+            .module
+            .finish()
     }
 
     fn clif(&self) -> Result<String> {
+        let ctx = self.ctx.read().unwrap();
         let mut buf = String::new();
-        let isa = self.module.isa();
+        let isa = ctx.module.isa();
 
-        for func in self.fns.clone() {
+        for func in ctx.fns.clone() {
             write_function(&mut buf, &func).into_diagnostic()?;
         }
 
-        write_function(&mut buf, &self.ctx.func).into_diagnostic()?;
+        write_function(&mut buf, &ctx.ctx.func).into_diagnostic()?;
 
         for flag in isa.flags().iter() {
             buf.push_str(format!("set {}\n", flag).as_str());
@@ -85,7 +84,10 @@ impl<'a> CodegenBackend<'a> for AotGenerator<'a> {
     }
 
     fn vcode(&self) -> String {
-        self.vcode
+        self.ctx
+            .read()
+            .unwrap()
+            .vcode
             .iter()
             .map(|v| v.vcode.clone())
             .filter(|v| v.is_some())
@@ -95,7 +97,14 @@ impl<'a> CodegenBackend<'a> for AotGenerator<'a> {
     }
 
     fn asm(self) -> Result<String> {
-        let capstone = self.module.isa().to_capstone().map_err(|v| miette!(v))?;
+        let capstone = self
+            .ctx
+            .read()
+            .unwrap()
+            .module
+            .isa()
+            .to_capstone()
+            .map_err(|v| miette!(v))?;
         let product = self.finalize();
         let data = product.object.write().into_diagnostic()?;
 
@@ -112,21 +121,15 @@ impl<'a> CodegenBackend<'a> for AotGenerator<'a> {
 }
 
 impl<'a> CodegenBackend<'a> for JitGenerator<'a> {
-    fn new(triple: Triple) -> Result<Self> {
+    fn new(triple: Triple, _name: String) -> Result<Self> {
         Ok(Self::new(triple)?)
     }
 
-    fn compile(&'a mut self, tree: AbstractTree<'a>) -> Result<()> {
-        let me = Cell::new(self);
-
+    fn compile(&mut self, tree: AbstractTree<'a>) -> Result<()> {
         for node in tree.data {
             if let Ok(decl) = node.data.as_decl() {
                 if let Ok(func) = decl.as_function() {
-                    unsafe {
-                        let me_ref = me.as_ptr().as_mut().unwrap();
-
-                        me_ref.compile_function(func)?;
-                    }
+                    self.compile_function(func)?;
                 }
             }
         }
@@ -147,14 +150,15 @@ impl<'a> CodegenBackend<'a> for JitGenerator<'a> {
     }
 
     fn clif(&self) -> Result<String> {
+        let ctx = self.ctx.read().unwrap();
         let mut buf = String::new();
-        let isa = self.module.isa();
+        let isa = ctx.module.isa();
 
-        for func in self.fns.clone() {
+        for func in ctx.fns.clone() {
             write_function(&mut buf, &func).into_diagnostic()?;
         }
 
-        write_function(&mut buf, &self.ctx.func).into_diagnostic()?;
+        write_function(&mut buf, &ctx.ctx.func).into_diagnostic()?;
 
         for flag in isa.flags().iter() {
             buf.push_str(format!("set {}\n", flag).as_str());
@@ -174,7 +178,10 @@ impl<'a> CodegenBackend<'a> for JitGenerator<'a> {
     }
 
     fn vcode(&self) -> String {
-        self.vcode
+        self.ctx
+            .read()
+            .unwrap()
+            .vcode
             .iter()
             .map(|v| v.vcode.clone())
             .filter(|v| v.is_some())
@@ -184,7 +191,7 @@ impl<'a> CodegenBackend<'a> for JitGenerator<'a> {
     }
 
     fn asm(self) -> Result<String> {
-        let capstone = self.module.isa().to_capstone().unwrap();
+        let capstone = self.ctx.read().unwrap().module.isa().to_capstone().unwrap();
         let product = self.finalize();
         let data = product.emit().unwrap();
         let disasm = capstone.disasm_all(&*data.into_boxed_slice(), 0x0).unwrap();

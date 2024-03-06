@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+
 use cranelift_codegen::ir::{types, GlobalValue, InstBuilder, Type, Value};
 use cranelift_module::{DataId, Module};
 use miette::Result;
@@ -29,27 +31,27 @@ pub mod vars;
 pub const RETURN_VAR: &str = "__func_return__";
 
 pub trait Backend<'a, M: Module>: BackendInternal<'a, M> {
-    fn query_type(cctx: &mut CompilerContext<'a, M>, ty: String) -> Type;
+    fn query_type(cctx: Arc<RwLock<CompilerContext<'a, M>>>, ty: String) -> Type;
     fn query_type_with_pointer(ptr: Type, ty: String) -> Type;
-    fn ptr(cctx: &mut CompilerContext<'a, M>) -> Type;
+    fn ptr(cctx: Arc<RwLock<CompilerContext<'a, M>>>) -> Type;
     fn null(ctx: &mut CodegenContext<'a>) -> Value;
-    fn nullptr(cctx: &mut CompilerContext<'a, M>, ctx: &mut CodegenContext<'a>) -> Value;
+    fn nullptr(cctx: Arc<RwLock<CompilerContext<'a, M>>>, ctx: &mut CodegenContext<'a>) -> Value;
 
     fn compile(
-        cctx: &mut CompilerContext<'a, M>,
+        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
         ctx: &mut CodegenContext<'a>,
         node: Node<'a>,
     ) -> Result<Value>;
 
     fn get_global(
-        cctx: &mut CompilerContext<'a, M>,
+        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
         ctx: &mut CodegenContext<'a>,
         id: DataId,
     ) -> GlobalValue;
 }
 
 impl<'a, M: Module, T: BackendInternal<'a, M>> Backend<'a, M> for T {
-    fn query_type(cctx: &mut CompilerContext<'a, M>, ty: String) -> Type {
+    fn query_type(cctx: Arc<RwLock<CompilerContext<'a, M>>>, ty: String) -> Type {
         Self::query_type_with_pointer(Self::ptr(cctx), ty)
     }
 
@@ -68,31 +70,34 @@ impl<'a, M: Module, T: BackendInternal<'a, M>> Backend<'a, M> for T {
         }
     }
 
-    fn ptr(cctx: &mut CompilerContext<'a, M>) -> Type {
-        cctx.module.target_config().pointer_type()
+    fn ptr(cctx: Arc<RwLock<CompilerContext<'a, M>>>) -> Type {
+        cctx.read().unwrap().module.target_config().pointer_type()
     }
 
     fn null(ctx: &mut CodegenContext<'a>) -> Value {
         // one null byte
-        ctx.builder.ins().null(types::I8)
+        ctx.builder.write().unwrap().ins().null(types::I8)
     }
 
-    fn nullptr(cctx: &mut CompilerContext<'a, M>, ctx: &mut CodegenContext<'a>) -> Value {
+    fn nullptr(cctx: Arc<RwLock<CompilerContext<'a, M>>>, ctx: &mut CodegenContext<'a>) -> Value {
         let ptr = Self::ptr(cctx);
 
-        ctx.builder.ins().null(ptr)
+        ctx.builder.write().unwrap().ins().null(ptr)
     }
 
     fn get_global(
-        cctx: &mut CompilerContext<'a, M>,
+        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
         ctx: &mut CodegenContext<'a>,
         id: DataId,
     ) -> GlobalValue {
-        cctx.module.declare_data_in_func(id, &mut ctx.builder.func)
+        cctx.write()
+            .unwrap()
+            .module
+            .declare_data_in_func(id, &mut ctx.builder.write().unwrap().func)
     }
 
     fn compile(
-        cctx: &mut CompilerContext<'a, M>,
+        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
         ctx: &mut CodegenContext<'a>,
         node: Node<'a>,
     ) -> Result<Value> {
@@ -111,7 +116,7 @@ impl<'a, M: Module, T: BackendInternal<'a, M>> Backend<'a, M> for T {
                 }) => Ok(if negative {
                     let val = Self::compile(cctx, ctx, value)?;
 
-                    ctx.builder.ins().ineg(val)
+                    ctx.builder.write().unwrap().ins().ineg(val)
                 } else {
                     Self::compile(cctx, ctx, value)?
                 }),
@@ -134,7 +139,7 @@ impl<'a, M: Module, T: BackendInternal<'a, M>> Backend<'a, M> for T {
                 let mut res = Self::null(ctx);
 
                 for node in block.data {
-                    res = Self::compile(cctx, ctx, node)?;
+                    res = Self::compile(cctx.clone(), ctx, node)?;
                 }
 
                 Ok(res)

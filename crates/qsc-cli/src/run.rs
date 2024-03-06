@@ -1,4 +1,4 @@
-use std::{cell::Cell, fs, path::PathBuf, process::exit};
+use std::{fs, path::PathBuf, process::exit};
 
 use clap::Parser;
 use miette::{IntoDiagnostic, Result};
@@ -40,14 +40,9 @@ impl<'a> Command<'a> for RunCommand {
 
         debug!("Compiling file: {}", self.file.to_str().unwrap());
 
-        let mut compiler = SimpleCompiler::<JitGenerator>::new(Triple::host())?;
-        let compiler_cell = Cell::from_mut(&mut compiler);
+        let mut compiler = SimpleCompiler::<JitGenerator>::new(Triple::host(), name.to_string())?;
 
-        unsafe {
-            let compiler = compiler_cell.as_ptr().as_mut().unwrap();
-
-            compiler.compile(exprs)?;
-        }
+        compiler.compile(exprs)?;
 
         exit(compiler.run()?);
     }

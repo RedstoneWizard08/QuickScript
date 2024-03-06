@@ -1,4 +1,4 @@
-use std::{cell::Cell, fs, path::PathBuf, str::FromStr};
+use std::{fs, path::PathBuf, str::FromStr};
 
 use clap::Parser;
 use miette::{IntoDiagnostic, Result};
@@ -80,20 +80,9 @@ impl<'a> Command<'a> for CompileCommand {
 
         debug!("Compiling file: {}", self.file.to_str().unwrap());
 
-        let mut compiler = SimpleCompiler::<AotGenerator>::new(triple.clone())?;
-        let compiler_cell = Cell::from_mut(&mut compiler);
+        let mut compiler = SimpleCompiler::<AotGenerator>::new(triple.clone(), name.to_string())?;
 
-        unsafe {
-            let compiler = compiler_cell.as_ptr().as_mut().unwrap();
-
-            compiler.compile(exprs)?;
-        }
-
-        let compiler;
-
-        unsafe {
-            compiler = compiler_cell.as_ptr().as_mut().unwrap();
-        }
+        compiler.compile(exprs)?;
 
         debug!("Emitting object(s)...");
 
@@ -119,25 +108,13 @@ impl<'a> Command<'a> for CompileCommand {
             let mut file = self.file.clone();
 
             file.set_extension("s");
-
-            unsafe {
-                let compiler = compiler_cell.as_ptr().read();
-
-                fs::write(file, compiler.asm()?).into_diagnostic()?;
-            }
+            fs::write(file, compiler.asm()?).into_diagnostic()?;
 
             return Ok(());
         }
 
         if self.object {
-            let obj;
-
-            unsafe {
-                let compiler = compiler_cell.as_ptr().read();
-
-                obj = compiler.finalize();
-            }
-
+            let obj = compiler.finalize();
             let data = obj.object.write().into_diagnostic()?;
             let mut file = self.file.clone();
 
@@ -159,14 +136,7 @@ impl<'a> Command<'a> for CompileCommand {
         }
 
         let tmp_file = NamedTempFile::new().into_diagnostic()?;
-        let obj;
-
-        unsafe {
-            let compiler = compiler_cell.as_ptr().read();
-
-            obj = compiler.finalize();
-        }
-
+        let obj = compiler.finalize();
         let data = obj.object.write().into_diagnostic()?;
 
         fs::write(tmp_file.path(), data).into_diagnostic()?;

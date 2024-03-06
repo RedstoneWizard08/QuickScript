@@ -1,10 +1,13 @@
-use std::{cell::Cell, collections::HashMap};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
 use cranelift_codegen::{
     ir::{AbiParam, Function},
     isa::lookup,
     settings::{self, Configurable, Flags},
-    CompiledCode, Context,
+    Context,
 };
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_jit::{JITBuilder, JITModule};
@@ -20,15 +23,8 @@ use super::{
 };
 
 pub struct JitGenerator<'a> {
+    pub ctx: Arc<RwLock<CompilerContext<'a, JITModule>>>,
     pub builder_ctx: FunctionBuilderContext,
-    pub ctx: Context,
-    pub data_desc: DataDescription,
-    pub module: JITModule,
-    pub functions: HashMap<String, Func<'a>>,
-    pub globals: HashMap<String, DataId>,
-    pub fns: Vec<Function>,
-    pub vcode: Vec<CompiledCode>,
-    pub code: Vec<(String, *const u8)>,
 }
 
 impl<'a> JitGenerator<'a> {
@@ -47,7 +43,7 @@ impl<'a> JitGenerator<'a> {
         let builder = JITBuilder::with_isa(isa, default_libcall_names());
         let module = JITModule::new(builder);
 
-        Ok(Self {
+        let ctx = CompilerContext {
             builder_ctx: FunctionBuilderContext::new(),
             ctx: module.make_context(),
             data_desc: DataDescription::new(),
@@ -57,80 +53,50 @@ impl<'a> JitGenerator<'a> {
             code: Vec::new(),
             fns: Vec::new(),
             vcode: Vec::new(),
+        };
+
+        Ok(Self {
+            ctx: Arc::new(RwLock::new(ctx)),
+            builder_ctx: FunctionBuilderContext::new(),
         })
     }
 
-    pub fn create_context(
-        &'a mut self,
-        func: Func<'a>,
-    ) -> (CompilerContext<'a, JITModule>, CodegenContext) {
-        let builder = FunctionBuilder::new(&mut self.ctx.func, &mut self.builder_ctx);
-
-        (
-            CompilerContext {
-                module: &mut self.module,
-                data_desc: &mut self.data_desc,
-                functions: &mut self.functions,
-                globals: &mut self.globals,
-                code: &mut self.code,
-                fns: &mut self.fns,
-                vcode: &mut self.vcode,
-            },
-            CodegenContext {
-                builder,
-                locals: HashMap::new(),
-                vars: HashMap::new(),
-                values: HashMap::new(),
-                ret: func.ret.clone(),
-                func,
-            },
-        )
-    }
-
-    pub fn compile_function(&'a mut self, func: Func<'a>) -> Result<()> {
-        let me = Cell::new(self);
-
-        unsafe {
-            let me_ref = me.as_ptr().as_mut().unwrap();
-
-            me_ref.setup_function(&func)?;
-        }
-
-        unsafe {
-            let me_ref = me.as_ptr().as_mut().unwrap();
-
-            me_ref.compile_function_code(&func)?;
-        }
-
-        unsafe {
-            let me_ref = me.as_ptr().as_mut().unwrap();
-
-            me_ref.finalize_funciton(func)?;
-        }
+    pub fn compile_function(&mut self, func: Func<'a>) -> Result<()> {
+        self.setup_function(&func)?;
+        self.compile_function_code(&func)?;
+        self.finalize_funciton(func)?;
 
         Ok(())
     }
 
-    pub fn setup_function(&'a mut self, func: &Func<'a>) -> Result<()> {
+    pub fn setup_function(&mut self, func: &Func<'a>) -> Result<()> {
         debug!("Compiling function: {}", func.name);
+
+        let ptr = self.ctx.read().unwrap().module.isa().pointer_type();
 
         for arg in func.args.clone() {
             self.ctx
+                .write()
+                .unwrap()
+                .ctx
                 .func
                 .signature
                 .params
                 .push(AbiParam::new(Self::query_type_with_pointer(
-                    self.module.isa().pointer_type(),
+                    ptr,
                     arg.type_.as_str(),
                 )));
         }
 
         self.ctx
+            .write()
+            .unwrap()
+            .ctx
             .func
             .signature
             .returns
             .push(AbiParam::new(Self::query_type_with_pointer(
-                self.module.isa().pointer_type(),
+                ptr,
                 func.ret
                     .clone()
                     .map(|v| v.as_str())
@@ -140,34 +106,99 @@ impl<'a> JitGenerator<'a> {
         Ok(())
     }
 
-    pub fn compile_function_code(&'a mut self, func: &Func<'a>) -> Result<()> {
-        let (mut cctx, mut ctx) = self.create_context(func.clone());
+    pub fn compile_function_code(&mut self, func: &Func<'a>) -> Result<()> {
+        let cctx = self.ctx.clone();
+        let builder;
 
-        Self::compile_fn(&mut cctx, &mut ctx, func)?;
+        {
+            let mut ctx = self.ctx.write().unwrap();
 
-        ctx.builder.finalize();
+            builder = FunctionBuilder::new(
+                unsafe { ((&mut ctx.ctx.func) as *mut Function).as_mut() }.unwrap(),
+                unsafe { ((&mut self.builder_ctx) as *mut FunctionBuilderContext).as_mut() }
+                    .unwrap(),
+            );
+        }
+
+        let builder = Arc::new(RwLock::new(builder));
+
+        let ctx = &mut CodegenContext {
+            builder: builder.clone(),
+            locals: HashMap::new(),
+            vars: HashMap::new(),
+            values: HashMap::new(),
+            ret: func.ret.clone(),
+            func: func.clone(),
+        };
+
+        Self::compile_fn(cctx, ctx, func)?;
+
+        let builder = unsafe { Arc::try_unwrap(builder).unwrap_unchecked() };
+        let builder = RwLock::into_inner(builder).unwrap();
+
+        builder.finalize();
 
         Ok(())
     }
 
-    pub fn finalize_funciton(&'a mut self, func: Func<'a>) -> Result<()> {
+    pub fn finalize_funciton(&mut self, func: Func<'a>) -> Result<()> {
+        let sig = self.ctx.read().unwrap().ctx.func.signature.clone();
+
         let id = self
+            .ctx
+            .write()
+            .unwrap()
             .module
-            .declare_function(&func.name, Linkage::Export, &self.ctx.func.signature)
+            .declare_function(&func.name, Linkage::Export, &sig)
             .into_diagnostic()?;
 
-        self.module
-            .define_function(id, &mut self.ctx)
+        {
+            let mut ctx = self.ctx.write().unwrap();
+            let ctx_ref = unsafe { ((&mut ctx.ctx) as *mut Context).as_mut() }.unwrap();
+
+            ctx.module.define_function(id, ctx_ref).into_diagnostic()?;
+        }
+
+        let cg_func = self.ctx.read().unwrap().ctx.func.clone();
+
+        self.ctx.write().unwrap().fns.push(cg_func);
+
+        self.ctx
+            .write()
+            .unwrap()
+            .functions
+            .insert(func.name.to_string(), func.clone());
+
+        self.ctx.write().unwrap().vcode.push(
+            self.ctx
+                .write()
+                .unwrap()
+                .ctx
+                .compiled_code()
+                .unwrap()
+                .clone(),
+        );
+
+        self.ctx
+            .write()
+            .unwrap()
+            .module
+            .clear_context(&mut self.ctx.write().unwrap().ctx);
+
+        self.ctx
+            .write()
+            .unwrap()
+            .module
+            .finalize_definitions()
             .into_diagnostic()?;
-        self.fns.push(self.ctx.func.clone());
-        self.functions.insert(func.name.to_string(), func.clone());
-        self.vcode.push(self.ctx.compiled_code().unwrap().clone());
-        self.module.clear_context(&mut self.ctx);
-        self.module.finalize_definitions().into_diagnostic()?;
 
-        let code = self.module.get_finalized_function(id);
+        let code = self.ctx.read().unwrap().module.get_finalized_function(id);
 
-        self.code.push((func.name.to_string(), code));
+        self.ctx
+            .write()
+            .unwrap()
+            .code
+            .push((func.name.to_string(), code));
 
         debug!("Compiled function: {}", func.name);
 
@@ -177,7 +208,7 @@ impl<'a> JitGenerator<'a> {
     pub fn exec(&self) -> Result<i32> {
         let mut main = None;
 
-        for (name, code) in &self.code {
+        for (name, code) in &self.ctx.read().unwrap().code {
             if name == "main" {
                 main = Some(unsafe { std::mem::transmute::<_, fn() -> i32>(code) });
 

@@ -14,14 +14,14 @@ pub struct SimpleCompiler<'a, T: CodegenBackend<'a>> {
 }
 
 impl<'a, T: CodegenBackend<'a>> SimpleCompiler<'a, T> {
-    pub fn new(triple: Triple) -> Result<Self> {
+    pub fn new(triple: Triple, name: String) -> Result<Self> {
         Ok(Self {
-            backend: T::new(triple)?,
+            backend: T::new(triple, name)?,
             _pdata0: PhantomData,
         })
     }
 
-    pub fn compile(&'a mut self, tree: AbstractTree<'a>) -> Result<()> {
+    pub fn compile(&mut self, tree: AbstractTree<'a>) -> Result<()> {
         let mut funcs = Vec::new();
 
         for node in &tree.data {

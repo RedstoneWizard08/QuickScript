@@ -1,5 +1,4 @@
 use std::{
-    cell::Cell,
     fs::{self, canonicalize},
     path::PathBuf,
     sync::mpsc::channel,
@@ -30,14 +29,9 @@ impl WatchCommand {
         let content = fs::read_to_string(path.clone()).into_diagnostic()?;
         let lexer = Lexer::new(&name, &content);
         let exprs = lexer.lex()?;
-        let mut compiler = SimpleCompiler::<JitGenerator>::new(Triple::host())?;
-        let compiler_cell = Cell::from_mut(&mut compiler);
+        let mut compiler = SimpleCompiler::<JitGenerator>::new(Triple::host(), name.to_string())?;
 
-        unsafe {
-            let compiler = compiler_cell.as_ptr().as_mut().unwrap();
-
-            compiler.compile(exprs)?;
-        }
+        compiler.compile(exprs)?;
 
         let code = compiler.run()?;
 
