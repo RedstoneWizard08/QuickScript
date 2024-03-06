@@ -11,19 +11,19 @@ use qsc_ast::ast::decl::func::FunctionNode;
 
 use super::var::VariableCompiler;
 
-pub trait FunctionCompiler<'i, 'a, M: Module>: Backend<'i, 'a, M> {
+pub trait FunctionCompiler<'a, M: Module>: Backend<'a, M> {
     fn compile_fn(
-        cctx: &mut CompilerContext<'i, 'a, M>,
-        ctx: &mut CodegenContext,
-        func: FunctionNode<'i>,
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
+        func: FunctionNode<'a>,
     ) -> Result<Value>;
 }
 
-impl<'i, 'a, M: Module, T: Backend<'i, 'a, M>> FunctionCompiler<'i, 'a, M> for T {
+impl<'a, M: Module, T: Backend<'a, M>> FunctionCompiler<'a, M> for T {
     fn compile_fn(
-        cctx: &mut CompilerContext<'i, 'a, M>,
-        ctx: &mut CodegenContext,
-        func: FunctionNode<'i>,
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
+        func: FunctionNode<'a>,
     ) -> Result<Value> {
         let entry = ctx.builder.create_block();
 

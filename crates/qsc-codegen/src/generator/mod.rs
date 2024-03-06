@@ -28,28 +28,28 @@ pub mod vars;
 
 pub const RETURN_VAR: &str = "__func_return__";
 
-pub trait Backend<'i, 'a, M: Module>: BackendInternal<'i, 'a, M> {
-    fn query_type(cctx: &mut CompilerContext<'i, 'a, M>, ty: String) -> Type;
+pub trait Backend<'a, M: Module>: BackendInternal<'a, M> {
+    fn query_type(cctx: &mut CompilerContext<'a, M>, ty: String) -> Type;
     fn query_type_with_pointer(ptr: Type, ty: String) -> Type;
-    fn ptr(cctx: &mut CompilerContext<'i, 'a, M>) -> Type;
-    fn null(ctx: &mut CodegenContext) -> Value;
-    fn nullptr(cctx: &mut CompilerContext<'i, 'a, M>, ctx: &mut CodegenContext) -> Value;
+    fn ptr(cctx: &mut CompilerContext<'a, M>) -> Type;
+    fn null(ctx: &mut CodegenContext<'a>) -> Value;
+    fn nullptr(cctx: &mut CompilerContext<'a, M>, ctx: &mut CodegenContext<'a>) -> Value;
 
     fn compile(
-        cctx: &mut CompilerContext<'i, 'a, M>,
-        ctx: &mut CodegenContext,
-        node: Node<'i>,
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
+        node: Node<'a>,
     ) -> Result<Value>;
 
     fn get_global(
-        cctx: &mut CompilerContext<'i, 'a, M>,
-        ctx: &mut CodegenContext,
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
         id: DataId,
     ) -> GlobalValue;
 }
 
-impl<'i, 'a, M: Module, T: BackendInternal<'i, 'a, M>> Backend<'i, 'a, M> for T {
-    fn query_type(cctx: &mut CompilerContext<'i, 'a, M>, ty: String) -> Type {
+impl<'a, M: Module, T: BackendInternal<'a, M>> Backend<'a, M> for T {
+    fn query_type(cctx: &mut CompilerContext<'a, M>, ty: String) -> Type {
         Self::query_type_with_pointer(Self::ptr(cctx), ty)
     }
 
@@ -70,33 +70,33 @@ impl<'i, 'a, M: Module, T: BackendInternal<'i, 'a, M>> Backend<'i, 'a, M> for T 
         }
     }
 
-    fn ptr(cctx: &mut CompilerContext<'i, 'a, M>) -> Type {
+    fn ptr(cctx: &mut CompilerContext<'a, M>) -> Type {
         cctx.module.target_config().pointer_type()
     }
 
-    fn null(ctx: &mut CodegenContext) -> Value {
+    fn null(ctx: &mut CodegenContext<'a>) -> Value {
         // one null byte
         ctx.builder.ins().null(types::I8)
     }
 
-    fn nullptr(cctx: &mut CompilerContext<'i, 'a, M>, ctx: &mut CodegenContext) -> Value {
+    fn nullptr(cctx: &mut CompilerContext<'a, M>, ctx: &mut CodegenContext<'a>) -> Value {
         let ptr = Self::ptr(cctx);
 
         ctx.builder.ins().null(ptr)
     }
 
     fn get_global(
-        cctx: &mut CompilerContext<'i, 'a, M>,
-        ctx: &mut CodegenContext,
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
         id: DataId,
     ) -> GlobalValue {
         cctx.module.declare_data_in_func(id, &mut ctx.builder.func)
     }
 
     fn compile(
-        cctx: &mut CompilerContext<'i, 'a, M>,
-        ctx: &mut CodegenContext,
-        node: Node<'i>,
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
+        node: Node<'a>,
     ) -> Result<Value> {
         debug!("Trying to compile: {:?}", node);
 

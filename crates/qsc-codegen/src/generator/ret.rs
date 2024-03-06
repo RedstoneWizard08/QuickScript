@@ -8,19 +8,19 @@ use qsc_ast::ast::stmt::{call::{CallArgument, CallNode}, ret::ReturnNode};
 
 use super::{Backend, CallCompiler, RETURN_VAR};
 
-pub trait ReturnCompiler<'i, 'a, M: Module>: Backend<'i, 'a, M> {
+pub trait ReturnCompiler<'a, M: Module>: Backend<'a, M> {
     fn compile_return(
-        cctx: &mut CompilerContext<'i, 'a, M>,
-        ctx: &mut CodegenContext,
-        node: ReturnNode<'i>,
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
+        node: ReturnNode<'a>,
     ) -> Result<Value>;
 }
 
-impl<'i, 'a, M: Module, T: Backend<'i, 'a, M>> ReturnCompiler<'i, 'a, M> for T {
+impl<'a, M: Module, T: Backend<'a, M>> ReturnCompiler<'a, M> for T {
     fn compile_return(
-        cctx: &mut CompilerContext<'i, 'a, M>,
-        ctx: &mut CodegenContext,
-        node: ReturnNode<'i>,
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
+        node: ReturnNode<'a>,
     ) -> Result<Value> {
         if let Some(value) = node.value {
             if ctx.func.name == "main" || ctx.func.name == "_start" {

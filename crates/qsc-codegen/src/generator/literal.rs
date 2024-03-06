@@ -8,30 +8,30 @@ use crate::context::{CodegenContext, CompilerContext};
 
 use super::Backend;
 
-pub trait LiteralCompiler<'i, 'a, M: Module>: Backend<'i, 'a, M> {
-    fn compile_bool(ctx: &mut CodegenContext, value: BoolNode<'i>) -> Value;
-    fn compile_int(ctx: &mut CodegenContext, value: IntNode<'i>) -> Value;
-    fn compile_float(ctx: &mut CodegenContext, value: FloatNode<'i>) -> Value;
-    fn compile_char(ctx: &mut CodegenContext, value: CharNode<'i>) -> Value;
+pub trait LiteralCompiler<'a, M: Module>: Backend<'a, M> {
+    fn compile_bool(ctx: &mut CodegenContext<'a>, value: BoolNode<'a>) -> Value;
+    fn compile_int(ctx: &mut CodegenContext<'a>, value: IntNode<'a>) -> Value;
+    fn compile_float(ctx: &mut CodegenContext<'a>, value: FloatNode<'a>) -> Value;
+    fn compile_char(ctx: &mut CodegenContext<'a>, value: CharNode<'a>) -> Value;
 
     fn compile_string(
-        cctx: &mut CompilerContext<'i, 'a, M>,
-        ctx: &mut CodegenContext,
-        value: StringNode<'i>,
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
+        value: StringNode<'a>,
     ) -> Result<Value>;
 
     fn compile_literal(
-        cctx: &mut CompilerContext<'i, 'a, M>,
-        ctx: &mut CodegenContext,
-        node: LiteralNode<'i>,
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
+        node: LiteralNode<'a>,
     ) -> Result<Value>;
 }
 
-impl<'i, 'a, M: Module, T: Backend<'i, 'a, M>> LiteralCompiler<'i, 'a, M> for T {
+impl<'a, M: Module, T: Backend<'a, M>> LiteralCompiler<'a, M> for T {
     fn compile_literal(
-        cctx: &mut CompilerContext<'i, 'a, M>,
-        ctx: &mut CodegenContext,
-        expr: LiteralNode<'i>,
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
+        expr: LiteralNode<'a>,
     ) -> Result<Value> {
         Ok(match expr {
             LiteralNode::Bool(b) => Self::compile_bool(ctx, b),
@@ -42,24 +42,24 @@ impl<'i, 'a, M: Module, T: Backend<'i, 'a, M>> LiteralCompiler<'i, 'a, M> for T 
         })
     }
 
-    fn compile_bool(ctx: &mut CodegenContext, value: BoolNode<'i>) -> Value {
+    fn compile_bool(ctx: &mut CodegenContext<'a>, value: BoolNode<'a>) -> Value {
         ctx.builder
             .ins()
             .iconst(Type::int(1).unwrap(), i64::from(value.value))
     }
 
-    fn compile_int(ctx: &mut CodegenContext, value: IntNode<'i>) -> Value {
+    fn compile_int(ctx: &mut CodegenContext<'a>, value: IntNode<'a>) -> Value {
         ctx.builder.ins().iconst(types::I32, i64::from(value.value))
     }
 
-    fn compile_float(ctx: &mut CodegenContext, value: FloatNode<'i>) -> Value {
+    fn compile_float(ctx: &mut CodegenContext<'a>, value: FloatNode<'a>) -> Value {
         ctx.builder.ins().f64const(value.value)
     }
 
     fn compile_string(
-        cctx: &mut CompilerContext<'i, 'a, M>,
-        ctx: &mut CodegenContext,
-        value: StringNode<'i>,
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
+        value: StringNode<'a>,
     ) -> Result<Value> {
         cctx.data_desc.define(
             format!("{}\0", value.value)
@@ -82,7 +82,7 @@ impl<'i, 'a, M: Module, T: Backend<'i, 'a, M>> LiteralCompiler<'i, 'a, M> for T 
         Ok(ctx.builder.ins().global_value(Self::ptr(cctx), local_id))
     }
 
-    fn compile_char(ctx: &mut CodegenContext, value: CharNode<'i>) -> Value {
+    fn compile_char(ctx: &mut CodegenContext<'a>, value: CharNode<'a>) -> Value {
         ctx.builder
             .ins()
             .iconst(types::I32, i64::from(value.value as u32))

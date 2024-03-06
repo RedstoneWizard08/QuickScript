@@ -5,19 +5,19 @@ use crate::context::{CodegenContext, CompilerContext};
 use qsc_ast::ast::stmt::call::CallNode;
 use super::Backend;
 
-pub trait CallCompiler<'i, 'a, M: Module>: Backend<'i, 'a, M> {
+pub trait CallCompiler<'a, M: Module>: Backend<'a, M> {
     fn compile_call(
-        cctx: &mut CompilerContext<'i, 'a, M>,
-        ctx: &mut CodegenContext,
-        call: CallNode<'i>,
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
+        call: CallNode<'a>,
     ) -> Result<Value>;
 }
 
-impl<'i, 'a, M: Module, T: Backend<'i, 'a, M>> CallCompiler<'i, 'a, M> for T {
+impl<'a, M: Module, T: Backend<'a, M>> CallCompiler<'a, M> for T {
     fn compile_call(
-        cctx: &mut CompilerContext<'i, 'a, M>,
-        ctx: &mut CodegenContext,
-        call: CallNode<'i>,
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
+        call: CallNode<'a>,
     ) -> Result<Value> {
         let mut sig = cctx.module.make_signature();
 
@@ -34,7 +34,7 @@ impl<'i, 'a, M: Module, T: Backend<'i, 'a, M>> CallCompiler<'i, 'a, M> for T {
 
             debug!(
                 "Using local function for call: {}({}) -> {}",
-                call.func, args, func.ret.map(|v| v.as_str()).unwrap_or(String::new())
+                call.func, args, func.ret.clone().map(|v| v.as_str()).unwrap_or(String::new())
             );
 
             sig.params.append(
@@ -47,7 +47,7 @@ impl<'i, 'a, M: Module, T: Backend<'i, 'a, M>> CallCompiler<'i, 'a, M> for T {
 
             sig.returns.push(AbiParam::new(Self::query_type(
                 cctx,
-                func.ret.map(|v| v.as_str()).unwrap_or(String::new()),
+                func.ret.clone().map(|v| v.as_str()).unwrap_or(String::new()),
             )));
         } else {
             let args = call
@@ -60,7 +60,7 @@ impl<'i, 'a, M: Module, T: Backend<'i, 'a, M>> CallCompiler<'i, 'a, M> for T {
                                 .vars
                                 .get(ident.value)
                                 .unwrap()
-                                .1
+                                .1.clone()
                                 .map(|v| v.as_str())
                                 .unwrap_or("ptr".to_string());
                         }

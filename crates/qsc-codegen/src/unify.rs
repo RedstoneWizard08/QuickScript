@@ -4,29 +4,28 @@ use cranelift_codegen::write_function;
 use cranelift_module::Module;
 use cranelift_object::ObjectProduct;
 use qsc_ast::ast::decl::func::FunctionNode;
-use std::any::Any;
 use target_lexicon::Triple;
 
-pub trait CodegenBackend<'i, 'a> {
+pub trait CodegenBackend<'a> {
     fn new(triple: Triple) -> Result<Self>
     where
         Self: Sized;
-    fn compile(&mut self, funcs: Vec<FunctionNode<'i>>) -> Result<()>;
+
+    fn compile(&'a mut self, funcs: Vec<FunctionNode<'a>>) -> Result<()>;
     fn is_jit(&self) -> bool;
     fn run(&self) -> Result<i32>;
     fn finalize(self) -> ObjectProduct;
-    fn as_any(&self) -> &dyn Any;
     fn clif(&self) -> Result<String>;
     fn vcode(&self) -> String;
     fn asm(self) -> Result<String>;
 }
 
-impl<'i, 'a> CodegenBackend<'i, 'a> for AotGenerator<'i> {
+impl<'a> CodegenBackend<'a> for AotGenerator<'a> {
     fn new(triple: Triple) -> Result<Self> {
         Ok(Self::new(triple)?)
     }
 
-    fn compile(&mut self, funcs: Vec<FunctionNode<'i>>) -> Result<()> {
+    fn compile(&'a mut self, funcs: Vec<FunctionNode<'a>>) -> Result<()> {
         for func in funcs {
             self.compile_function(func)?;
         }
@@ -44,10 +43,6 @@ impl<'i, 'a> CodegenBackend<'i, 'a> for AotGenerator<'i> {
 
     fn finalize(self) -> ObjectProduct {
         self.module.finish()
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 
     fn clif(&self) -> Result<String> {
@@ -104,12 +99,12 @@ impl<'i, 'a> CodegenBackend<'i, 'a> for AotGenerator<'i> {
     }
 }
 
-impl<'i, 'a> CodegenBackend<'i, 'a> for JitGenerator<'i> {
+impl<'a> CodegenBackend<'a> for JitGenerator<'a> {
     fn new(triple: Triple) -> Result<Self> {
         Ok(Self::new(triple)?)
     }
 
-    fn compile(&mut self, funcs: Vec<FunctionNode<'i>>) -> Result<()> {
+    fn compile(&'a mut self, funcs: Vec<FunctionNode<'a>>) -> Result<()> {
         for func in funcs {
             self.compile_function(func)?;
         }
@@ -127,10 +122,6 @@ impl<'i, 'a> CodegenBackend<'i, 'a> for JitGenerator<'i> {
 
     fn finalize(self) -> ObjectProduct {
         panic!("JIT backend cannot be finalized")
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 
     fn clif(&self) -> Result<String> {

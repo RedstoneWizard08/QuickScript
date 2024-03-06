@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use anyhow::Result;
 use cranelift_codegen::{
@@ -19,19 +19,19 @@ use super::{
     generator::{unify::BackendInternal, vars::func::FunctionCompiler, Backend},
 };
 
-pub struct JitGenerator<'i> {
+pub struct JitGenerator<'a> {
     pub builder_ctx: FunctionBuilderContext,
     pub ctx: Context,
     pub data_desc: DataDescription,
     pub module: JITModule,
-    pub functions: HashMap<String, Func<'i>>,
+    pub functions: HashMap<String, Func<'a>>,
     pub globals: HashMap<String, DataId>,
     pub fns: Vec<Function>,
     pub vcode: Vec<CompiledCode>,
     pub code: Vec<(String, *const u8)>,
 }
 
-impl<'i, 'a> JitGenerator<'i> {
+impl<'a> JitGenerator<'a> {
     pub fn new(triple: Triple) -> Result<Self> {
         let mut flags = settings::builder();
 
@@ -57,8 +57,8 @@ impl<'i, 'a> JitGenerator<'i> {
 
     pub fn create_context(
         &'a mut self,
-        func: Func,
-    ) -> (CompilerContext<'i, 'a, JITModule>, CodegenContext) {
+        func: Func<'a>,
+    ) -> (CompilerContext<'a, JITModule>, CodegenContext) {
         let builder = FunctionBuilder::new(&mut self.ctx.func, &mut self.builder_ctx);
 
         (
@@ -68,19 +68,21 @@ impl<'i, 'a> JitGenerator<'i> {
                 functions: &mut self.functions,
                 globals: &mut self.globals,
                 code: &mut self.code,
+                fns: &mut self.fns,
+                vcode: &mut self.vcode,
             },
             CodegenContext {
                 builder,
                 locals: HashMap::new(),
                 vars: HashMap::new(),
                 values: HashMap::new(),
-                ret: func.ret,
+                ret: func.ret.clone(),
                 func,
             },
         )
     }
 
-    pub fn compile_function(&'a mut self, func: Func) -> Result<()> {
+    pub fn compile_function(&'a mut self, func: Func<'a>) -> Result<()> {
         debug!("Compiling function: {}", func.name);
 
         for arg in func.args.clone() {
@@ -100,7 +102,7 @@ impl<'i, 'a> JitGenerator<'i> {
             .returns
             .push(AbiParam::new(Self::query_type_with_pointer(
                 self.module.isa().pointer_type(),
-                func.ret.map(|v| v.as_str()).unwrap_or("void".to_string()),
+                func.ret.clone().map(|v| v.as_str()).unwrap_or("void".to_string()),
             )));
 
         let (mut cctx, mut ctx) = self.create_context(func.clone());
@@ -150,8 +152,8 @@ impl<'i, 'a> JitGenerator<'i> {
     }
 }
 
-impl<'i, 'a> BackendInternal<'i, 'a, JITModule> for JitGenerator<'i> {
-    fn post_define(cctx: &mut CompilerContext<'i, 'a, JITModule>, id: DataId) -> Result<()> {
+impl<'a> BackendInternal<'a, JITModule> for JitGenerator<'a> {
+    fn post_define(cctx: &mut CompilerContext<'a, JITModule>, id: DataId) -> Result<()> {
         cctx.module.finalize_definitions()?;
 
         let (code, _) = cctx.module.get_finalized_data(id);

@@ -3,19 +3,19 @@ use cranelift_module::{DataId, Module};
 use qsc_ast::ast::decl::global::GlobalVariable;
 use crate::{context::{CodegenContext, CompilerContext}, generator::Backend};
 
-pub trait GlobalVariableCompiler<'i, 'a, M: Module>: Backend<'i, 'a, M> {
+pub trait GlobalVariableCompiler<'a, M: Module>: Backend<'a, M> {
     fn compile_global(
-        cctx: &mut CompilerContext<'i, 'a, M>,
-        ctx: &mut CodegenContext,
-        var: GlobalVariable<'i>,
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
+        var: GlobalVariable<'a>,
     ) -> Result<DataId>;
 }
 
-impl<'i, 'a, M: Module, T: Backend<'i, 'a, M>> GlobalVariableCompiler<'i, 'a, M> for T {
+impl<'a, M: Module, T: Backend<'a, M>> GlobalVariableCompiler<'a, M> for T {
     fn compile_global(
-        _cctx: &mut CompilerContext<'i, 'a, M>,
-        _ctx: &mut CodegenContext,
-        _var: GlobalVariable<'i>,
+        _cctx: &mut CompilerContext<'a, M>,
+        _ctx: &mut CodegenContext<'a>,
+        _var: GlobalVariable<'a>,
     ) -> Result<DataId> {
         todo!();
 

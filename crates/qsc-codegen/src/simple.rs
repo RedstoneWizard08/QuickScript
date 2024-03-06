@@ -7,23 +7,21 @@ use target_lexicon::Triple;
 
 use super::unify::CodegenBackend;
 
-pub struct SimpleCompiler<'i, 'a, T: CodegenBackend<'i, 'a>> {
+pub struct SimpleCompiler<'a, T: CodegenBackend<'a>> {
     pub backend: T,
 
-    _pdata0: PhantomData<&'i ()>,
-    _pdata1: PhantomData<&'a ()>,
+    _pdata0: PhantomData<&'a ()>,
 }
 
-impl<'i, 'a, T: CodegenBackend<'i, 'a>> SimpleCompiler<'i, 'a, T> {
+impl<'a, T: CodegenBackend<'a>> SimpleCompiler<'a, T> {
     pub fn new(triple: Triple) -> Result<Self> {
         Ok(Self {
             backend: T::new(triple)?,
             _pdata0: PhantomData,
-            _pdata1: PhantomData,
         })
     }
 
-    pub fn compile(&mut self, nodes: Vec<Node>) -> Result<()> {
+    pub fn compile(&'a mut self, nodes: Vec<Node<'a>>) -> Result<()> {
         let mut funcs = Vec::new();
 
         for node in nodes {

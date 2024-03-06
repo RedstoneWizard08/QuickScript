@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{borrow::BorrowMut, cell::RefCell, collections::HashMap, ops::DerefMut, ptr::drop_in_place, rc::Rc, sync::Arc};
 
 use anyhow::Result;
 use cranelift_codegen::{
@@ -17,12 +17,12 @@ use target_lexicon::Triple;
 
 use super::context::{CodegenContext, CompilerContext};
 
-pub struct AotGenerator<'i> {
+pub struct AotGenerator<'a> {
     pub builder_ctx: FunctionBuilderContext,
     pub ctx: Context,
     pub data_desc: DataDescription,
     pub module: ObjectModule,
-    pub functions: HashMap<String, Func<'i>>,
+    pub functions: HashMap<String, Func<'a>>,
     pub globals: HashMap<String, DataId>,
     pub fns: Vec<Function>,
     pub vcode: Vec<CompiledCode>,
@@ -31,7 +31,7 @@ pub struct AotGenerator<'i> {
     pub code: Vec<(String, *const u8)>,
 }
 
-impl<'i, 'a> AotGenerator<'i> {
+impl<'a> AotGenerator<'a> {
     pub fn new(triple: Triple) -> Result<Self> {
         let mut flags = settings::builder();
 
@@ -62,8 +62,8 @@ impl<'i, 'a> AotGenerator<'i> {
 
     pub fn create_context(
         &'a mut self,
-        func: Func,
-    ) -> (CompilerContext<'i, 'a, ObjectModule>, CodegenContext) {
+        func: Func<'a>,
+    ) -> (CompilerContext<'a, ObjectModule>, CodegenContext) {
         let builder = FunctionBuilder::new(&mut self.ctx.func, &mut self.builder_ctx);
 
         (
@@ -73,19 +73,21 @@ impl<'i, 'a> AotGenerator<'i> {
                 functions: &mut self.functions,
                 globals: &mut self.globals,
                 code: &mut self.code,
+                fns: &mut self.fns,
+                vcode: &mut self.vcode,
             },
             CodegenContext {
                 builder,
                 locals: HashMap::new(),
                 vars: HashMap::new(),
                 values: HashMap::new(),
-                ret: func.ret,
+                ret: func.ret.clone(),
                 func,
             },
         )
     }
 
-    pub fn compile_function(&'a mut self, mut func: Func) -> Result<()> {
+    pub fn compile_function(&'a mut self, mut func: Func<'a>) -> Result<()> {
         if func.name == "main" {
             // Make the linker happy :)
             func.name = "_start";
@@ -112,14 +114,13 @@ impl<'i, 'a> AotGenerator<'i> {
             .returns
             .push(AbiParam::new(Self::query_type_with_pointer(
                 self.module.isa().pointer_type(),
-                func.ret.map(|v| v.as_str()).unwrap_or("void".to_string()),
+                func.ret
+                    .clone()
+                    .map(|v| v.as_str())
+                    .unwrap_or("void".to_string()),
             )));
-
-        let (mut cctx, mut ctx) = self.create_context(func.clone());
-
-        Self::compile_fn(&mut cctx, &mut ctx, func.clone())?;
-
-        ctx.builder.finalize();
+        
+        self.compile_function_code(func.clone())?;
 
         let id =
             self.module
@@ -136,13 +137,23 @@ impl<'i, 'a> AotGenerator<'i> {
         Ok(())
     }
 
+    pub fn compile_function_code(&'a mut self, func: Func<'a>) -> Result<()> {
+        let (mut cctx, mut ctx) = self.create_context(func.clone());
+
+        Self::compile_fn(&mut cctx, &mut ctx, func)?;
+
+        ctx.builder.finalize();
+
+        Ok(())
+    }
+
     pub fn finalize(self) -> ObjectProduct {
         self.module.finish()
     }
 }
 
-impl<'i, 'a> BackendInternal<'i, 'a, ObjectModule> for AotGenerator<'i> {
-    fn post_define(_cctx: &mut CompilerContext<'i, 'a, ObjectModule>, _id: DataId) -> Result<()> {
+impl<'a> BackendInternal<'a, ObjectModule> for AotGenerator<'a> {
+    fn post_define(_cctx: &mut CompilerContext<'a, ObjectModule>, _id: DataId) -> Result<()> {
         Ok(())
     }
 }

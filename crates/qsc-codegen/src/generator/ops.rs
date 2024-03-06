@@ -7,19 +7,19 @@ use qsc_ast::ast::expr::{binary::BinaryExpr, operator::Operator};
 
 use super::Backend;
 
-pub trait OperationCompiler<'i, 'a, M: Module>: Backend<'i, 'a, M> {
+pub trait OperationCompiler<'a, M: Module>: Backend<'a, M> {
     fn compile_binary_expr(
-        cctx: &mut CompilerContext<'i, 'a, M>,
-        ctx: &mut CodegenContext,
-        expr: BinaryExpr,
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
+        expr: BinaryExpr<'a>,
     ) -> Result<Value>;
 }
 
-impl<'i, 'a, M: Module, T: Backend<'i, 'a, M>> OperationCompiler<'i, 'a, M> for T {
+impl<'a, M: Module, T: Backend<'a, M>> OperationCompiler<'a, M> for T {
     fn compile_binary_expr(
-        cctx: &mut CompilerContext<'i, 'a, M>,
-        ctx: &mut CodegenContext,
-        expr: BinaryExpr,
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
+        expr: BinaryExpr<'a>,
     ) -> Result<Value> {
         let left = Self::compile(cctx, ctx, expr.lhs)?;
         let right = Self::compile(cctx, ctx, expr.rhs)?;
