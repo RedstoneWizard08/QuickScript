@@ -1,7 +1,10 @@
+use crate::{
+    context::{CodegenContext, CompilerContext},
+    generator::Backend,
+};
 use anyhow::Result;
 use cranelift_module::{DataId, Module};
 use qsc_ast::ast::decl::global::GlobalVariable;
-use crate::{context::{CodegenContext, CompilerContext}, generator::Backend};
 
 pub trait GlobalVariableCompiler<'a, M: Module>: Backend<'a, M> {
     fn compile_global(

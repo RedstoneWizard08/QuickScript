@@ -48,7 +48,11 @@ pub trait VariableCompiler<'a, M: Module>: Backend<'a, M> {
         value: Value,
     ) -> Result<Self::O>;
 
-    fn compile_named_var(cctx: &mut CompilerContext<'a, M>, ctx: &mut CodegenContext<'a>, ident: &'a str) -> Result<Self::O>;
+    fn compile_named_var(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
+        ident: &'a str,
+    ) -> Result<Self::O>;
 }
 
 impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
@@ -75,7 +79,13 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
         ctx: &mut CodegenContext<'a>,
         var: Var<'a>,
     ) -> Result<Variable> {
-        let ty = Self::query_type(cctx, var.type_.clone().map(|v| v.as_str()).unwrap_or(String::new()));
+        let ty = Self::query_type(
+            cctx,
+            var.type_
+                .clone()
+                .map(|v| v.as_str())
+                .unwrap_or(String::new()),
+        );
         let ref_ = Variable::new(ctx.vars.len());
 
         ctx.builder.declare_var(ref_, ty);
@@ -89,7 +99,13 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
         ctx: &mut CodegenContext<'a>,
         var: Var<'a>,
     ) -> Result<Self::O> {
-        let ty = Self::query_type(cctx, var.type_.clone().map(|v| v.as_str()).unwrap_or(String::new()));
+        let ty = Self::query_type(
+            cctx,
+            var.type_
+                .clone()
+                .map(|v| v.as_str())
+                .unwrap_or(String::new()),
+        );
         let null = ctx.builder.ins().null(ty);
         let ref_ = Variable::new(ctx.vars.len());
 
@@ -108,12 +124,24 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
     ) -> Result<Self::O> {
         let val = Self::get_global(cctx, ctx, data);
 
-        let val = ctx
-            .builder
-            .ins()
-            .symbol_value(Self::query_type(cctx, var.type_.clone().map(|v| v.as_str()).unwrap_or(String::new())), val);
+        let val = ctx.builder.ins().symbol_value(
+            Self::query_type(
+                cctx,
+                var.type_
+                    .clone()
+                    .map(|v| v.as_str())
+                    .unwrap_or(String::new()),
+            ),
+            val,
+        );
 
-        let ty = Self::query_type(cctx, var.type_.clone().map(|v| v.as_str()).unwrap_or(String::new()));
+        let ty = Self::query_type(
+            cctx,
+            var.type_
+                .clone()
+                .map(|v| v.as_str())
+                .unwrap_or(String::new()),
+        );
         let ref_ = Variable::new(ctx.vars.len());
 
         ctx.builder.declare_var(ref_, ty);
@@ -129,7 +157,13 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
         var: Var<'a>,
         val: Value,
     ) -> Result<Self::O> {
-        let ty = Self::query_type(cctx, var.type_.clone().map(|v| v.as_str()).unwrap_or(String::new()));
+        let ty = Self::query_type(
+            cctx,
+            var.type_
+                .clone()
+                .map(|v| v.as_str())
+                .unwrap_or(String::new()),
+        );
         let ref_ = Variable::new(ctx.vars.len());
 
         ctx.builder.declare_var(ref_, ty);
@@ -139,13 +173,19 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
         Ok(ctx.builder.use_var(ref_))
     }
 
-    fn compile_named_var(cctx: &mut CompilerContext<'a, M>, ctx: &mut CodegenContext<'a>, ident: &'a str) -> Result<Self::O> {
+    fn compile_named_var(
+        cctx: &mut CompilerContext<'a, M>,
+        ctx: &mut CodegenContext<'a>,
+        ident: &'a str,
+    ) -> Result<Self::O> {
         if ctx.vars.contains_key(ident) {
             let (ref_, _) = *ctx.vars.get(ident).unwrap();
 
             Ok(ctx.builder.use_var(ref_))
         } else if cctx.globals.contains_key(ident) {
-            let sym = cctx.module.declare_data(ident, Linkage::Export, true, false)?;
+            let sym = cctx
+                .module
+                .declare_data(ident, Linkage::Export, true, false)?;
             let local_id = cctx.module.declare_data_in_func(sym, ctx.builder.func);
             let ptr = Self::ptr(cctx);
             let val = ctx.builder.ins().symbol_value(ptr, local_id);

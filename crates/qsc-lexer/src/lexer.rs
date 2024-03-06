@@ -85,7 +85,8 @@ impl<'i> Lexer<'i> {
             // Primitives (literals)
             Rule::char => NodeData::Literal(LiteralNode::Char(CharNode {
                 span: pair.as_span(),
-                value: self.interp_literal(pair.as_str().trim().trim_matches('\''))
+                value: self
+                    .interp_literal(pair.as_str().trim().trim_matches('\''))
                     .chars()
                     .nth(0)
                     .unwrap(),

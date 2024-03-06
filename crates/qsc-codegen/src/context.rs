@@ -1,6 +1,9 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::collections::HashMap;
 
-use cranelift_codegen::{ir::{Function, Value}, CompiledCode, Context};
+use cranelift_codegen::{
+    ir::{Function, Value},
+    CompiledCode,
+};
 use cranelift_frontend::{FunctionBuilder, Variable};
 use cranelift_module::{DataDescription, DataId, Module};
 

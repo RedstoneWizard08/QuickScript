@@ -14,7 +14,7 @@ use self::{
     ops::OperationCompiler,
     ret::ReturnCompiler,
     unify::BackendInternal,
-    vars::{func::FunctionCompiler, var::VariableCompiler, global::GlobalVariableCompiler},
+    vars::{func::FunctionCompiler, var::VariableCompiler},
 };
 
 use super::context::{CodegenContext, CompilerContext};
@@ -128,8 +128,8 @@ impl<'a, M: Module, T: BackendInternal<'a, M>> Backend<'a, M> for T {
 
             NodeData::Declaration(decl) => match decl {
                 DeclarationNode::Variable(var) => Self::compile_var(cctx, ctx, var),
-                DeclarationNode::Function(func) => Self::compile_fn(cctx, ctx, func),
-                DeclarationNode::Global(global) => unimplemented!(),
+                DeclarationNode::Function(func) => Self::compile_fn(cctx, ctx, &func),
+                DeclarationNode::Global(_global) => unimplemented!(),
             },
 
             NodeData::Block(block) => {

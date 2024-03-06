@@ -1,5 +1,3 @@
-use std::{borrow::BorrowMut, cell::RefCell, collections::HashMap, ops::DerefMut, ptr::drop_in_place, rc::Rc, sync::Arc};
-
 use anyhow::Result;
 use cranelift_codegen::{
     ir::{AbiParam, Function},
@@ -7,6 +5,7 @@ use cranelift_codegen::{
     settings::{self, Configurable, Flags},
     CompiledCode, Context,
 };
+use std::{cell::Cell, collections::HashMap};
 
 use crate::generator::{unify::BackendInternal, vars::func::FunctionCompiler, Backend};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
@@ -88,6 +87,30 @@ impl<'a> AotGenerator<'a> {
     }
 
     pub fn compile_function(&'a mut self, mut func: Func<'a>) -> Result<()> {
+        let me = Cell::new(self);
+
+        unsafe {
+            let me_ref = me.as_ptr().as_mut().unwrap();
+
+            me_ref.setup_function(&mut func)?;
+        }
+
+        unsafe {
+            let me_ref = me.as_ptr().as_mut().unwrap();
+
+            me_ref.compile_function_code(&func)?;
+        }
+
+        unsafe {
+            let me_ref = me.as_ptr().as_mut().unwrap();
+
+            me_ref.finalize_funciton(func)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn setup_function(&'a mut self, func: &mut Func<'a>) -> Result<()> {
         if func.name == "main" {
             // Make the linker happy :)
             func.name = "_start";
@@ -119,9 +142,21 @@ impl<'a> AotGenerator<'a> {
                     .map(|v| v.as_str())
                     .unwrap_or("void".to_string()),
             )));
-        
-        self.compile_function_code(func.clone())?;
 
+        Ok(())
+    }
+
+    pub fn compile_function_code(&'a mut self, func: &Func<'a>) -> Result<()> {
+        let (mut cctx, mut ctx) = self.create_context(func.clone());
+
+        Self::compile_fn(&mut cctx, &mut ctx, func)?;
+
+        ctx.builder.finalize();
+
+        Ok(())
+    }
+
+    pub fn finalize_funciton(&'a mut self, func: Func<'a>) -> Result<()> {
         let id =
             self.module
                 .declare_function(&func.name, Linkage::Export, &self.ctx.func.signature)?;
@@ -133,16 +168,6 @@ impl<'a> AotGenerator<'a> {
         self.module.clear_context(&mut self.ctx);
 
         debug!("Compiled function: {}", func.name);
-
-        Ok(())
-    }
-
-    pub fn compile_function_code(&'a mut self, func: Func<'a>) -> Result<()> {
-        let (mut cctx, mut ctx) = self.create_context(func.clone());
-
-        Self::compile_fn(&mut cctx, &mut ctx, func)?;
-
-        ctx.builder.finalize();
 
         Ok(())
     }

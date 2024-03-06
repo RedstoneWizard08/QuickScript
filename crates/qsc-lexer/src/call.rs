@@ -1,7 +1,10 @@
 use pest::iterators::Pair;
 use qsc_ast::ast::stmt::call::{CallArgument, CallNode};
 
-use crate::{lexer::{Lexer, Result}, parser::Rule};
+use crate::{
+    lexer::{Lexer, Result},
+    parser::Rule,
+};
 
 impl<'i> Lexer<'i> {
     pub fn call(&'i self, pair: &Pair<'i, Rule>) -> Result<CallNode<'i>> {
@@ -14,9 +17,14 @@ impl<'i> Lexer<'i> {
                 pair.into_inner()
                     .map(|pair| self.call_arg(pair).unwrap())
                     .collect::<Vec<_>>()
-            }).unwrap_or_default();
+            })
+            .unwrap_or_default();
 
-        Ok(CallNode { span: pair.as_span(), func, args })
+        Ok(CallNode {
+            span: pair.as_span(),
+            func,
+            args,
+        })
     }
 
     pub fn call_arg(&'i self, pair: Pair<'i, Rule>) -> Result<CallArgument<'i>> {

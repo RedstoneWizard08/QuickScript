@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::Cell, collections::HashMap};
 
 use anyhow::Result;
 use cranelift_codegen::{
@@ -83,6 +83,30 @@ impl<'a> JitGenerator<'a> {
     }
 
     pub fn compile_function(&'a mut self, func: Func<'a>) -> Result<()> {
+        let me = Cell::new(self);
+
+        unsafe {
+            let me_ref = me.as_ptr().as_mut().unwrap();
+
+            me_ref.setup_function(&func)?;
+        }
+
+        unsafe {
+            let me_ref = me.as_ptr().as_mut().unwrap();
+
+            me_ref.compile_function_code(&func)?;
+        }
+
+        unsafe {
+            let me_ref = me.as_ptr().as_mut().unwrap();
+
+            me_ref.finalize_funciton(func)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn setup_function(&'a mut self, func: &Func<'a>) -> Result<()> {
         debug!("Compiling function: {}", func.name);
 
         for arg in func.args.clone() {
@@ -102,15 +126,26 @@ impl<'a> JitGenerator<'a> {
             .returns
             .push(AbiParam::new(Self::query_type_with_pointer(
                 self.module.isa().pointer_type(),
-                func.ret.clone().map(|v| v.as_str()).unwrap_or("void".to_string()),
+                func.ret
+                    .clone()
+                    .map(|v| v.as_str())
+                    .unwrap_or("void".to_string()),
             )));
 
+        Ok(())
+    }
+
+    pub fn compile_function_code(&'a mut self, func: &Func<'a>) -> Result<()> {
         let (mut cctx, mut ctx) = self.create_context(func.clone());
 
-        Self::compile_fn(&mut cctx, &mut ctx, func.clone())?;
+        Self::compile_fn(&mut cctx, &mut ctx, func)?;
 
         ctx.builder.finalize();
 
+        Ok(())
+    }
+
+    pub fn finalize_funciton(&'a mut self, func: Func<'a>) -> Result<()> {
         let id =
             self.module
                 .declare_function(&func.name, Linkage::Export, &self.ctx.func.signature)?;
@@ -134,7 +169,7 @@ impl<'a> JitGenerator<'a> {
     pub fn exec(&self) -> Result<i32> {
         let mut main = None;
 
-        for (name, code) in self.code {
+        for (name, code) in &self.code {
             if name == "main" {
                 main = Some(unsafe { std::mem::transmute::<_, fn() -> i32>(code) });
 

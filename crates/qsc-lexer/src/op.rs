@@ -1,12 +1,17 @@
 use pest::iterators::Pair;
 use qsc_ast::ast::expr::{binary::BinaryExpr, operator::Operator};
 
-use crate::{conv::IntoSourceSpan, error::LexerError, lexer::{Lexer, Result}, parser::Rule};
+use crate::{
+    conv::IntoSourceSpan,
+    error::LexerError,
+    lexer::{Lexer, Result},
+    parser::Rule,
+};
 
 impl<'i> Lexer<'i> {
     pub fn binary_op(&'i self, pair: &Pair<'i, Rule>) -> Result<BinaryExpr<'i>> {
         let mut inner = pair.clone().into_inner();
-        
+
         let span = pair.as_span();
         let lhs = self.parse(inner.next().unwrap())?;
         let op = inner.next().unwrap().as_str().trim().to_string();
@@ -209,10 +214,12 @@ impl<'i> Lexer<'i> {
                 rhs,
             },
 
-            _ => return Err(LexerError {
-                src: self.err_src.clone(),
-                location: pair.as_span().into_source_span(),
-            }),
+            _ => {
+                return Err(LexerError {
+                    src: self.err_src.clone(),
+                    location: pair.as_span().into_source_span(),
+                })
+            }
         })
     }
 }

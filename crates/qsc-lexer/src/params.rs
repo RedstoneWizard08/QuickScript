@@ -1,11 +1,16 @@
 use pest::iterators::Pair;
 use qsc_ast::ast::decl::func::FunctionArgument;
 
-use crate::{lexer::{Lexer, Result}, parser::Rule};
+use crate::{
+    lexer::{Lexer, Result},
+    parser::Rule,
+};
 
 impl<'i> Lexer<'i> {
     pub fn params(&'i self, pair: Pair<'i, Rule>) -> Vec<FunctionArgument<'i>> {
-        pair.into_inner().map(|pair| self.param(&pair).unwrap()).collect()
+        pair.into_inner()
+            .map(|pair| self.param(&pair).unwrap())
+            .collect()
     }
 
     pub fn param(&self, pair: &Pair<'i, Rule>) -> Result<FunctionArgument> {

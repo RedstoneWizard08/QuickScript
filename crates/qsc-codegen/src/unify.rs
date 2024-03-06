@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use super::{aot::AotGenerator, jit::JitGenerator};
 use anyhow::Result;
 use cranelift_codegen::write_function;
@@ -26,8 +28,14 @@ impl<'a> CodegenBackend<'a> for AotGenerator<'a> {
     }
 
     fn compile(&'a mut self, funcs: Vec<FunctionNode<'a>>) -> Result<()> {
+        let me = Cell::new(self);
+
         for func in funcs {
-            self.compile_function(func)?;
+            unsafe {
+                let me_ref = me.as_ptr().as_mut().unwrap();
+
+                me_ref.compile_function(func)?;
+            }
         }
 
         Ok(())
@@ -105,8 +113,14 @@ impl<'a> CodegenBackend<'a> for JitGenerator<'a> {
     }
 
     fn compile(&'a mut self, funcs: Vec<FunctionNode<'a>>) -> Result<()> {
+        let me = Cell::new(self);
+
         for func in funcs {
-            self.compile_function(func)?;
+            unsafe {
+                let me_ref = me.as_ptr().as_mut().unwrap();
+
+                me_ref.compile_function(func)?;
+            }
         }
 
         Ok(())

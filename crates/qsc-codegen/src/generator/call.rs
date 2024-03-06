@@ -1,9 +1,9 @@
+use super::Backend;
+use crate::context::{CodegenContext, CompilerContext};
 use anyhow::Result;
 use cranelift_codegen::ir::{AbiParam, InstBuilder, Value};
 use cranelift_module::{Linkage, Module};
-use crate::context::{CodegenContext, CompilerContext};
 use qsc_ast::ast::stmt::call::CallNode;
-use super::Backend;
 
 pub trait CallCompiler<'a, M: Module>: Backend<'a, M> {
     fn compile_call(
@@ -24,7 +24,7 @@ impl<'a, M: Module, T: Backend<'a, M>> CallCompiler<'a, M> for T {
         if cctx.functions.contains_key(call.func) {
             let ptr = Self::ptr(cctx);
             let func = cctx.functions.get(call.func).unwrap();
-            
+
             let args = func
                 .args
                 .iter()
@@ -34,7 +34,12 @@ impl<'a, M: Module, T: Backend<'a, M>> CallCompiler<'a, M> for T {
 
             debug!(
                 "Using local function for call: {}({}) -> {}",
-                call.func, args, func.ret.clone().map(|v| v.as_str()).unwrap_or(String::new())
+                call.func,
+                args,
+                func.ret
+                    .clone()
+                    .map(|v| v.as_str())
+                    .unwrap_or(String::new())
             );
 
             sig.params.append(
@@ -47,7 +52,10 @@ impl<'a, M: Module, T: Backend<'a, M>> CallCompiler<'a, M> for T {
 
             sig.returns.push(AbiParam::new(Self::query_type(
                 cctx,
-                func.ret.clone().map(|v| v.as_str()).unwrap_or(String::new()),
+                func.ret
+                    .clone()
+                    .map(|v| v.as_str())
+                    .unwrap_or(String::new()),
             )));
         } else {
             let args = call
@@ -60,7 +68,8 @@ impl<'a, M: Module, T: Backend<'a, M>> CallCompiler<'a, M> for T {
                                 .vars
                                 .get(ident.value)
                                 .unwrap()
-                                .1.clone()
+                                .1
+                                .clone()
                                 .map(|v| v.as_str())
                                 .unwrap_or("ptr".to_string());
                         }

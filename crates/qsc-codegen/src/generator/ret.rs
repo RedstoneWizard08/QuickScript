@@ -4,7 +4,10 @@ use cranelift_frontend::Variable;
 use cranelift_module::Module;
 
 use crate::context::{CodegenContext, CompilerContext};
-use qsc_ast::ast::stmt::{call::{CallArgument, CallNode}, ret::ReturnNode};
+use qsc_ast::ast::stmt::{
+    call::{CallArgument, CallNode},
+    ret::ReturnNode,
+};
 
 use super::{Backend, CallCompiler, RETURN_VAR};
 
@@ -41,7 +44,10 @@ impl<'a, M: Module, T: Backend<'a, M>> ReturnCompiler<'a, M> for T {
             }
 
             let val = Self::compile(cctx, ctx, value)?;
-            let ty = Self::query_type(cctx, ctx.ret.clone().map(|v| v.as_str()).unwrap_or(String::new()));
+            let ty = Self::query_type(
+                cctx,
+                ctx.ret.clone().map(|v| v.as_str()).unwrap_or(String::new()),
+            );
             let ref_ = Variable::new(ctx.vars.len());
 
             ctx.builder.declare_var(ref_, ty);

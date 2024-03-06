@@ -1,5 +1,5 @@
-use pest::Span;
 use crate::ast::node::Node;
+use pest::Span;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ReturnNode<'i> {

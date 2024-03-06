@@ -1,7 +1,10 @@
 use anyhow::Result;
 use cranelift_codegen::ir::{types, InstBuilder, Type, Value};
 use cranelift_module::{Linkage, Module};
-use qsc_ast::ast::literal::{boolean::BoolNode, char::CharNode, float::FloatNode, int::IntNode, string::StringNode, LiteralNode};
+use qsc_ast::ast::literal::{
+    boolean::BoolNode, char::CharNode, float::FloatNode, int::IntNode, string::StringNode,
+    LiteralNode,
+};
 use qsc_core::util::random_string;
 
 use crate::context::{CodegenContext, CompilerContext};

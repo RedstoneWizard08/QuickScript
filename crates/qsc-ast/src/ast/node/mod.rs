@@ -1,8 +1,8 @@
 pub mod block;
 pub mod data;
+pub mod sym;
 pub mod ty;
 pub mod vis;
-pub mod sym;
 
 use pest::Span;
 

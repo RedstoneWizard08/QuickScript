@@ -15,7 +15,7 @@ pub trait FunctionCompiler<'a, M: Module>: Backend<'a, M> {
     fn compile_fn(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext<'a>,
-        func: FunctionNode<'a>,
+        func: &FunctionNode<'a>,
     ) -> Result<Value>;
 }
 
@@ -23,7 +23,7 @@ impl<'a, M: Module, T: Backend<'a, M>> FunctionCompiler<'a, M> for T {
     fn compile_fn(
         cctx: &mut CompilerContext<'a, M>,
         ctx: &mut CodegenContext<'a>,
-        func: FunctionNode<'a>,
+        func: &FunctionNode<'a>,
     ) -> Result<Value> {
         let entry = ctx.builder.create_block();
 
@@ -38,7 +38,7 @@ impl<'a, M: Module, T: Backend<'a, M>> FunctionCompiler<'a, M> for T {
             ctx.builder.def_var(var, val);
         }
 
-        for node in func.content.data {
+        for node in func.content.data.clone() {
             Self::compile(cctx, ctx, node)?;
         }
 

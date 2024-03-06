@@ -1,11 +1,11 @@
 pub mod call;
+pub mod conv;
+pub mod error;
 pub mod function;
+pub mod lexer;
 pub mod literal;
 pub mod op;
 pub mod params;
-pub mod lexer;
+pub mod parser;
 pub mod ty;
 pub mod var;
-pub mod error;
-pub mod conv;
-pub mod parser;

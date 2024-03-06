@@ -2,11 +2,11 @@ use crate::{get_enum_variant_value_impl, is_enum_variant_impl};
 
 use self::{boolean::BoolNode, char::CharNode, float::FloatNode, int::IntNode, string::StringNode};
 
+pub mod boolean;
 pub mod char;
 pub mod float;
 pub mod int;
 pub mod string;
-pub mod boolean;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum LiteralNode<'i> {
