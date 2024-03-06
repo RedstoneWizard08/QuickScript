@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf, process::exit};
+use std::{cell::Cell, fs, path::PathBuf, process::exit};
 
 use anyhow::Result;
 use clap::Parser;
@@ -23,13 +23,15 @@ pub struct RunCommand {
     pub dump_ast: bool,
 }
 
-impl Command for RunCommand {
-    fn execute(&mut self) -> Result<()> {
+impl<'a> Command<'a> for RunCommand {
+    fn execute(&'a mut self) -> Result<()> {
+        let name = self.file.file_name().unwrap().to_str().unwrap();
         let content = fs::read_to_string(self.file.clone())?;
 
         debug!("Lexing file: {}", self.file.to_str().unwrap());
 
-        let exprs = Lexer::new().lex(content)?;
+        let lexer = Lexer::new(&name, &content);
+        let exprs = lexer.lex()?;
 
         if self.dump_ast {
             println!("{:#?}", exprs);
@@ -39,8 +41,13 @@ impl Command for RunCommand {
         debug!("Compiling file: {}", self.file.to_str().unwrap());
 
         let mut compiler = SimpleCompiler::<JitGenerator>::new(Triple::host())?;
+        let compiler_cell = Cell::from_mut(&mut compiler);
 
-        compiler.compile(exprs)?;
+        unsafe {
+            let compiler = compiler_cell.as_ptr().as_mut().unwrap();
+
+            compiler.compile(exprs)?;
+        }
 
         exit(compiler.run()?);
     }

@@ -35,8 +35,8 @@ pub const LONG_VERSION: &str = formatcp!(
     env!("CARGO_PKG_REPOSITORY")
 );
 
-pub trait Command {
-    fn execute(&mut self) -> Result<()>;
+pub trait Command<'a> {
+    fn execute(&'a mut self) -> Result<()>;
 }
 
 #[derive(Debug, Clone, Parser)]
@@ -84,8 +84,8 @@ pub enum Commands {
     Version,
 }
 
-impl Command for Cli {
-    fn execute(&mut self) -> Result<()> {
+impl<'a> Command<'a> for Cli {
+    fn execute(&'a mut self) -> Result<()> {
         formatted_builder()
             .parse_default_env()
             .filter(Some("cranelift_jit::backend"), LevelFilter::Warn)
@@ -97,8 +97,8 @@ impl Command for Cli {
     }
 }
 
-impl Command for Commands {
-    fn execute(&mut self) -> Result<()> {
+impl<'a> Command<'a> for Commands {
+    fn execute(&'a mut self) -> Result<()> {
         match self.clone() {
             Commands::Run(mut cmd) => cmd.execute(),
             Commands::Compile(mut cmd) => cmd.execute(),

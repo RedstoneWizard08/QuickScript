@@ -1,4 +1,5 @@
 use std::{
+    cell::Cell,
     fs::{self, canonicalize},
     path::PathBuf,
     sync::mpsc::channel,
@@ -25,11 +26,18 @@ pub struct WatchCommand {
 impl WatchCommand {
     pub fn run(&self) -> Result<()> {
         let path = self.path.clone().join("main.qs");
+        let name = path.file_name().unwrap().to_str().unwrap();
         let content = fs::read_to_string(path.clone())?;
-        let exprs = Lexer::new().lex(content)?;
+        let lexer = Lexer::new(&name, &content);
+        let exprs = lexer.lex()?;
         let mut compiler = SimpleCompiler::<JitGenerator>::new(Triple::host())?;
+        let compiler_cell = Cell::from_mut(&mut compiler);
 
-        compiler.compile(exprs)?;
+        unsafe {
+            let compiler = compiler_cell.as_ptr().as_mut().unwrap();
+
+            compiler.compile(exprs)?;
+        }
 
         let code = compiler.run()?;
 
@@ -39,8 +47,8 @@ impl WatchCommand {
     }
 }
 
-impl Command for WatchCommand {
-    fn execute(&mut self) -> Result<()> {
+impl<'a> Command<'a> for WatchCommand {
+    fn execute(&'a mut self) -> Result<()> {
         self.path = canonicalize(&self.path)?;
 
         let (tx, rx) = channel();

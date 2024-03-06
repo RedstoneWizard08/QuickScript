@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf, str::FromStr};
+use std::{cell::Cell, fs, path::PathBuf, str::FromStr};
 
 use anyhow::Result;
 use clap::Parser;
@@ -57,19 +57,21 @@ pub struct CompileCommand {
     pub linker: Option<String>,
 }
 
-impl Command for CompileCommand {
-    fn execute(&mut self) -> Result<()> {
+impl<'a> Command<'a> for CompileCommand {
+    fn execute(&'a mut self) -> Result<()> {
         let triple = self
             .target
             .clone()
             .map(|v| Triple::from_str(v.as_str()).unwrap())
             .unwrap_or(Triple::host());
 
+        let name = self.file.file_name().unwrap().to_str().unwrap();
         let content = fs::read_to_string(self.file.clone())?;
 
         debug!("Lexing file: {}", self.file.to_str().unwrap());
 
-        let exprs = Lexer::new().lex(content)?;
+        let lexer = Lexer::new(&name, &content);
+        let exprs = lexer.lex()?;
 
         if self.dump_ast {
             println!("{:#?}", exprs);
@@ -79,8 +81,19 @@ impl Command for CompileCommand {
         debug!("Compiling file: {}", self.file.to_str().unwrap());
 
         let mut compiler = SimpleCompiler::<AotGenerator>::new(triple.clone())?;
+        let compiler_cell = Cell::from_mut(&mut compiler);
 
-        compiler.compile(exprs)?;
+        unsafe {
+            let compiler = compiler_cell.as_ptr().as_mut().unwrap();
+
+            compiler.compile(exprs)?;
+        }
+
+        let compiler;
+
+        unsafe {
+            compiler = compiler_cell.as_ptr().as_mut().unwrap();
+        }
 
         debug!("Emitting object(s)...");
 
@@ -107,13 +120,24 @@ impl Command for CompileCommand {
 
             file.set_extension("s");
 
-            fs::write(file, compiler.asm()?)?;
+            unsafe {
+                let compiler = compiler_cell.as_ptr().read();
+
+                fs::write(file, compiler.asm()?)?;
+            }
 
             return Ok(());
         }
 
         if self.object {
-            let obj = compiler.finalize();
+            let obj;
+
+            unsafe {
+                let compiler = compiler_cell.as_ptr().read();
+
+                obj = compiler.finalize();
+            }
+
             let data = obj.object.write()?;
             let mut file = self.file.clone();
 
@@ -135,7 +159,14 @@ impl Command for CompileCommand {
         }
 
         let tmp_file = NamedTempFile::new()?;
-        let obj = compiler.finalize();
+        let obj;
+
+        unsafe {
+            let compiler = compiler_cell.as_ptr().read();
+
+            obj = compiler.finalize();
+        }
+
         let data = obj.object.write()?;
 
         fs::write(tmp_file.path(), data)?;

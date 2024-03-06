@@ -12,8 +12,8 @@ pub struct CompletionsCommand {
     pub shell: Shell,
 }
 
-impl Command for CompletionsCommand {
-    fn execute(&mut self) -> Result<()> {
+impl<'a> Command<'a> for CompletionsCommand {
+    fn execute(&'a mut self) -> Result<()> {
         let mut cmd = Cli::command();
         let name = cmd.get_name().to_string();
 

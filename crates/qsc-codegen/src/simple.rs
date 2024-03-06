@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use anyhow::Result;
 use cranelift_object::ObjectProduct;
-use qsc_ast::ast::node::Node;
+use qsc_ast::ast::AbstractTree;
 use target_lexicon::Triple;
 
 use super::unify::CodegenBackend;
@@ -21,10 +21,10 @@ impl<'a, T: CodegenBackend<'a>> SimpleCompiler<'a, T> {
         })
     }
 
-    pub fn compile(&'a mut self, nodes: Vec<Node<'a>>) -> Result<()> {
+    pub fn compile(&'a mut self, tree: AbstractTree<'a>) -> Result<()> {
         let mut funcs = Vec::new();
 
-        for node in nodes {
+        for node in &tree.data {
             if let Ok(decl) = node.data.as_decl() {
                 if let Ok(func) = decl.as_function() {
                     funcs.push(func);
@@ -32,7 +32,7 @@ impl<'a, T: CodegenBackend<'a>> SimpleCompiler<'a, T> {
             }
         }
 
-        self.backend.compile(funcs)?;
+        self.backend.compile(tree)?;
 
         Ok(())
     }

@@ -5,7 +5,7 @@ use anyhow::Result;
 use cranelift_codegen::write_function;
 use cranelift_module::Module;
 use cranelift_object::ObjectProduct;
-use qsc_ast::ast::decl::func::FunctionNode;
+use qsc_ast::ast::AbstractTree;
 use target_lexicon::Triple;
 
 pub trait CodegenBackend<'a> {
@@ -13,7 +13,7 @@ pub trait CodegenBackend<'a> {
     where
         Self: Sized;
 
-    fn compile(&'a mut self, funcs: Vec<FunctionNode<'a>>) -> Result<()>;
+    fn compile(&'a mut self, tree: AbstractTree<'a>) -> Result<()>;
     fn is_jit(&self) -> bool;
     fn run(&self) -> Result<i32>;
     fn finalize(self) -> ObjectProduct;
@@ -27,14 +27,18 @@ impl<'a> CodegenBackend<'a> for AotGenerator<'a> {
         Ok(Self::new(triple)?)
     }
 
-    fn compile(&'a mut self, funcs: Vec<FunctionNode<'a>>) -> Result<()> {
+    fn compile(&'a mut self, tree: AbstractTree<'a>) -> Result<()> {
         let me = Cell::new(self);
 
-        for func in funcs {
-            unsafe {
-                let me_ref = me.as_ptr().as_mut().unwrap();
+        for node in tree.data {
+            if let Ok(decl) = node.data.as_decl() {
+                if let Ok(func) = decl.as_function() {
+                    unsafe {
+                        let me_ref = me.as_ptr().as_mut().unwrap();
 
-                me_ref.compile_function(func)?;
+                        me_ref.compile_function(func)?;
+                    }
+                }
             }
         }
 
@@ -112,14 +116,18 @@ impl<'a> CodegenBackend<'a> for JitGenerator<'a> {
         Ok(Self::new(triple)?)
     }
 
-    fn compile(&'a mut self, funcs: Vec<FunctionNode<'a>>) -> Result<()> {
+    fn compile(&'a mut self, tree: AbstractTree<'a>) -> Result<()> {
         let me = Cell::new(self);
 
-        for func in funcs {
-            unsafe {
-                let me_ref = me.as_ptr().as_mut().unwrap();
+        for node in tree.data {
+            if let Ok(decl) = node.data.as_decl() {
+                if let Ok(func) = decl.as_function() {
+                    unsafe {
+                        let me_ref = me.as_ptr().as_mut().unwrap();
 
-                me_ref.compile_function(func)?;
+                        me_ref.compile_function(func)?;
+                    }
+                }
             }
         }
 
