@@ -145,10 +145,11 @@ impl<'i> Lexer<'i> {
                     Rule::int => self.parse_data(pair)?,
                     Rule::float => self.parse_data(pair)?,
 
-                    _ => {
+                    val => {
                         return Err(LexerError {
                             src: self.err_src.clone(),
                             location: pair.as_span().into_source_span(),
+                            error: miette!("Unsupported number child: {:?}", val),
                         })
                     }
                 }
@@ -195,7 +196,11 @@ impl<'i> Lexer<'i> {
                 },
             })),
 
-            _ => unreachable!(),
+            val => return Err(LexerError {
+                src: self.err_src.clone(),
+                location: pair.as_span().into_source_span(),
+                error: miette!("Unsupported pair: {:?}", val),
+            }),
         })
     }
 }

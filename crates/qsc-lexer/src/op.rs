@@ -214,10 +214,11 @@ impl<'i> Lexer<'i> {
                 rhs,
             },
 
-            _ => {
+            val => {
                 return Err(LexerError {
                     src: self.err_src.clone(),
                     location: pair.as_span().into_source_span(),
+                    error: miette!("Unsupported operator: {}", val),
                 })
             }
         })

@@ -1,7 +1,7 @@
-use miette::{Diagnostic, NamedSource, SourceSpan};
+use miette::{Diagnostic, NamedSource, SourceSpan, Report};
 use thiserror::Error;
 
-#[derive(Debug, Clone, Error, Diagnostic)]
+#[derive(Debug, Error, Diagnostic)]
 #[error("Lexer Error")]
 #[diagnostic(
     code(qsc_lexer::error),
@@ -14,4 +14,7 @@ pub struct LexerError {
 
     #[label("here")]
     pub location: SourceSpan,
+
+    #[diagnostic(transparent)]
+    pub error: Report,
 }

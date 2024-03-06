@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate miette;
+
 pub mod call;
 pub mod conv;
 pub mod error;
