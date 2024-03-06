@@ -1,10 +1,10 @@
-use anyhow::Result;
 use cranelift_codegen::{
     ir::{AbiParam, Function},
     isa::lookup,
     settings::{self, Configurable, Flags},
     CompiledCode, Context,
 };
+use miette::{IntoDiagnostic, Result};
 use std::{cell::Cell, collections::HashMap};
 
 use crate::generator::{unify::BackendInternal, vars::func::FunctionCompiler, Backend};
@@ -34,16 +34,23 @@ impl<'a> AotGenerator<'a> {
     pub fn new(triple: Triple) -> Result<Self> {
         let mut flags = settings::builder();
 
-        flags.set("use_colocated_libcalls", "false")?;
-        flags.set("is_pic", "true")?;
-        flags.set("opt_level", "speed")?;
-        flags.set("regalloc_checker", "true")?;
-        flags.set("enable_alias_analysis", "true")?;
-        flags.set("enable_verifier", "true")?;
-        flags.set("enable_probestack", "false")?;
+        flags
+            .set("use_colocated_libcalls", "false")
+            .into_diagnostic()?;
+        flags.set("is_pic", "true").into_diagnostic()?;
+        flags.set("opt_level", "speed").into_diagnostic()?;
+        flags.set("regalloc_checker", "true").into_diagnostic()?;
+        flags
+            .set("enable_alias_analysis", "true")
+            .into_diagnostic()?;
+        flags.set("enable_verifier", "true").into_diagnostic()?;
+        flags.set("enable_probestack", "false").into_diagnostic()?;
 
-        let isa = lookup(triple)?.finish(Flags::new(flags))?;
-        let builder = ObjectBuilder::new(isa, "qsc", default_libcall_names())?;
+        let isa = lookup(triple)
+            .into_diagnostic()?
+            .finish(Flags::new(flags))
+            .into_diagnostic()?;
+        let builder = ObjectBuilder::new(isa, "qsc", default_libcall_names()).into_diagnostic()?;
         let module = ObjectModule::new(builder);
 
         Ok(Self {
@@ -157,11 +164,14 @@ impl<'a> AotGenerator<'a> {
     }
 
     pub fn finalize_funciton(&'a mut self, func: Func<'a>) -> Result<()> {
-        let id =
-            self.module
-                .declare_function(&func.name, Linkage::Export, &self.ctx.func.signature)?;
+        let id = self
+            .module
+            .declare_function(&func.name, Linkage::Export, &self.ctx.func.signature)
+            .into_diagnostic()?;
 
-        self.module.define_function(id, &mut self.ctx)?;
+        self.module
+            .define_function(id, &mut self.ctx)
+            .into_diagnostic()?;
         self.fns.push(self.ctx.func.clone());
         self.functions.insert(func.name.to_string(), func.clone());
         self.vcode.push(self.ctx.compiled_code().unwrap().clone());

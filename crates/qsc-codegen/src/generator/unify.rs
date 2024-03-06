@@ -1,5 +1,5 @@
-use anyhow::Result;
 use cranelift_module::{DataId, Module};
+use miette::Result;
 
 use crate::context::CompilerContext;
 

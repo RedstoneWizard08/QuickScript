@@ -2,8 +2,8 @@ use crate::{
     context::{CodegenContext, CompilerContext},
     generator::Backend,
 };
-use anyhow::Result;
 use cranelift_module::{DataId, Module};
+use miette::Result;
 use qsc_ast::ast::decl::global::GlobalVariable;
 
 pub trait GlobalVariableCompiler<'a, M: Module>: Backend<'a, M> {

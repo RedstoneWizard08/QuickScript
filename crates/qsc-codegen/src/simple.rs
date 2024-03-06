@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
-use anyhow::Result;
 use cranelift_object::ObjectProduct;
+use miette::Result;
 use qsc_ast::ast::AbstractTree;
 use target_lexicon::Triple;
 

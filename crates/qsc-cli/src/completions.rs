@@ -1,8 +1,8 @@
 use std::io::stdout;
 
-use anyhow::Result;
 use clap::{CommandFactory, Parser};
 use clap_complete::{generate, Shell};
+use miette::Result;
 
 use super::{Cli, Command};
 

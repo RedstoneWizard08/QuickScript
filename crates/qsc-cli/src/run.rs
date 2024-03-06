@@ -1,7 +1,7 @@
 use std::{cell::Cell, fs, path::PathBuf, process::exit};
 
-use anyhow::Result;
 use clap::Parser;
+use miette::{IntoDiagnostic, Result};
 use target_lexicon::Triple;
 
 use qsc_codegen::{jit::JitGenerator, simple::SimpleCompiler};
@@ -26,7 +26,7 @@ pub struct RunCommand {
 impl<'a> Command<'a> for RunCommand {
     fn execute(&'a mut self) -> Result<()> {
         let name = self.file.file_name().unwrap().to_str().unwrap();
-        let content = fs::read_to_string(self.file.clone())?;
+        let content = fs::read_to_string(self.file.clone()).into_diagnostic()?;
 
         debug!("Lexing file: {}", self.file.to_str().unwrap());
 

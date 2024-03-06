@@ -1,4 +1,4 @@
-pub extern crate anyhow;
+pub extern crate miette;
 
 pub mod ast;
 pub mod macros;

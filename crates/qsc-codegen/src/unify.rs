@@ -1,10 +1,10 @@
 use std::cell::Cell;
 
 use super::{aot::AotGenerator, jit::JitGenerator};
-use anyhow::Result;
 use cranelift_codegen::write_function;
 use cranelift_module::Module;
 use cranelift_object::ObjectProduct;
+use miette::{IntoDiagnostic, Result};
 use qsc_ast::ast::AbstractTree;
 use target_lexicon::Triple;
 
@@ -62,10 +62,10 @@ impl<'a> CodegenBackend<'a> for AotGenerator<'a> {
         let isa = self.module.isa();
 
         for func in self.fns.clone() {
-            write_function(&mut buf, &func)?;
+            write_function(&mut buf, &func).into_diagnostic()?;
         }
 
-        write_function(&mut buf, &self.ctx.func)?;
+        write_function(&mut buf, &self.ctx.func).into_diagnostic()?;
 
         for flag in isa.flags().iter() {
             buf.push_str(format!("set {}\n", flag).as_str());
@@ -95,13 +95,13 @@ impl<'a> CodegenBackend<'a> for AotGenerator<'a> {
     }
 
     fn asm(self) -> Result<String> {
-        let capstone = self.module.isa().to_capstone().map_err(|v| anyhow!(v))?;
+        let capstone = self.module.isa().to_capstone().map_err(|v| miette!(v))?;
         let product = self.finalize();
-        let data = product.object.write()?;
+        let data = product.object.write().into_diagnostic()?;
 
         let disasm = capstone
             .disasm_all(&*data.into_boxed_slice(), 0x0)
-            .map_err(|v| anyhow!(v))?;
+            .map_err(|v| miette!(v))?;
 
         Ok(disasm
             .iter()
@@ -151,10 +151,10 @@ impl<'a> CodegenBackend<'a> for JitGenerator<'a> {
         let isa = self.module.isa();
 
         for func in self.fns.clone() {
-            write_function(&mut buf, &func)?;
+            write_function(&mut buf, &func).into_diagnostic()?;
         }
 
-        write_function(&mut buf, &self.ctx.func)?;
+        write_function(&mut buf, &self.ctx.func).into_diagnostic()?;
 
         for flag in isa.flags().iter() {
             buf.push_str(format!("set {}\n", flag).as_str());

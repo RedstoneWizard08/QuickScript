@@ -1240,7 +1240,7 @@ dependencies = [
 name = "qsc-ast"
 version = "0.6.0"
 dependencies = [
- "anyhow",
+ "miette",
  "pest",
  "pest_derive",
  "strum",
@@ -1250,15 +1250,16 @@ dependencies = [
 name = "qsc-cli"
 version = "0.6.0"
 dependencies = [
- "anyhow",
  "clap",
  "clap-verbosity-flag",
  "clap_complete",
  "const_format",
  "log",
+ "miette",
  "notify",
  "pretty_env_logger",
  "qsc-codegen",
+ "qsc-core",
  "qsc-lexer",
  "qsc-linker",
  "target-lexicon",
@@ -1269,7 +1270,6 @@ dependencies = [
 name = "qsc-codegen"
 version = "0.6.0"
 dependencies = [
- "anyhow",
  "cranelift-codegen",
  "cranelift-frontend",
  "cranelift-jit",
@@ -1277,6 +1277,7 @@ dependencies = [
  "cranelift-native",
  "cranelift-object",
  "log",
+ "miette",
  "object",
  "qsc-ast",
  "qsc-core",
@@ -1289,13 +1290,13 @@ version = "0.6.0"
 dependencies = [
  "object",
  "rand",
+ "thiserror",
 ]
 
 [[package]]
 name = "qsc-lexer"
 version = "0.6.0"
 dependencies = [
- "anyhow",
  "miette",
  "pest",
  "pest_derive",
@@ -1307,9 +1308,9 @@ dependencies = [
 name = "qsc-linker"
 version = "0.6.0"
 dependencies = [
- "anyhow",
  "lnk",
  "log",
+ "miette",
  "qsc-core",
  "target-lexicon",
  "which",

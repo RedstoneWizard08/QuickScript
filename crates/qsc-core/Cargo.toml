@@ -10,3 +10,4 @@ edition.workspace = true
 [dependencies]
 object.workspace = true
 rand.workspace = true
+thiserror.workspace = true

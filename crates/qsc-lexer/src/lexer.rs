@@ -196,11 +196,15 @@ impl<'i> Lexer<'i> {
                 },
             })),
 
-            val => return Err(LexerError {
-                src: self.err_src.clone(),
-                location: pair.as_span().into_source_span(),
-                error: miette!("Unsupported pair: {:?}", val),
-            }),
+            Rule::EOI => NodeData::EOI,
+
+            val => {
+                return Err(LexerError {
+                    src: self.err_src.clone(),
+                    location: pair.as_span().into_source_span(),
+                    error: miette!("Unsupported pair: {:?}", val),
+                })
+            }
         })
     }
 }

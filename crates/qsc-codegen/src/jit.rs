@@ -1,6 +1,5 @@
 use std::{cell::Cell, collections::HashMap};
 
-use anyhow::Result;
 use cranelift_codegen::{
     ir::{AbiParam, Function},
     isa::lookup,
@@ -10,6 +9,7 @@ use cranelift_codegen::{
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{default_libcall_names, DataDescription, DataId, Linkage, Module};
+use miette::{IntoDiagnostic, Result};
 use target_lexicon::Triple;
 
 use qsc_ast::ast::decl::func::FunctionNode as Func;
@@ -35,10 +35,15 @@ impl<'a> JitGenerator<'a> {
     pub fn new(triple: Triple) -> Result<Self> {
         let mut flags = settings::builder();
 
-        flags.set("use_colocated_libcalls", "false")?;
-        flags.set("is_pic", "false")?;
+        flags
+            .set("use_colocated_libcalls", "false")
+            .into_diagnostic()?;
+        flags.set("is_pic", "false").into_diagnostic()?;
 
-        let isa = lookup(triple)?.finish(Flags::new(flags))?;
+        let isa = lookup(triple)
+            .into_diagnostic()?
+            .finish(Flags::new(flags))
+            .into_diagnostic()?;
         let builder = JITBuilder::with_isa(isa, default_libcall_names());
         let module = JITModule::new(builder);
 
@@ -146,16 +151,19 @@ impl<'a> JitGenerator<'a> {
     }
 
     pub fn finalize_funciton(&'a mut self, func: Func<'a>) -> Result<()> {
-        let id =
-            self.module
-                .declare_function(&func.name, Linkage::Export, &self.ctx.func.signature)?;
+        let id = self
+            .module
+            .declare_function(&func.name, Linkage::Export, &self.ctx.func.signature)
+            .into_diagnostic()?;
 
-        self.module.define_function(id, &mut self.ctx)?;
+        self.module
+            .define_function(id, &mut self.ctx)
+            .into_diagnostic()?;
         self.fns.push(self.ctx.func.clone());
         self.functions.insert(func.name.to_string(), func.clone());
         self.vcode.push(self.ctx.compiled_code().unwrap().clone());
         self.module.clear_context(&mut self.ctx);
-        self.module.finalize_definitions()?;
+        self.module.finalize_definitions().into_diagnostic()?;
 
         let code = self.module.get_finalized_function(id);
 
@@ -182,14 +190,14 @@ impl<'a> JitGenerator<'a> {
         if let Some(main) = main {
             Ok(main())
         } else {
-            Err(anyhow!("No main function found"))
+            Err(miette!("No main function found"))
         }
     }
 }
 
 impl<'a> BackendInternal<'a, JITModule> for JitGenerator<'a> {
     fn post_define(cctx: &mut CompilerContext<'a, JITModule>, id: DataId) -> Result<()> {
-        cctx.module.finalize_definitions()?;
+        cctx.module.finalize_definitions().into_diagnostic()?;
 
         let (code, _) = cctx.module.get_finalized_data(id);
 

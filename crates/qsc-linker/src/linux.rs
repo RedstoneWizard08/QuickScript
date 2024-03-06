@@ -1,6 +1,6 @@
 use crate::command_exists;
-use anyhow::Result;
 use log::debug;
+use miette::{IntoDiagnostic, Result};
 use qsc_core::target::ENV;
 use std::{
     path::PathBuf,
@@ -116,8 +116,10 @@ pub fn run_linker(
         .arg(tmp_file)
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
-        .spawn()?
-        .wait()?;
+        .spawn()
+        .into_diagnostic()?
+        .wait()
+        .into_diagnostic()?;
 
     Ok(())
 }

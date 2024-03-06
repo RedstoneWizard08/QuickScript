@@ -1,9 +1,9 @@
 use super::Backend;
 use crate::context::{CodegenContext, CompilerContext};
-use anyhow::Result;
 use cranelift_codegen::ir::{AbiParam, InstBuilder, Value};
 use cranelift_module::{Linkage, Module};
-use qsc_ast::ast::stmt::call::CallNode;
+use miette::{IntoDiagnostic, Result};
+use qsc_ast::ast::{literal::LiteralNode, stmt::call::CallNode};
 
 pub trait CallCompiler<'a, M: Module>: Backend<'a, M> {
     fn compile_call(
@@ -71,8 +71,19 @@ impl<'a, M: Module, T: Backend<'a, M>> CallCompiler<'a, M> for T {
                                 .1
                                 .clone()
                                 .map(|v| v.as_str())
-                                .unwrap_or("ptr".to_string());
+                                .unwrap_or("i32".to_string());
                         }
+                    }
+
+                    if let Ok(literal) = arg.value.data.as_literal() {
+                        return match literal {
+                            LiteralNode::Bool(_) => "bool",
+                            LiteralNode::Char(_) => "char",
+                            LiteralNode::Float(_) => "f64",
+                            LiteralNode::Int(_) => "i32",
+                            LiteralNode::String(_) => "str",
+                        }
+                        .to_string();
                     }
 
                     "ptr".to_string()
@@ -98,7 +109,8 @@ impl<'a, M: Module, T: Backend<'a, M>> CallCompiler<'a, M> for T {
 
         let callee = cctx
             .module
-            .declare_function(&call.func, Linkage::Import, &sig)?;
+            .declare_function(&call.func, Linkage::Import, &sig)
+            .into_diagnostic()?;
 
         let local_callee = cctx
             .module

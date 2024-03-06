@@ -7,8 +7,8 @@ use std::{
     time::Duration,
 };
 
-use anyhow::Result;
 use clap::Parser;
+use miette::{IntoDiagnostic, Result};
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 use target_lexicon::Triple;
 
@@ -27,7 +27,7 @@ impl WatchCommand {
     pub fn run(&self) -> Result<()> {
         let path = self.path.clone().join("main.qs");
         let name = path.file_name().unwrap().to_str().unwrap();
-        let content = fs::read_to_string(path.clone())?;
+        let content = fs::read_to_string(path.clone()).into_diagnostic()?;
         let lexer = Lexer::new(&name, &content);
         let exprs = lexer.lex()?;
         let mut compiler = SimpleCompiler::<JitGenerator>::new(Triple::host())?;
@@ -49,13 +49,13 @@ impl WatchCommand {
 
 impl<'a> Command<'a> for WatchCommand {
     fn execute(&'a mut self) -> Result<()> {
-        self.path = canonicalize(&self.path)?;
+        self.path = canonicalize(&self.path).into_diagnostic()?;
 
         let (tx, rx) = channel();
 
         info!("Setting up watcher...");
 
-        let mut watcher = RecommendedWatcher::new(tx, Config::default())?;
+        let mut watcher = RecommendedWatcher::new(tx, Config::default()).into_diagnostic()?;
 
         info!("Starting changes watcher...");
 
@@ -64,7 +64,7 @@ impl<'a> Command<'a> for WatchCommand {
 
         watcher
             .watch(&self.path, RecursiveMode::Recursive)
-            .map_err(|v| anyhow!(v))?;
+            .map_err(|v| miette!(v))?;
 
         while let Ok(res) = rx.recv() {
             match res {
@@ -82,13 +82,13 @@ impl<'a> Command<'a> for WatchCommand {
                         let _ = self.run();
 
                         // Events fire twice, so consume an extra.
-                        if let Err(err) = rx.recv()? {
-                            return Err(anyhow!("The file watcher encountered an error: {}", err));
+                        if let Err(err) = rx.recv().into_diagnostic()? {
+                            return Err(miette!("The file watcher encountered an error: {}", err));
                         }
                     }
                 }
 
-                Err(err) => return Err(anyhow!("The file watcher encountered an error: {}", err)),
+                Err(err) => return Err(miette!("The file watcher encountered an error: {}", err)),
             }
         }
 

@@ -1,6 +1,6 @@
-use anyhow::Result;
 use cranelift_codegen::ir::{InstBuilder, Value};
 use cranelift_module::Module;
+use miette::Result;
 
 use crate::{
     context::{CodegenContext, CompilerContext},

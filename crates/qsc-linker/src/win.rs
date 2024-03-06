@@ -1,6 +1,6 @@
-use anyhow::Result;
 use lnk::ShellLink;
 use log::debug;
+use miette::Result;
 use std::{
     path::PathBuf,
     process::{Command, Stdio},

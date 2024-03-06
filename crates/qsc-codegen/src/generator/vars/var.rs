@@ -1,10 +1,10 @@
-use anyhow::Result;
 use cranelift_codegen::{
     entity::EntityRef,
     ir::{InstBuilder, Value},
 };
 use cranelift_frontend::Variable;
 use cranelift_module::{DataId, Linkage, Module};
+use miette::{IntoDiagnostic, Result};
 
 use qsc_ast::ast::decl::var::VariableNode as Var;
 
@@ -185,7 +185,8 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
         } else if cctx.globals.contains_key(ident) {
             let sym = cctx
                 .module
-                .declare_data(ident, Linkage::Export, true, false)?;
+                .declare_data(ident, Linkage::Export, true, false)
+                .into_diagnostic()?;
             let local_id = cctx.module.declare_data_in_func(sym, ctx.builder.func);
             let ptr = Self::ptr(cctx);
             let val = ctx.builder.ins().symbol_value(ptr, local_id);
@@ -196,7 +197,7 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
 
             Ok(val)
         } else {
-            Err(anyhow::anyhow!("Variable {} not found", ident))
+            Err(miette::miette!("Variable {} not found", ident))
         }
     }
 }

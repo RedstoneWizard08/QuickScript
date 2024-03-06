@@ -1,6 +1,6 @@
-use anyhow::Result;
 use cranelift_codegen::ir::{types, InstBuilder, Type, Value};
 use cranelift_module::{Linkage, Module};
+use miette::{IntoDiagnostic, Result};
 use qsc_ast::ast::literal::{
     boolean::BoolNode, char::CharNode, float::FloatNode, int::IntNode, string::StringNode,
     LiteralNode,
@@ -52,7 +52,7 @@ impl<'a, M: Module, T: Backend<'a, M>> LiteralCompiler<'a, M> for T {
     }
 
     fn compile_int(ctx: &mut CodegenContext<'a>, value: IntNode<'a>) -> Value {
-        ctx.builder.ins().iconst(types::I32, i64::from(value.value))
+        ctx.builder.ins().iconst(types::I32, value.value)
     }
 
     fn compile_float(ctx: &mut CodegenContext<'a>, value: FloatNode<'a>) -> Value {
@@ -75,9 +75,13 @@ impl<'a, M: Module, T: Backend<'a, M>> LiteralCompiler<'a, M> for T {
 
         let id = cctx
             .module
-            .declare_data(&name, Linkage::Export, true, false)?;
+            .declare_data(&name, Linkage::Export, true, false)
+            .into_diagnostic()?;
 
-        cctx.module.define_data(id, &cctx.data_desc)?;
+        cctx.module
+            .define_data(id, &cctx.data_desc)
+            .into_diagnostic()?;
+
         cctx.data_desc.clear();
 
         let local_id = cctx.module.declare_data_in_func(id, ctx.builder.func);

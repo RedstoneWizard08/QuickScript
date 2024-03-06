@@ -1,6 +1,6 @@
 use crate::{
     ast::{decl::DeclarationNode, expr::ExpressionNode, literal::LiteralNode, stmt::StatementNode},
-    get_enum_variant_value_impl, is_enum_variant_impl,
+    get_enum_variant_value_impl, is_enum_variant_impl, is_enum_variant_no_field_impl,
 };
 
 use super::{block::Block, sym::SymbolNode, ty::TypeNode};
@@ -14,6 +14,7 @@ pub enum NodeData<'i> {
     Block(Block<'i>),
     Symbol(SymbolNode<'i>),
     Type(TypeNode<'i>),
+    EOI,
 }
 
 is_enum_variant_impl!(is_expr -> NodeData::Expr);
@@ -23,6 +24,7 @@ is_enum_variant_impl!(is_stmt -> NodeData::Statement);
 is_enum_variant_impl!(is_block -> NodeData::Block);
 is_enum_variant_impl!(is_symbol -> NodeData::Symbol);
 is_enum_variant_impl!(is_type -> NodeData::Type);
+is_enum_variant_no_field_impl!(is_eoi -> NodeData::EOI);
 
 get_enum_variant_value_impl!(as_expr -> NodeData::Expr: ExpressionNode);
 get_enum_variant_value_impl!(as_literal -> NodeData::Literal: LiteralNode);

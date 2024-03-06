@@ -8,13 +8,14 @@ license.workspace = true
 edition.workspace = true
 
 [dependencies]
-anyhow.workspace = true
+miette.workspace = true
 clap.workspace = true
 log.workspace = true
 clap-verbosity-flag.workspace = true
 clap_complete.workspace = true
 pretty_env_logger.workspace = true
 target-lexicon.workspace = true
+qsc-core.workspace = true
 qsc-codegen.workspace = true
 qsc-lexer.workspace = true
 qsc-linker.workspace = true

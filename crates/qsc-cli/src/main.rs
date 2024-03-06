@@ -1,5 +1,5 @@
-use anyhow::Result;
 use clap::Parser;
+use miette::Result;
 use qsc_cli::{Cli, Command};
 
 pub fn main() -> Result<()> {

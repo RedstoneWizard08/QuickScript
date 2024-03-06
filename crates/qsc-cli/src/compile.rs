@@ -1,7 +1,7 @@
 use std::{cell::Cell, fs, path::PathBuf, str::FromStr};
 
-use anyhow::Result;
 use clap::Parser;
+use miette::{IntoDiagnostic, Result};
 use target_lexicon::Triple;
 use tempfile::NamedTempFile;
 
@@ -66,7 +66,7 @@ impl<'a> Command<'a> for CompileCommand {
             .unwrap_or(Triple::host());
 
         let name = self.file.file_name().unwrap().to_str().unwrap();
-        let content = fs::read_to_string(self.file.clone())?;
+        let content = fs::read_to_string(self.file.clone()).into_diagnostic()?;
 
         debug!("Lexing file: {}", self.file.to_str().unwrap());
 
@@ -102,7 +102,7 @@ impl<'a> Command<'a> for CompileCommand {
 
             file.set_extension("vcode");
 
-            fs::write(file, compiler.vcode())?;
+            fs::write(file, compiler.vcode()).into_diagnostic()?;
         }
 
         if self.clif {
@@ -110,7 +110,7 @@ impl<'a> Command<'a> for CompileCommand {
 
             file.set_extension("clif");
 
-            fs::write(file, compiler.clif()?)?;
+            fs::write(file, compiler.clif()?).into_diagnostic()?;
         }
 
         // The compiler is consumed here, so we can't output both asm
@@ -123,7 +123,7 @@ impl<'a> Command<'a> for CompileCommand {
             unsafe {
                 let compiler = compiler_cell.as_ptr().read();
 
-                fs::write(file, compiler.asm()?)?;
+                fs::write(file, compiler.asm()?).into_diagnostic()?;
             }
 
             return Ok(());
@@ -138,7 +138,7 @@ impl<'a> Command<'a> for CompileCommand {
                 obj = compiler.finalize();
             }
 
-            let data = obj.object.write()?;
+            let data = obj.object.write().into_diagnostic()?;
             let mut file = self.file.clone();
 
             {
@@ -153,12 +153,12 @@ impl<'a> Command<'a> for CompileCommand {
                 }
             }
 
-            fs::write(file, data)?;
+            fs::write(file, data).into_diagnostic()?;
 
             return Ok(());
         }
 
-        let tmp_file = NamedTempFile::new()?;
+        let tmp_file = NamedTempFile::new().into_diagnostic()?;
         let obj;
 
         unsafe {
@@ -167,9 +167,9 @@ impl<'a> Command<'a> for CompileCommand {
             obj = compiler.finalize();
         }
 
-        let data = obj.object.write()?;
+        let data = obj.object.write().into_diagnostic()?;
 
-        fs::write(tmp_file.path(), data)?;
+        fs::write(tmp_file.path(), data).into_diagnostic()?;
 
         let out_path = {
             #[cfg(windows)]

@@ -1,5 +1,5 @@
 #[macro_use]
-extern crate anyhow;
+extern crate miette;
 
 #[macro_use]
 extern crate log;
@@ -10,11 +10,11 @@ pub mod run;
 pub mod style;
 pub mod watch;
 
-use anyhow::Result;
 use clap::{Parser, Subcommand};
 use clap_verbosity_flag::Verbosity;
 use const_format::formatcp;
 use log::LevelFilter;
+use miette::Result;
 use pretty_env_logger::formatted_builder;
 
 use self::{

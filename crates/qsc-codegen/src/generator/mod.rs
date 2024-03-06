@@ -1,6 +1,6 @@
-use anyhow::Result;
 use cranelift_codegen::ir::{types, GlobalValue, InstBuilder, Type, Value};
 use cranelift_module::{DataId, Module};
+use miette::Result;
 use qsc_ast::ast::{
     decl::DeclarationNode,
     expr::{unary::UnaryExpr, ExpressionNode},
@@ -64,9 +64,7 @@ impl<'a, M: Module, T: BackendInternal<'a, M>> Backend<'a, M> for T {
             "f64" => types::F64,
             "bool" => Type::int(1).unwrap(),
             "char" => types::I32,
-            "str" | "ptr" => ptr,
-
-            _ => types::I32,
+            "str" | "ptr" | _ => ptr,
         }
     }
 
@@ -103,7 +101,7 @@ impl<'a, M: Module, T: BackendInternal<'a, M>> Backend<'a, M> for T {
         let res = match *node.data {
             NodeData::Literal(literal) => Self::compile_literal(cctx, ctx, literal),
             NodeData::Symbol(symbol) => Self::compile_named_var(cctx, ctx, symbol.value),
-            NodeData::Type(_) => Ok(Self::null(ctx)),
+            NodeData::Type(_) | NodeData::EOI => Ok(Self::null(ctx)),
 
             NodeData::Expr(expr) => match expr {
                 ExpressionNode::Unary(UnaryExpr {
