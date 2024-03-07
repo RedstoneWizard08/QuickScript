@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cranelift_codegen::{
     entity::EntityRef,
     ir::{InstBuilder, Value},
@@ -16,59 +14,59 @@ use crate::{
     generator::Backend,
 };
 
-pub trait VariableCompiler<'a, M: Module>: Backend<'a, M> {
+pub trait VariableCompiler<'a, 'b, M: Module>: Backend<'a, 'b, M> {
     type O;
 
     fn compile_var(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         var: Var<'a>,
     ) -> Result<Self::O>;
 
     fn declare_var(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         var: Var<'a>,
     ) -> Result<Variable>;
 
     fn compile_empty_var(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         var: Var<'a>,
     ) -> Result<Self::O>;
 
     fn compile_data_var(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         var: Var<'a>,
         data: DataId,
     ) -> Result<Self::O>;
 
     fn compile_value_var(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         var: Var<'a>,
         value: Value,
     ) -> Result<Self::O>;
 
     fn compile_named_var(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         ident: &'a str,
     ) -> Result<Self::O>;
 }
 
-impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
+impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> VariableCompiler<'a, 'b, M> for T {
     type O = Value;
 
     fn compile_var(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         var: Var<'a>,
     ) -> Result<Self::O> {
         match var.clone().value {
             Some(value) => {
-                let val = Self::compile(cctx.clone(), ctx, value)?;
+                let val = Self::compile(cctx, ctx, value)?;
 
                 Self::compile_value_var(cctx, ctx, var, val)
             }
@@ -78,8 +76,8 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
     }
 
     fn declare_var(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         var: Var<'a>,
     ) -> Result<Variable> {
         let ty = Self::query_type(
@@ -98,8 +96,8 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
     }
 
     fn compile_empty_var(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         var: Var<'a>,
     ) -> Result<Self::O> {
         let ty = Self::query_type(
@@ -122,16 +120,16 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
     }
 
     fn compile_data_var(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         var: Var<'a>,
         data: DataId,
     ) -> Result<Self::O> {
-        let val = Self::get_global(cctx.clone(), ctx, data);
+        let val = Self::get_global(cctx, ctx, data);
 
         let val = ctx.builder.write().ins().symbol_value(
             Self::query_type(
-                cctx.clone(),
+                cctx,
                 var.type_
                     .clone()
                     .map(|v| v.as_str())
@@ -158,8 +156,8 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
     }
 
     fn compile_value_var(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         var: Var<'a>,
         val: Value,
     ) -> Result<Self::O> {
@@ -182,11 +180,11 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
     }
 
     fn compile_named_var(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         ident: &'a str,
     ) -> Result<Self::O> {
-        let cctx_c = cctx.clone();
+        let cctx_c = cctx;
         let mut wctx = cctx_c.write();
         let mut bctx = ctx.builder.write();
 

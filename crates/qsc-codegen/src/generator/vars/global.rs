@@ -6,18 +6,18 @@ use cranelift_module::{DataId, Module};
 use miette::Result;
 use qsc_ast::ast::decl::global::GlobalVariable;
 
-pub trait GlobalVariableCompiler<'a, M: Module>: Backend<'a, M> {
+pub trait GlobalVariableCompiler<'a, 'b, M: Module>: Backend<'a, 'b, M> {
     fn compile_global(
         cctx: &mut CompilerContext<'a, M>,
-        ctx: &mut CodegenContext<'a>,
+        ctx: &mut CodegenContext<'a, 'b>,
         var: GlobalVariable<'a>,
     ) -> Result<DataId>;
 }
 
-impl<'a, M: Module, T: Backend<'a, M>> GlobalVariableCompiler<'a, M> for T {
+impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> GlobalVariableCompiler<'a, 'b, M> for T {
     fn compile_global(
         _cctx: &mut CompilerContext<'a, M>,
-        _ctx: &mut CodegenContext<'a>,
+        _ctx: &mut CodegenContext<'a, 'b>,
         _var: GlobalVariable<'a>,
     ) -> Result<DataId> {
         todo!();

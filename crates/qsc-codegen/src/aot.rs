@@ -6,7 +6,7 @@ use cranelift_codegen::{
 };
 use miette::{IntoDiagnostic, Result};
 use parking_lot::RwLock;
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use crate::{
     context::{CodegenContext, CompilerContext},
@@ -19,7 +19,7 @@ use qsc_ast::ast::decl::func::FunctionNode;
 use target_lexicon::Triple;
 
 pub struct AotGenerator<'a> {
-    pub ctx: Arc<RwLock<CompilerContext<'a, ObjectModule>>>,
+    pub ctx: RwLock<CompilerContext<'a, ObjectModule>>,
     pub builder_ctx: FunctionBuilderContext,
 }
 
@@ -64,7 +64,7 @@ impl<'a> AotGenerator<'a> {
         };
 
         Ok(Self {
-            ctx: Arc::new(RwLock::new(ctx)),
+            ctx: RwLock::new(ctx),
             builder_ctx: FunctionBuilderContext::new(),
         })
     }
@@ -120,7 +120,6 @@ impl<'a> AotGenerator<'a> {
     }
 
     pub fn compile_function_code(&mut self, func: &FunctionNode<'a>) -> Result<()> {
-        let cctx = self.ctx.clone();
         let builder;
 
         {
@@ -133,10 +132,10 @@ impl<'a> AotGenerator<'a> {
             );
         }
 
-        let builder = Arc::new(RwLock::new(builder));
+        let builder = RwLock::new(builder);
 
         let ctx = &mut CodegenContext {
-            builder: builder.clone(),
+            builder: &builder,
             locals: HashMap::new(),
             vars: HashMap::new(),
             values: HashMap::new(),
@@ -144,9 +143,8 @@ impl<'a> AotGenerator<'a> {
             func: func.clone(),
         };
 
-        Self::compile_fn(cctx, ctx, func)?;
+        Self::compile_fn(&self.ctx, ctx, func)?;
 
-        let builder = Arc::into_inner(builder).unwrap();
         let builder = RwLock::into_inner(builder);
 
         builder.finalize();
@@ -196,10 +194,7 @@ impl<'a> AotGenerator<'a> {
     }
 
     pub fn finalize(self) -> ObjectProduct {
-        unsafe { Arc::try_unwrap(self.ctx).unwrap_unchecked() }
-            .into_inner()
-            .module
-            .finish()
+        self.ctx.into_inner().module.finish()
     }
 }
 

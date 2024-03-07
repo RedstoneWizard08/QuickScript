@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cranelift_codegen::ir::{types, InstBuilder, Type, Value};
 use cranelift_module::{Linkage, Module};
 use miette::{IntoDiagnostic, Result};
@@ -14,29 +12,29 @@ use crate::context::{CodegenContext, CompilerContext};
 
 use super::Backend;
 
-pub trait LiteralCompiler<'a, M: Module>: Backend<'a, M> {
-    fn compile_bool(ctx: &mut CodegenContext<'a>, value: BoolNode<'a>) -> Value;
-    fn compile_int(ctx: &mut CodegenContext<'a>, value: IntNode<'a>) -> Value;
-    fn compile_float(ctx: &mut CodegenContext<'a>, value: FloatNode<'a>) -> Value;
-    fn compile_char(ctx: &mut CodegenContext<'a>, value: CharNode<'a>) -> Value;
+pub trait LiteralCompiler<'a, 'b, M: Module>: Backend<'a, 'b, M> {
+    fn compile_bool(ctx: &mut CodegenContext<'a, 'b>, value: BoolNode<'a>) -> Value;
+    fn compile_int(ctx: &mut CodegenContext<'a, 'b>, value: IntNode<'a>) -> Value;
+    fn compile_float(ctx: &mut CodegenContext<'a, 'b>, value: FloatNode<'a>) -> Value;
+    fn compile_char(ctx: &mut CodegenContext<'a, 'b>, value: CharNode<'a>) -> Value;
 
     fn compile_string(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         value: StringNode<'a>,
     ) -> Result<Value>;
 
     fn compile_literal(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         node: LiteralNode<'a>,
     ) -> Result<Value>;
 }
 
-impl<'a, M: Module, T: Backend<'a, M>> LiteralCompiler<'a, M> for T {
+impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> LiteralCompiler<'a, 'b, M> for T {
     fn compile_literal(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         expr: LiteralNode<'a>,
     ) -> Result<Value> {
         Ok(match expr {
@@ -48,24 +46,24 @@ impl<'a, M: Module, T: Backend<'a, M>> LiteralCompiler<'a, M> for T {
         })
     }
 
-    fn compile_bool(ctx: &mut CodegenContext<'a>, value: BoolNode<'a>) -> Value {
+    fn compile_bool(ctx: &mut CodegenContext<'a, 'b>, value: BoolNode<'a>) -> Value {
         ctx.builder
             .write()
             .ins()
             .iconst(Type::int(1).unwrap(), i64::from(value.value))
     }
 
-    fn compile_int(ctx: &mut CodegenContext<'a>, value: IntNode<'a>) -> Value {
+    fn compile_int(ctx: &mut CodegenContext<'a, 'b>, value: IntNode<'a>) -> Value {
         ctx.builder.write().ins().iconst(types::I32, value.value)
     }
 
-    fn compile_float(ctx: &mut CodegenContext<'a>, value: FloatNode<'a>) -> Value {
+    fn compile_float(ctx: &mut CodegenContext<'a, 'b>, value: FloatNode<'a>) -> Value {
         ctx.builder.write().ins().f64const(value.value)
     }
 
     fn compile_string(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         value: StringNode<'a>,
     ) -> Result<Value> {
         let ddesc = cctx.read().data_desc.clone();
@@ -92,10 +90,10 @@ impl<'a, M: Module, T: Backend<'a, M>> LiteralCompiler<'a, M> for T {
 
         let local_id = wctx.module.declare_data_in_func(id, bctx.func);
 
-        Ok(bctx.ins().global_value(Self::ptr(cctx.clone()), local_id))
+        Ok(bctx.ins().global_value(Self::ptr(cctx), local_id))
     }
 
-    fn compile_char(ctx: &mut CodegenContext<'a>, value: CharNode<'a>) -> Value {
+    fn compile_char(ctx: &mut CodegenContext<'a, 'b>, value: CharNode<'a>) -> Value {
         ctx.builder
             .write()
             .ins()

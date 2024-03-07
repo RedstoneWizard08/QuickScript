@@ -34,6 +34,7 @@ pest_derive = "2.7.7"
 strum = { version = "0.26.1", features = ["derive"] }
 miette = { version = "7.1.0", features = ["fancy"] }
 parking_lot = { version = "0.12.1", features = ["arc_lock"] }
+debug-ignore = "1.0.5"
 
 qsc-ast = { path = "./crates/qsc-ast" }
 qsc-cli = { path = "./crates/qsc-cli" }

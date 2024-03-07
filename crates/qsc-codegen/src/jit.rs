@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use cranelift_codegen::{
     ir::{AbiParam, Function},
@@ -12,8 +12,7 @@ use cranelift_module::{default_libcall_names, DataDescription, DataId, Linkage, 
 use miette::{IntoDiagnostic, Result};
 use parking_lot::RwLock;
 use target_lexicon::Triple;
-
-use qsc_ast::ast::decl::func::FunctionNode as Func;
+use qsc_ast::ast::decl::func::FunctionNode;
 
 use super::{
     context::{CodegenContext, CompilerContext},
@@ -21,7 +20,7 @@ use super::{
 };
 
 pub struct JitGenerator<'a> {
-    pub ctx: Arc<RwLock<CompilerContext<'a, JITModule>>>,
+    pub ctx: RwLock<CompilerContext<'a, JITModule>>,
     pub builder_ctx: FunctionBuilderContext,
 }
 
@@ -54,12 +53,12 @@ impl<'a> JitGenerator<'a> {
         };
 
         Ok(Self {
-            ctx: Arc::new(RwLock::new(ctx)),
+            ctx: RwLock::new(ctx),
             builder_ctx: FunctionBuilderContext::new(),
         })
     }
 
-    pub fn compile_function(&mut self, func: Func<'a>) -> Result<()> {
+    pub fn compile_function(&mut self, func: FunctionNode<'a>) -> Result<()> {
         self.setup_function(&func)?;
         self.compile_function_code(&func)?;
         self.finalize_funciton(func)?;
@@ -67,7 +66,7 @@ impl<'a> JitGenerator<'a> {
         Ok(())
     }
 
-    pub fn setup_function(&mut self, func: &Func<'a>) -> Result<()> {
+    pub fn setup_function(&mut self, func: &FunctionNode<'a>) -> Result<()> {
         debug!("Compiling function: {}", func.name);
 
         let ptr = self.ctx.read().module.isa().pointer_type();
@@ -102,8 +101,7 @@ impl<'a> JitGenerator<'a> {
         Ok(())
     }
 
-    pub fn compile_function_code(&mut self, func: &Func<'a>) -> Result<()> {
-        let cctx = self.ctx.clone();
+    pub fn compile_function_code(&mut self, func: &FunctionNode<'a>) -> Result<()> {
         let builder;
 
         {
@@ -116,10 +114,10 @@ impl<'a> JitGenerator<'a> {
             );
         }
 
-        let builder = Arc::new(RwLock::new(builder));
+        let builder = RwLock::new(builder);
 
         let ctx = &mut CodegenContext {
-            builder: builder.clone(),
+            builder: &builder,
             locals: HashMap::new(),
             vars: HashMap::new(),
             values: HashMap::new(),
@@ -127,17 +125,20 @@ impl<'a> JitGenerator<'a> {
             func: func.clone(),
         };
 
-        Self::compile_fn(cctx, ctx, func)?;
+        debug!("Compiling function: {}", func.name);
 
-        let builder = Arc::into_inner(builder).unwrap();
-        let builder = builder.into_inner();
+        Self::compile_fn(&self.ctx, ctx, func)?;
 
-        builder.finalize();
+        debug!("Finalizing function: {}", func.name);
+
+        builder.into_inner().finalize();
+
+        debug!("Completed compilation for function: {}", func.name);
 
         Ok(())
     }
 
-    pub fn finalize_funciton(&mut self, func: Func<'a>) -> Result<()> {
+    pub fn finalize_funciton(&mut self, func: FunctionNode<'a>) -> Result<()> {
         let sig = self.ctx.read().ctx.func.signature.clone();
 
         let id = self

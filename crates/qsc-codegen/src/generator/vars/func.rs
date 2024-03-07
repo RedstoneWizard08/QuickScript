@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cranelift_codegen::ir::{InstBuilder, Value};
 use cranelift_module::Module;
 use miette::Result;
@@ -14,21 +12,23 @@ use qsc_ast::ast::decl::func::FunctionNode;
 
 use super::var::VariableCompiler;
 
-pub trait FunctionCompiler<'a, M: Module>: Backend<'a, M> {
+pub trait FunctionCompiler<'a, 'b, M: Module>: Backend<'a, 'b, M> {
     fn compile_fn(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         func: &FunctionNode<'a>,
     ) -> Result<Value>;
 }
 
-impl<'a, M: Module, T: Backend<'a, M>> FunctionCompiler<'a, M> for T {
+impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> FunctionCompiler<'a, 'b, M> for T {
     fn compile_fn(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         func: &FunctionNode<'a>,
     ) -> Result<Value> {
         let entry;
+
+        debug!("Creating entry block for function: {}", func.name);
 
         {
             let mut bctx = ctx.builder.write();
@@ -39,16 +39,22 @@ impl<'a, M: Module, T: Backend<'a, M>> FunctionCompiler<'a, M> for T {
             bctx.seal_block(entry);
         }
 
+        debug!("Declaring argument variables for function: {}", func.name);
+
         for (idx, arg) in func.args.iter().enumerate() {
             let val = ctx.builder.write().block_params(entry)[idx];
-            let var = Self::declare_var(cctx.clone(), ctx, arg.clone().into())?;
+            let var = Self::declare_var(cctx, ctx, arg.clone().into())?;
 
             ctx.builder.write().def_var(var, val);
         }
 
+        debug!("Compiling nodes for function: {}", func.name);
+
         for node in func.content.data.clone() {
-            Self::compile(cctx.clone(), ctx, node)?;
+            Self::compile(cctx, ctx, node)?;
         }
+
+        debug!("Compiled all nodes for function: {}", func.name);
 
         if ctx.vars.contains_key(RETURN_VAR) {
             let val = Self::compile_named_var(cctx, ctx, RETURN_VAR)?;
@@ -57,6 +63,8 @@ impl<'a, M: Module, T: Backend<'a, M>> FunctionCompiler<'a, M> for T {
         } else {
             ctx.builder.write().ins().return_(&[]);
         }
+
+        debug!("Compiled function: {}", func.name);
 
         Ok(Value::from_u32(0))
     }

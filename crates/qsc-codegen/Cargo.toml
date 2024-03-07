@@ -21,3 +21,4 @@ target-lexicon.workspace = true
 qsc-ast.workspace = true
 qsc-core.workspace = true
 parking_lot.workspace = true
+debug-ignore.workspace = true

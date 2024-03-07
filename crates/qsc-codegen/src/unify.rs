@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use super::{aot::AotGenerator, jit::JitGenerator};
 use cranelift_codegen::write_function;
 use cranelift_module::Module;
@@ -48,10 +46,7 @@ impl<'a> CodegenBackend<'a> for AotGenerator<'a> {
     }
 
     fn finalize(self) -> ObjectProduct {
-        unsafe { Arc::try_unwrap(self.ctx).unwrap_unchecked() }
-            .into_inner()
-            .module
-            .finish()
+        self.ctx.into_inner().module.finish()
     }
 
     fn clif(&self) -> Result<String> {

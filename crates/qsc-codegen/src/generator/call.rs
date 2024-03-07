@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use super::Backend;
 use crate::context::{CodegenContext, CompilerContext};
 use cranelift_codegen::ir::{AbiParam, InstBuilder, Value};
@@ -8,25 +6,25 @@ use miette::{IntoDiagnostic, Result};
 use parking_lot::RwLock;
 use qsc_ast::ast::{literal::LiteralNode, stmt::call::CallNode};
 
-pub trait CallCompiler<'a, M: Module>: Backend<'a, M> {
+pub trait CallCompiler<'a, 'b, M: Module>: Backend<'a, 'b, M> {
     fn compile_call(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         call: CallNode<'a>,
     ) -> Result<Value>;
 }
 
-impl<'a, M: Module, T: Backend<'a, M>> CallCompiler<'a, M> for T {
+impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> CallCompiler<'a, 'b, M> for T {
     fn compile_call(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         call: CallNode<'a>,
     ) -> Result<Value> {
         let mut wctx = cctx.write();
         let mut sig = wctx.module.make_signature();
 
         if wctx.functions.contains_key(call.func) {
-            let ptr = Self::ptr(cctx.clone());
+            let ptr = Self::ptr(cctx);
             let func = wctx.functions.get(call.func).unwrap();
 
             let args = func
@@ -55,7 +53,7 @@ impl<'a, M: Module, T: Backend<'a, M>> CallCompiler<'a, M> for T {
             );
 
             sig.returns.push(AbiParam::new(Self::query_type(
-                cctx.clone(),
+                cctx,
                 func.ret
                     .clone()
                     .map(|v| v.as_str())
@@ -103,14 +101,12 @@ impl<'a, M: Module, T: Backend<'a, M>> CallCompiler<'a, M> for T {
             sig.params.append(
                 &mut args
                     .iter()
-                    .map(|ty| AbiParam::new(Self::query_type(cctx.clone(), ty.clone())))
+                    .map(|ty| AbiParam::new(Self::query_type(cctx, ty.clone())))
                     .collect(),
             );
 
-            sig.returns.push(AbiParam::new(Self::query_type(
-                cctx.clone(),
-                "i32".to_string(),
-            )));
+            sig.returns
+                .push(AbiParam::new(Self::query_type(cctx, "i32".to_string())));
         }
 
         let callee = wctx
@@ -125,7 +121,7 @@ impl<'a, M: Module, T: Backend<'a, M>> CallCompiler<'a, M> for T {
         let mut args = Vec::new();
 
         for arg in call.args {
-            args.push(Self::compile(cctx.clone(), ctx, arg.value)?);
+            args.push(Self::compile(cctx, ctx, arg.value)?);
         }
 
         let call = ctx.builder.write().ins().call(local_callee, &args);

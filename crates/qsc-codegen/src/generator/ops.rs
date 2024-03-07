@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cranelift_codegen::ir::{InstBuilder, Value};
 use cranelift_module::Module;
 use miette::Result;
@@ -10,21 +8,21 @@ use qsc_ast::ast::expr::{binary::BinaryExpr, operator::Operator};
 
 use super::Backend;
 
-pub trait OperationCompiler<'a, M: Module>: Backend<'a, M> {
+pub trait OperationCompiler<'a, 'b, M: Module>: Backend<'a, 'b, M> {
     fn compile_binary_expr(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         expr: BinaryExpr<'a>,
     ) -> Result<Value>;
 }
 
-impl<'a, M: Module, T: Backend<'a, M>> OperationCompiler<'a, M> for T {
+impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> OperationCompiler<'a, 'b, M> for T {
     fn compile_binary_expr(
-        cctx: Arc<RwLock<CompilerContext<'a, M>>>,
-        ctx: &mut CodegenContext<'a>,
+        cctx: &RwLock<CompilerContext<'a, M>>,
+        ctx: &mut CodegenContext<'a, 'b>,
         expr: BinaryExpr<'a>,
     ) -> Result<Value> {
-        let left = Self::compile(cctx.clone(), ctx, expr.lhs)?;
+        let left = Self::compile(cctx, ctx, expr.lhs)?;
         let right = Self::compile(cctx, ctx, expr.rhs)?;
         let mut bctx = ctx.builder.write();
 
