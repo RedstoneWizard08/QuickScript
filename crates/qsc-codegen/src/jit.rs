@@ -7,11 +7,11 @@ use cranelift_codegen::{
     Context,
 };
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
-use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{default_libcall_names, DataDescription, DataId, Linkage, Module};
 use miette::{IntoDiagnostic, Result};
 use parking_lot::RwLock;
 use qsc_ast::ast::decl::func::FunctionNode;
+use qsc_jit::{JITBuilder, JITModule};
 use target_lexicon::Triple;
 
 use super::{
@@ -181,9 +181,12 @@ impl<'a> JitGenerator<'a> {
             .finalize_definitions()
             .into_diagnostic()?;
 
-        let code = self.ctx.read().module.get_finalized_function(id);
+        let (code, size) = self.ctx.read().module.get_finalized_function(id);
 
-        self.ctx.write().code.push((func.name.to_string(), code));
+        self.ctx
+            .write()
+            .code
+            .push((func.name.to_string(), code, size));
 
         debug!("Compiled function: {}", func.name);
 
@@ -193,7 +196,7 @@ impl<'a> JitGenerator<'a> {
     pub fn exec(&self) -> Result<i32> {
         let mut main = None;
 
-        for (name, code) in &self.ctx.read().code {
+        for (name, code, _) in &self.ctx.read().code {
             if name == "main" {
                 main = Some(unsafe { std::mem::transmute::<_, fn() -> i32>(code) });
 
@@ -212,13 +215,19 @@ impl<'a> JitGenerator<'a> {
 }
 
 impl<'a> BackendInternal<'a, JITModule> for JitGenerator<'a> {
-    fn post_define(cctx: &mut CompilerContext<'a, JITModule>, id: DataId) -> Result<()> {
-        cctx.module.finalize_definitions().into_diagnostic()?;
+    fn post_define(cctx: &RwLock<CompilerContext<'a, JITModule>>, id: DataId) -> Result<()> {
+        let mut wctx = cctx.write();
 
-        let (code, _) = cctx.module.get_finalized_data(id);
+        wctx.module.finalize_definitions().into_diagnostic()?;
 
-        cctx.code.push((String::new(), code));
+        let (code, size) = wctx.module.get_finalized_data(id);
+
+        wctx.code.push((String::new(), code, size));
 
         Ok(())
+    }
+
+    fn is_jit() -> bool {
+        true
     }
 }

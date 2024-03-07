@@ -1,7 +1,7 @@
 use cranelift_codegen::ir::{types, InstBuilder, Type, Value};
 use cranelift_module::{Linkage, Module};
 use miette::{IntoDiagnostic, Result};
-use parking_lot::RwLock;
+use parking_lot::{RwLock, RwLockWriteGuard};
 use qsc_ast::ast::literal::{
     boolean::BoolNode, char::CharNode, float::FloatNode, int::IntNode, string::StringNode,
     LiteralNode,
@@ -90,7 +90,10 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> LiteralCompiler<'a, 'b, M> for T 
         ddesc.clear();
         wctx.data_desc = ddesc;
 
-        let local_id = wctx.module.declare_data_in_func(id, bctx.func);
+        RwLockWriteGuard::unlock_fair(wctx);
+        Self::post_define(cctx, id)?;
+
+        let local_id = cctx.write().module.declare_data_in_func(id, bctx.func);
 
         Ok(bctx.ins().global_value(ptr, local_id))
     }

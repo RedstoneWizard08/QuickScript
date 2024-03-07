@@ -441,26 +441,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "457a9832b089e26f5eea70dcf49bed8ec6edafed630ce7c83161f24d46ab8085"
 
 [[package]]
-name = "cranelift-jit"
-version = "0.105.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0af95fe68d5a10919012c8db82b1d59820405b8001c8c6d05f94b08031334fa9"
-dependencies = [
- "anyhow",
- "cranelift-codegen",
- "cranelift-control",
- "cranelift-entity",
- "cranelift-module",
- "cranelift-native",
- "libc",
- "log",
- "region",
- "target-lexicon",
- "wasmtime-jit-icache-coherence",
- "windows-sys 0.52.0",
-]
-
-[[package]]
 name = "cranelift-module"
 version = "0.105.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1004,6 +984,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "523dc4f511e55ab87b694dc30d0f820d60906ef06413f93d4d7a1385599cc149"
 
 [[package]]
+name = "memmap2"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "723e3ebdcdc5c023db1df315364573789f8857c11b631a2fdfad7c00f5c046b4"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "miette"
 version = "7.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1288,7 +1277,6 @@ version = "0.6.0"
 dependencies = [
  "cranelift-codegen",
  "cranelift-frontend",
- "cranelift-jit",
  "cranelift-module",
  "cranelift-native",
  "cranelift-object",
@@ -1299,6 +1287,7 @@ dependencies = [
  "parking_lot",
  "qsc-ast",
  "qsc-core",
+ "qsc-jit",
  "target-lexicon",
 ]
 
@@ -1309,6 +1298,24 @@ dependencies = [
  "object",
  "rand",
  "thiserror",
+]
+
+[[package]]
+name = "qsc-jit"
+version = "0.6.0"
+dependencies = [
+ "anyhow",
+ "cranelift-codegen",
+ "cranelift-control",
+ "cranelift-entity",
+ "cranelift-module",
+ "cranelift-native",
+ "libc",
+ "log",
+ "memmap2",
+ "region",
+ "target-lexicon",
+ "wasmtime-jit-icache-coherence",
 ]
 
 [[package]]

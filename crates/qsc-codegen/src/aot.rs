@@ -200,7 +200,11 @@ impl<'a> AotGenerator<'a> {
 }
 
 impl<'a> BackendInternal<'a, ObjectModule> for AotGenerator<'a> {
-    fn post_define(_cctx: &mut CompilerContext<'a, ObjectModule>, _id: DataId) -> Result<()> {
+    fn post_define(_cctx: &RwLock<CompilerContext<'a, ObjectModule>>, _id: DataId) -> Result<()> {
         Ok(())
+    }
+
+    fn is_jit() -> bool {
+        false
     }
 }

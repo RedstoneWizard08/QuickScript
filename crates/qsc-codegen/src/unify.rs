@@ -1,3 +1,5 @@
+use std::slice;
+
 use super::{aot::AotGenerator, jit::JitGenerator};
 use cranelift_codegen::write_function;
 use cranelift_module::Module;
@@ -183,10 +185,31 @@ impl<'a> CodegenBackend<'a> for JitGenerator<'a> {
     }
 
     fn asm(self) -> Result<String> {
-        let capstone = self.ctx.read().module.isa().to_capstone().unwrap();
-        let product = self.finalize();
-        let data = product.emit().unwrap();
-        let disasm = capstone.disasm_all(&*data.into_boxed_slice(), 0x0).unwrap();
+        let mut main = None;
+
+        for (name, code, size) in &self.ctx.read().code {
+            if name == "main" {
+                main = Some(unsafe { slice::from_raw_parts(*code, *size) });
+
+                debug!("Found main function!");
+            }
+        }
+
+        let main = main
+            .ok_or(miette!("Cannot find a main function!"))?
+            .to_vec();
+
+        let capstone = self
+            .ctx
+            .read()
+            .module
+            .isa()
+            .to_capstone()
+            .map_err(|v| miette!(v))?;
+
+        let disasm = capstone
+            .disasm_all(&*main.into_boxed_slice(), 0x0)
+            .map_err(|v| miette!(v))?;
 
         Ok(disasm
             .iter()

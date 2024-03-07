@@ -27,7 +27,7 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> ReturnCompiler<'a, 'b, M> for T {
         node: ReturnNode<'a>,
     ) -> Result<Value> {
         if let Some(value) = node.value {
-            if ctx.func.name == "main" || ctx.func.name == "_start" {
+            if (ctx.func.name == "main" || ctx.func.name == "_start") && !Self::is_jit() {
                 // main or _start need to exit instead of returning
 
                 Self::compile_call(

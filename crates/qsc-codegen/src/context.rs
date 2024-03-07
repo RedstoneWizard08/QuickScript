@@ -60,5 +60,5 @@ pub struct CompilerContext<'a, M: Module> {
     pub globals: HashMap<String, DataId>,
     pub fns: Vec<Function>,
     pub vcode: Vec<CompiledCode>,
-    pub code: Vec<(String, *const u8)>,
+    pub code: Vec<(String, *const u8, usize)>,
 }

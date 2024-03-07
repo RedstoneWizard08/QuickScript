@@ -21,6 +21,18 @@ pub struct RunCommand {
     /// Instead of running, dump the AST.
     #[arg(long = "dump-ast")]
     pub dump_ast: bool,
+
+    /// Output VCode.
+    #[arg(short = 'e', long = "vcode")]
+    pub vcode: bool,
+
+    /// Output ASM.
+    #[arg(short = 'S', long = "asm")]
+    pub asm: bool,
+
+    /// Output CLIF.
+    #[arg(short = 'i', long = "clif")]
+    pub clif: bool,
 }
 
 impl<'a> Command<'a> for RunCommand {
@@ -43,6 +55,33 @@ impl<'a> Command<'a> for RunCommand {
         let mut compiler = SimpleCompiler::<JitGenerator>::new(Triple::host(), name.to_string())?;
 
         compiler.compile(exprs)?;
+
+        if self.vcode {
+            let mut file = self.file.clone();
+
+            file.set_extension("vcode");
+
+            fs::write(file, compiler.vcode()).into_diagnostic()?;
+        }
+
+        if self.clif {
+            let mut file = self.file.clone();
+
+            file.set_extension("clif");
+
+            fs::write(file, compiler.clif()?).into_diagnostic()?;
+        }
+
+        // The compiler is consumed here, so we can't output both asm
+        // and object files at the same time.
+        if self.asm {
+            let mut file = self.file.clone();
+
+            file.set_extension("s");
+            fs::write(file, compiler.asm()?).into_diagnostic()?;
+
+            return Ok(());
+        }
 
         exit(compiler.run()?);
     }
