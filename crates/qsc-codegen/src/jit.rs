@@ -1,5 +1,3 @@
-pub mod lookup;
-
 use std::{collections::HashMap, sync::Arc};
 
 use cranelift_codegen::{
@@ -16,7 +14,7 @@ use qsc_ast::ast::decl::func::FunctionNode;
 use qsc_jit::{JITBuilder, JITModule};
 use target_lexicon::Triple;
 
-use self::lookup::lookup_symbol;
+use crate::lookup::lookup_symbol;
 
 use super::{
     context::{CodegenContext, CompilerContext},

@@ -14,8 +14,8 @@ use crate::{
 };
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{default_libcall_names, DataDescription, DataId, Linkage, Module};
-use cranelift_object::{ObjectBuilder, ObjectModule, ObjectProduct};
 use qsc_ast::ast::decl::func::FunctionNode;
+use qsc_object::{ObjectBuilder, ObjectModule, ObjectProduct};
 use target_lexicon::Triple;
 
 pub struct AotGenerator<'a> {

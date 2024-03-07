@@ -1,0 +1,21 @@
+[package]
+name = "qsc-object"
+version.workspace = true
+repository.workspace = true
+authors.workspace = true
+description.workspace = true
+license.workspace = true
+edition.workspace = true
+
+[dependencies]
+cranelift-module.workspace = true
+cranelift-codegen = { workspace = true, features = ["std"] }
+cranelift-control.workspace = true
+object = { workspace = true, features = ["write"] }
+target-lexicon.workspace = true
+anyhow.workspace = true
+log.workspace = true
+
+[dev-dependencies]
+cranelift-frontend.workspace = true
+cranelift-entity.workspace = true

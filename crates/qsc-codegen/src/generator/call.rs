@@ -1,10 +1,14 @@
 use super::Backend;
-use crate::context::{CodegenContext, CompilerContext};
+use crate::{
+    alias::DeclareAliasedFunction,
+    context::{CodegenContext, CompilerContext},
+};
 use cranelift_codegen::ir::{AbiParam, Function, InstBuilder, Value};
 use cranelift_module::{Linkage, Module};
 use miette::{IntoDiagnostic, Result};
 use parking_lot::{RwLock, RwLockWriteGuard};
 use qsc_ast::ast::{literal::LiteralNode, stmt::call::CallNode};
+use qsc_core::util::random_string;
 
 pub trait CallCompiler<'a, 'b, M: Module>: Backend<'a, 'b, M> {
     fn compile_call(
@@ -14,7 +18,9 @@ pub trait CallCompiler<'a, 'b, M: Module>: Backend<'a, 'b, M> {
     ) -> Result<Value>;
 }
 
-impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> CallCompiler<'a, 'b, M> for T {
+impl<'a, 'b, M: Module + DeclareAliasedFunction, T: Backend<'a, 'b, M>> CallCompiler<'a, 'b, M>
+    for T
+{
     fn compile_call(
         cctx: &RwLock<CompilerContext<'a, M>>,
         ctx: &mut CodegenContext<'a, 'b>,
@@ -25,6 +31,7 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> CallCompiler<'a, 'b, M> for T {
         let ptr = Self::ptr(cctx);
         let mut wctx = cctx.write();
         let mut sig = wctx.module.make_signature();
+        let mut func_name = call.func.to_string();
 
         if wctx.functions.contains_key(call.func) {
             let func = wctx.functions.get(call.func).unwrap();
@@ -95,8 +102,11 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> CallCompiler<'a, 'b, M> for T {
                 })
                 .collect::<Vec<String>>();
 
+            func_name = format!("__qsc::alias::{}_{}", call.func, random_string(8));
+
             debug!(
-                "Using imported function for call (Linkage::Import): {}({}) -> i32",
+                "Using imported function for call (name = {}, Linkage::Import): {}({}) -> i32",
+                func_name,
                 call.func,
                 args.join(", ")
             );
@@ -119,7 +129,7 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> CallCompiler<'a, 'b, M> for T {
 
         let callee = wctx
             .module
-            .declare_function(&call.func, Linkage::Import, &sig)
+            .declare_aliased_function(&func_name, &call.func, Linkage::Import, &sig)
             .into_diagnostic()?;
 
         let func_ref = unsafe { ((&mut wctx.ctx.func) as *mut Function).as_mut() }.unwrap();

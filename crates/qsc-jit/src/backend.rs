@@ -170,14 +170,14 @@ struct GotUpdate {
 ///
 /// See the `JITBuilder` for a convenient way to construct `JITModule` instances.
 pub struct JITModule {
-    isa: OwnedTargetIsa,
+    pub isa: OwnedTargetIsa,
     hotswap_enabled: bool,
     symbols: RefCell<HashMap<String, *const u8>>,
     lookup_symbols: Vec<Box<dyn Fn(&str) -> Option<*const u8>>>,
     libcall_names: Box<dyn Fn(ir::LibCall) -> String>,
     memory: MemoryHandle,
-    declarations: ModuleDeclarations,
-    function_got_entries: SecondaryMap<FuncId, Option<NonNull<AtomicPtr<u8>>>>,
+    pub declarations: ModuleDeclarations,
+    pub function_got_entries: SecondaryMap<FuncId, Option<NonNull<AtomicPtr<u8>>>>,
     function_plt_entries: SecondaryMap<FuncId, Option<NonNull<[u8; 16]>>>,
     data_object_got_entries: SecondaryMap<DataId, Option<NonNull<AtomicPtr<u8>>>>,
     libcall_got_entries: HashMap<ir::LibCall, NonNull<AtomicPtr<u8>>>,
@@ -213,7 +213,7 @@ impl JITModule {
         self.memory.writable.free_memory();
     }
 
-    fn lookup_symbol(&self, name: &str) -> Option<*const u8> {
+    pub fn lookup_symbol(&self, name: &str) -> Option<*const u8> {
         match self.symbols.borrow_mut().entry(name.to_owned()) {
             std::collections::hash_map::Entry::Occupied(occ) => Some(*occ.get()),
             std::collections::hash_map::Entry::Vacant(vac) => {
@@ -264,7 +264,7 @@ impl JITModule {
         NonNull::new(plt_entry).unwrap()
     }
 
-    fn new_func_plt_entry(&mut self, id: FuncId, val: *const u8) {
+    pub fn new_func_plt_entry(&mut self, id: FuncId, val: *const u8) {
         let got_entry = self.new_got_entry(val);
         self.function_got_entries[id] = Some(got_entry);
         let plt_entry = self.new_plt_entry(got_entry);

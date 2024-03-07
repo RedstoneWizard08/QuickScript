@@ -20,7 +20,7 @@ The lexer will transform `pest`'s tree into our `AbstractTree<'t>` type, which r
 
 ***Crate: `qsc-preprocessor`***
 
-This will go through the `AbstractTree<'t>` and gather a list of defined functions and variables in the module's scope. This will immediately return to the invoker after this is done. This information is then used by the processor in its information collection stage.
+This will go through the `AbstractTree<'t>` and gather a list of defined functions and variables in the module's scope. This will immediately return to the invoker after this is done. This information is then used by the processor in its information collection stage. This will be collected as a `PreprocessedTree<'t>`.
 
 ## 4. Processor
 
@@ -56,7 +56,7 @@ This stage will also include information about functions not defined in the modu
 
 ***Crate: part of `qsc-processor`***
 
-This stage will walk through the new `ProcessedTree<'t>` and create a new `FinalizedTree<'t>` type, which contains the abstract syntax tree in its final form.
+This stage will walk through and modify the new `ProcessedTree<'t>` type, turning it into the abstract syntax tree in its final form.
 
 This stage will find any empty `Option`s and fill them with the correct values, and will infer variable types based on statement contents and return types. It will also fill any missing types with `void`.
 

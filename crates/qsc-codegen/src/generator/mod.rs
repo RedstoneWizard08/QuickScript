@@ -9,6 +9,8 @@ use qsc_ast::ast::{
     stmt::StatementNode,
 };
 
+use crate::alias::DeclareAliasedFunction;
+
 use self::{
     call::CallCompiler,
     literal::LiteralCompiler,
@@ -49,7 +51,9 @@ pub trait Backend<'a, 'b, M: Module>: BackendInternal<'a, M> {
     ) -> GlobalValue;
 }
 
-impl<'a, 'b, M: Module, T: BackendInternal<'a, M>> Backend<'a, 'b, M> for T {
+impl<'a, 'b, M: Module + DeclareAliasedFunction, T: BackendInternal<'a, M>> Backend<'a, 'b, M>
+    for T
+{
     fn query_type(cctx: &RwLock<CompilerContext<'a, M>>, ty: String) -> Type {
         Self::query_type_with_pointer(Self::ptr(cctx), ty)
     }

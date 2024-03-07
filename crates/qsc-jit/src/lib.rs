@@ -3,7 +3,7 @@
 //! There is an [example project](https://github.com/bytecodealliance/cranelift-jit-demo/)
 //! which shows how to use some of the features of `cranelift_jit`.
 
-#![deny(missing_docs, unreachable_pub)]
+#![deny(unreachable_pub)]
 
 mod backend;
 mod compiled_blob;

@@ -1,3 +1,7 @@
+fn get_name() -> str {
+    return "worlde";
+}
+
 fn do_math(a: i32, b: i32) -> i32 {
     let v: i32 = a - b;
 
@@ -9,6 +13,7 @@ fn main() -> i32 {
     let b: i32 = 2;
     let val: i32 = do_math(a, b);
 
+    printf("Hello, %s!\n", get_name());
     puts("Hello, world!");
     puts("Another test!");
     printf("Math: %i - %i = %i\n", a, b, val);

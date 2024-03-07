@@ -1,3 +1,6 @@
+//! The initial Abstract Syntax Tree.
+//! This is the container for the raw data that comes from pest's parsing.
+
 pub mod decl;
 pub mod expr;
 pub mod literal;

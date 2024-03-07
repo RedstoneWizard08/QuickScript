@@ -4,7 +4,10 @@ use cranelift_module::Module;
 use miette::Result;
 use parking_lot::RwLock;
 
-use crate::context::{CodegenContext, CompilerContext};
+use crate::{
+    alias::DeclareAliasedFunction,
+    context::{CodegenContext, CompilerContext},
+};
 use qsc_ast::ast::stmt::{
     call::{CallArgument, CallNode},
     ret::ReturnNode,
@@ -20,7 +23,9 @@ pub trait ReturnCompiler<'a, 'b, M: Module>: Backend<'a, 'b, M> {
     ) -> Result<Value>;
 }
 
-impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> ReturnCompiler<'a, 'b, M> for T {
+impl<'a, 'b, M: Module + DeclareAliasedFunction, T: Backend<'a, 'b, M>> ReturnCompiler<'a, 'b, M>
+    for T
+{
     fn compile_return(
         cctx: &RwLock<CompilerContext<'a, M>>,
         ctx: &mut CodegenContext<'a, 'b>,

@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
 
-use cranelift_object::ObjectProduct;
 use miette::Result;
 use qsc_ast::ast::AbstractTree;
+use qsc_object::ObjectProduct;
 use target_lexicon::Triple;
 
 use super::unify::CodegenBackend;

@@ -22,7 +22,7 @@ cranelift-entity = "0.105.2"
 wasmtime-jit-icache-coherence = "18.0.2"
 log = "0.4.20"
 notify = "6.1.1"
-object = { version = "0.32.2", features = ["write"] }
+object = { version = "0.33.0", features = ["write"] }
 pretty_env_logger = "0.5.0"
 rand = "0.8.5"
 target-lexicon = "0.12.13"
@@ -47,8 +47,8 @@ qsc-jit = { path = "./crates/qsc-jit" }
 qsc-lexer = { path = "./crates/qsc-lexer" }
 qsc-linker = { path = "./crates/qsc-linker" }
 qsc-lsp = { path = "./crates/qsc-lsp" }
+qsc-object = { path = "./crates/qsc-object" }
 qsc-processor = { path = "./crates/qsc-processor" }
-qsc-preprocessor = { path = "./crates/qsc-preprocessor" }
 
 [profile.release]
 strip = true
@@ -68,6 +68,6 @@ members = [
     "crates/qsc-lexer",
     "crates/qsc-linker",
     "crates/qsc-lsp",
-    "crates/qsc-preprocessor",
+    "crates/qsc-object",
     "crates/qsc-processor",
 ]

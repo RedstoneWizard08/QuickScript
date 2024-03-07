@@ -152,7 +152,7 @@ dependencies = [
  "cfg-if",
  "libc",
  "miniz_oxide",
- "object",
+ "object 0.32.2",
  "rustc-demangle",
 ]
 
@@ -459,21 +459,6 @@ checksum = "9b490d579df1ce365e1ea359e24ed86d82289fa785153327c2f6a69a59a731e4"
 dependencies = [
  "cranelift-codegen",
  "libc",
- "target-lexicon",
-]
-
-[[package]]
-name = "cranelift-object"
-version = "0.105.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb7e821ac6db471bcdbd004e5a4fa0d374f1046bd3a2ce278c332e0b0c01ca63"
-dependencies = [
- "anyhow",
- "cranelift-codegen",
- "cranelift-control",
- "cranelift-module",
- "log",
- "object",
  "target-lexicon",
 ]
 
@@ -1088,6 +1073,15 @@ version = "0.32.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a6a622008b6e321afc04970976f62ee297fdbaa6f95318ca343e3eebb9648441"
 dependencies = [
+ "memchr",
+]
+
+[[package]]
+name = "object"
+version = "0.33.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d8dd6c0cdf9429bce006e1362bfce61fa1bfd8c898a643ed8d2b471934701d3d"
+dependencies = [
  "crc32fast",
  "flate2",
  "hashbrown 0.14.3",
@@ -1279,16 +1273,16 @@ dependencies = [
  "cranelift-frontend",
  "cranelift-module",
  "cranelift-native",
- "cranelift-object",
  "debug-ignore",
  "libc",
  "log",
  "miette",
- "object",
+ "object 0.33.0",
  "parking_lot",
  "qsc-ast",
  "qsc-core",
  "qsc-jit",
+ "qsc-object",
  "target-lexicon",
 ]
 
@@ -1296,7 +1290,7 @@ dependencies = [
 name = "qsc-core"
 version = "0.6.0"
 dependencies = [
- "object",
+ "object 0.33.0",
  "rand",
  "thiserror",
 ]
@@ -1350,8 +1344,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "qsc-preprocessor"
+name = "qsc-object"
 version = "0.6.0"
+dependencies = [
+ "anyhow",
+ "cranelift-codegen",
+ "cranelift-control",
+ "cranelift-entity",
+ "cranelift-frontend",
+ "cranelift-module",
+ "log",
+ "object 0.33.0",
+ "target-lexicon",
+]
 
 [[package]]
 name = "qsc-processor"
@@ -1492,9 +1497,9 @@ checksum = "7ffc183a10b4478d04cbbbfc96d0873219d962dd5accaff2ffbd4ceb7df837f4"
 
 [[package]]
 name = "ruzstd"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58c4eb8a81997cf040a091d1f7e1938aeab6749d3a0dfa73af43cdc32393483d"
+checksum = "5174a470eeb535a721ae9fdd6e291c2411a906b96592182d05217591d5c5cf7b"
 dependencies = [
  "byteorder",
  "derive_more",

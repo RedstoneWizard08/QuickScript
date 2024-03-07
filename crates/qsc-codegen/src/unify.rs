@@ -3,9 +3,9 @@ use std::slice;
 use super::{aot::AotGenerator, jit::JitGenerator};
 use cranelift_codegen::write_function;
 use cranelift_module::Module;
-use cranelift_object::ObjectProduct;
 use miette::{IntoDiagnostic, Result};
 use qsc_ast::ast::AbstractTree;
+use qsc_object::ObjectProduct;
 use target_lexicon::Triple;
 
 pub trait CodegenBackend<'a> {

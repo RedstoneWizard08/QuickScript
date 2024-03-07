@@ -14,6 +14,22 @@ pub struct FunctionNode<'i> {
     pub vis: Visibility,
 }
 
+impl<'i> FunctionNode<'i> {
+    pub fn vars(&self) -> Vec<VariableNode<'i>> {
+        let mut vars = Vec::new();
+
+        for node in &self.content.data {
+            if let Ok(decl) = node.data.as_decl() {
+                if let Ok(var) = decl.as_variable() {
+                    vars.push(var);
+                }
+            }
+        }
+
+        vars
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct FunctionArgument<'i> {
     pub span: Span<'i>,
