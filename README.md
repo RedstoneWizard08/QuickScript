@@ -70,8 +70,9 @@ Huge thanks to [Pixeled (@orosmatthew)](https://github.com/orosmatthew) and his
 series, as it helped me think about how to do this best and it gave me the
 inspiration for this project.
 
-Another huge thanks for the [cranelift-jit-demo](https://github.com/bytecodealliance/cranelift-jit-demo),
-as it helped me implement the code generator with Cranelift.
+Another huge thanks for the [cranelift-jit-demo](https://github.com/bytecodealliance/cranelift-jit-demo), as it helped me implement the code generator with Cranelift.
+
+Massive thank you to [@cfallin](https://github.com/cfallin) and [@bjorn3](https://github.com/bjorn3) for helping me learn how to use Cranelift properly and help me fix some critical issues.
 
 # Roadmap
 
