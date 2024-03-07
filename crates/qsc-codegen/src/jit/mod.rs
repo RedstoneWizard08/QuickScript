@@ -1,4 +1,6 @@
-use std::collections::HashMap;
+pub mod lookup;
+
+use std::{collections::HashMap, sync::Arc};
 
 use cranelift_codegen::{
     ir::{AbiParam, Function},
@@ -13,6 +15,8 @@ use parking_lot::RwLock;
 use qsc_ast::ast::decl::func::FunctionNode;
 use qsc_jit::{JITBuilder, JITModule};
 use target_lexicon::Triple;
+
+use self::lookup::lookup_symbol;
 
 use super::{
     context::{CodegenContext, CompilerContext},
@@ -31,23 +35,28 @@ impl<'a> JitGenerator<'a> {
         flags
             .set("use_colocated_libcalls", "false")
             .into_diagnostic()?;
+
         flags.set("is_pic", "false").into_diagnostic()?;
 
         let isa = lookup(triple)
             .into_diagnostic()?
             .finish(Flags::new(flags))
             .into_diagnostic()?;
-        let builder = JITBuilder::with_isa(isa, default_libcall_names());
+
+        let map = Arc::new(RwLock::new(HashMap::new()));
+        let mut builder = JITBuilder::with_isa(isa, default_libcall_names());
+
+        builder.symbol_lookup_fn(lookup_symbol(Arc::clone(&map)));
+
         let module = JITModule::new(builder);
 
         let ctx = CompilerContext {
-            builder_ctx: FunctionBuilderContext::new(),
             ctx: module.make_context(),
             data_desc: DataDescription::new(),
             module,
             functions: HashMap::new(),
             globals: HashMap::new(),
-            code: Vec::new(),
+            code: map,
             fns: Vec::new(),
             vcode: Vec::new(),
         };
@@ -125,15 +134,9 @@ impl<'a> JitGenerator<'a> {
             func: func.clone(),
         };
 
-        debug!("Compiling function: {}", func.name);
-
         Self::compile_fn(&self.ctx, ctx, func)?;
 
-        debug!("Finalizing function: {}", func.name);
-
         builder.into_inner().finalize();
-
-        debug!("Completed compilation for function: {}", func.name);
 
         Ok(())
     }
@@ -186,7 +189,8 @@ impl<'a> JitGenerator<'a> {
         self.ctx
             .write()
             .code
-            .push((func.name.to_string(), code, size));
+            .write()
+            .insert(func.name.to_string(), (func.name.to_string(), code, size));
 
         debug!("Compiled function: {}", func.name);
 
@@ -196,9 +200,9 @@ impl<'a> JitGenerator<'a> {
     pub fn exec(&self) -> Result<i32> {
         let mut main = None;
 
-        for (name, code, _) in &self.ctx.read().code {
+        for (name, code, _) in self.ctx.read().code.read().values() {
             if name == "main" {
-                main = Some(unsafe { std::mem::transmute::<_, fn() -> i32>(code) });
+                main = Some(unsafe { std::mem::transmute::<_, fn() -> i32>(*code) });
 
                 debug!("Found main function!");
             }
@@ -222,7 +226,9 @@ impl<'a> BackendInternal<'a, JITModule> for JitGenerator<'a> {
 
         let (code, size) = wctx.module.get_finalized_data(id);
 
-        wctx.code.push((String::new(), code, size));
+        wctx.code
+            .write()
+            .insert(String::new(), (String::new(), code, size));
 
         Ok(())
     }

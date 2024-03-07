@@ -6,7 +6,7 @@ use cranelift_codegen::{
 };
 use miette::{IntoDiagnostic, Result};
 use parking_lot::RwLock;
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     context::{CodegenContext, CompilerContext},
@@ -52,13 +52,12 @@ impl<'a> AotGenerator<'a> {
         let module = ObjectModule::new(builder);
 
         let ctx = CompilerContext {
-            builder_ctx: FunctionBuilderContext::new(),
             ctx: module.make_context(),
             data_desc: DataDescription::new(),
             module,
             functions: HashMap::new(),
             globals: HashMap::new(),
-            code: Vec::new(),
+            code: Arc::new(RwLock::new(HashMap::new())),
             fns: Vec::new(),
             vcode: Vec::new(),
         };
@@ -145,9 +144,7 @@ impl<'a> AotGenerator<'a> {
 
         Self::compile_fn(&self.ctx, ctx, func)?;
 
-        let builder = RwLock::into_inner(builder);
-
-        builder.finalize();
+        builder.into_inner().finalize();
 
         Ok(())
     }

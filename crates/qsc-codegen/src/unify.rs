@@ -187,7 +187,7 @@ impl<'a> CodegenBackend<'a> for JitGenerator<'a> {
     fn asm(self) -> Result<String> {
         let mut main = None;
 
-        for (name, code, size) in &self.ctx.read().code {
+        for (name, code, size) in self.ctx.read().code.read().values() {
             if name == "main" {
                 main = Some(unsafe { slice::from_raw_parts(*code, *size) });
 

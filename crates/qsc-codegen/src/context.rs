@@ -1,13 +1,14 @@
 use std::{
     collections::HashMap,
     fmt::{Debug, Formatter},
+    sync::Arc,
 };
 
 use cranelift_codegen::{
     ir::{Function, Value},
     CompiledCode, Context,
 };
-use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
+use cranelift_frontend::{FunctionBuilder, Variable};
 use cranelift_module::{DataDescription, DataId, Module};
 
 use parking_lot::RwLock;
@@ -52,7 +53,6 @@ impl<'a, 'b> Debug for CodegenContext<'a, 'b> {
 }
 
 pub struct CompilerContext<'a, M: Module> {
-    pub builder_ctx: FunctionBuilderContext,
     pub ctx: Context,
     pub data_desc: DataDescription,
     pub module: M,
@@ -60,5 +60,5 @@ pub struct CompilerContext<'a, M: Module> {
     pub globals: HashMap<String, DataId>,
     pub fns: Vec<Function>,
     pub vcode: Vec<CompiledCode>,
-    pub code: Vec<(String, *const u8, usize)>,
+    pub code: Arc<RwLock<HashMap<String, (String, *const u8, usize)>>>,
 }

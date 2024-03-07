@@ -1281,6 +1281,7 @@ dependencies = [
  "cranelift-native",
  "cranelift-object",
  "debug-ignore",
+ "libc",
  "log",
  "miette",
  "object",

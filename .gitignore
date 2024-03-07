@@ -11,3 +11,5 @@
 *.s
 /dev/main
 /dev/main.exe
+perf.data*
+perf-*.map
