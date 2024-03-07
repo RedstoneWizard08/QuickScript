@@ -1,7 +1,7 @@
 [workspace.package]
 version = "0.6.0"
 repository = "https://github.com/RedstoneWizard08/QuickScript"
-authors = ["RedstoneWizard08", "td5032"]
+authors = ["RedstoneWizard08", "td5038"]
 description = "A quick programming language with a compiler implemented in Rust."
 license = "MIT"
 edition = "2021"
