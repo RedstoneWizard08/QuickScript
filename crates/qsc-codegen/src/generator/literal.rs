@@ -66,7 +66,7 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> LiteralCompiler<'a, 'b, M> for T 
         ctx: &mut CodegenContext<'a, 'b>,
         value: StringNode<'a>,
     ) -> Result<Value> {
-        let ddesc = cctx.read().data_desc.clone();
+        let ptr = Self::ptr(cctx);
         let mut bctx = ctx.builder.write();
         let mut wctx = cctx.write();
 
@@ -84,13 +84,15 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> LiteralCompiler<'a, 'b, M> for T 
             .declare_data(&name, Linkage::Export, true, false)
             .into_diagnostic()?;
 
-        wctx.module.define_data(id, &ddesc).into_diagnostic()?;
+        let mut ddesc = wctx.data_desc.clone();
 
-        wctx.data_desc.clear();
+        wctx.module.define_data(id, &ddesc).into_diagnostic()?;
+        ddesc.clear();
+        wctx.data_desc = ddesc;
 
         let local_id = wctx.module.declare_data_in_func(id, bctx.func);
 
-        Ok(bctx.ins().global_value(Self::ptr(cctx), local_id))
+        Ok(bctx.ins().global_value(ptr, local_id))
     }
 
     fn compile_char(ctx: &mut CodegenContext<'a, 'b>, value: CharNode<'a>) -> Value {

@@ -178,15 +178,16 @@ impl<'a> AotGenerator<'a> {
             .functions
             .insert(func.name.to_string(), func.clone());
 
-        self.ctx
-            .write()
-            .vcode
-            .push(self.ctx.write().ctx.compiled_code().unwrap().clone());
+        let code = self.ctx.read().ctx.compiled_code().unwrap().clone();
 
-        self.ctx
-            .write()
-            .module
-            .clear_context(&mut self.ctx.write().ctx);
+        self.ctx.write().vcode.push(code);
+
+        {
+            let mut ctx = self.ctx.write();
+            let ctx_ref = unsafe { ((&mut ctx.ctx) as *mut Context).as_mut() }.unwrap();
+
+            ctx.module.clear_context(ctx_ref);
+        }
 
         debug!("Compiled function: {}", func.name);
 

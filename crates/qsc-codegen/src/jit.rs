@@ -11,8 +11,8 @@ use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{default_libcall_names, DataDescription, DataId, Linkage, Module};
 use miette::{IntoDiagnostic, Result};
 use parking_lot::RwLock;
-use target_lexicon::Triple;
 use qsc_ast::ast::decl::func::FunctionNode;
+use target_lexicon::Triple;
 
 use super::{
     context::{CodegenContext, CompilerContext},
@@ -164,15 +164,16 @@ impl<'a> JitGenerator<'a> {
             .functions
             .insert(func.name.to_string(), func.clone());
 
-        self.ctx
-            .write()
-            .vcode
-            .push(self.ctx.write().ctx.compiled_code().unwrap().clone());
+        let code = self.ctx.read().ctx.compiled_code().unwrap().clone();
 
-        self.ctx
-            .write()
-            .module
-            .clear_context(&mut self.ctx.write().ctx);
+        self.ctx.write().vcode.push(code);
+
+        {
+            let mut ctx = self.ctx.write();
+            let ctx_ref = unsafe { ((&mut ctx.ctx) as *mut Context).as_mut() }.unwrap();
+
+            ctx.module.clear_context(ctx_ref);
+        }
 
         self.ctx
             .write()

@@ -90,7 +90,10 @@ impl<'a> Command<'a> for Cli {
             .parse_default_env()
             .filter(Some("cranelift_jit::backend"), LevelFilter::Warn)
             .filter(Some("cranelift_object::backend"), LevelFilter::Warn)
-            .filter(Some("cranelift_codegen::timing::enabled"), LevelFilter::Warn)
+            .filter(
+                Some("cranelift_codegen::timing::enabled"),
+                LevelFilter::Warn,
+            )
             .filter_level(self.verbose.log_level_filter())
             .init();
 

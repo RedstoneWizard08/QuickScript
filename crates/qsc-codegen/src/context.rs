@@ -1,4 +1,7 @@
-use std::{collections::HashMap, fmt::{Debug, Formatter}};
+use std::{
+    collections::HashMap,
+    fmt::{Debug, Formatter},
+};
 
 use cranelift_codegen::{
     ir::{Function, Value},

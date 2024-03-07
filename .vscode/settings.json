@@ -1,5 +1,6 @@
 {
     "rust-analyzer.showUnlinkedFileNotification": false,
     "files.autoSave": "off",
-    "nuxt.isNuxtApp": false
+    "nuxt.isNuxtApp": false,
+    "debug.allowBreakpointsEverywhere": true
 }

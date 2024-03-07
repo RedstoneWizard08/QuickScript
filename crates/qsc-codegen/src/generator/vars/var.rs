@@ -184,8 +184,8 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> VariableCompiler<'a, 'b, M> for T
         ctx: &mut CodegenContext<'a, 'b>,
         ident: &'a str,
     ) -> Result<Self::O> {
-        let cctx_c = cctx;
-        let mut wctx = cctx_c.write();
+        let ptr = Self::ptr(cctx);
+        let mut wctx = cctx.write();
         let mut bctx = ctx.builder.write();
 
         if ctx.vars.contains_key(ident) {
@@ -199,7 +199,6 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> VariableCompiler<'a, 'b, M> for T
                 .into_diagnostic()?;
 
             let local_id = wctx.module.declare_data_in_func(sym, bctx.func);
-            let ptr = Self::ptr(cctx);
             let val = bctx.ins().symbol_value(ptr, local_id);
 
             Ok(val)
