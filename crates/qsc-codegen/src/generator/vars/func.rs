@@ -1,8 +1,9 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use cranelift_codegen::ir::{InstBuilder, Value};
 use cranelift_module::Module;
 use miette::Result;
+use parking_lot::RwLock;
 
 use crate::{
     context::{CodegenContext, CompilerContext},
@@ -30,7 +31,7 @@ impl<'a, M: Module, T: Backend<'a, M>> FunctionCompiler<'a, M> for T {
         let entry;
 
         {
-            let mut bctx = ctx.builder.write().unwrap();
+            let mut bctx = ctx.builder.write();
             entry = bctx.create_block();
 
             bctx.append_block_params_for_function_params(entry);
@@ -39,10 +40,10 @@ impl<'a, M: Module, T: Backend<'a, M>> FunctionCompiler<'a, M> for T {
         }
 
         for (idx, arg) in func.args.iter().enumerate() {
-            let val = ctx.builder.write().unwrap().block_params(entry)[idx];
+            let val = ctx.builder.write().block_params(entry)[idx];
             let var = Self::declare_var(cctx.clone(), ctx, arg.clone().into())?;
 
-            ctx.builder.write().unwrap().def_var(var, val);
+            ctx.builder.write().def_var(var, val);
         }
 
         for node in func.content.data.clone() {
@@ -52,9 +53,9 @@ impl<'a, M: Module, T: Backend<'a, M>> FunctionCompiler<'a, M> for T {
         if ctx.vars.contains_key(RETURN_VAR) {
             let val = Self::compile_named_var(cctx, ctx, RETURN_VAR)?;
 
-            ctx.builder.write().unwrap().ins().return_(&[val]);
+            ctx.builder.write().ins().return_(&[val]);
         } else {
-            ctx.builder.write().unwrap().ins().return_(&[]);
+            ctx.builder.write().ins().return_(&[]);
         }
 
         Ok(Value::from_u32(0))

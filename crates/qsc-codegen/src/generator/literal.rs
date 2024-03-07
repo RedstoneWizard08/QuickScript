@@ -1,8 +1,9 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use cranelift_codegen::ir::{types, InstBuilder, Type, Value};
 use cranelift_module::{Linkage, Module};
 use miette::{IntoDiagnostic, Result};
+use parking_lot::RwLock;
 use qsc_ast::ast::literal::{
     boolean::BoolNode, char::CharNode, float::FloatNode, int::IntNode, string::StringNode,
     LiteralNode,
@@ -50,21 +51,16 @@ impl<'a, M: Module, T: Backend<'a, M>> LiteralCompiler<'a, M> for T {
     fn compile_bool(ctx: &mut CodegenContext<'a>, value: BoolNode<'a>) -> Value {
         ctx.builder
             .write()
-            .unwrap()
             .ins()
             .iconst(Type::int(1).unwrap(), i64::from(value.value))
     }
 
     fn compile_int(ctx: &mut CodegenContext<'a>, value: IntNode<'a>) -> Value {
-        ctx.builder
-            .write()
-            .unwrap()
-            .ins()
-            .iconst(types::I32, value.value)
+        ctx.builder.write().ins().iconst(types::I32, value.value)
     }
 
     fn compile_float(ctx: &mut CodegenContext<'a>, value: FloatNode<'a>) -> Value {
-        ctx.builder.write().unwrap().ins().f64const(value.value)
+        ctx.builder.write().ins().f64const(value.value)
     }
 
     fn compile_string(
@@ -72,9 +68,9 @@ impl<'a, M: Module, T: Backend<'a, M>> LiteralCompiler<'a, M> for T {
         ctx: &mut CodegenContext<'a>,
         value: StringNode<'a>,
     ) -> Result<Value> {
-        let ddesc = cctx.read().unwrap().data_desc.clone();
-        let mut bctx = ctx.builder.write().unwrap();
-        let mut wctx = cctx.write().unwrap();
+        let ddesc = cctx.read().data_desc.clone();
+        let mut bctx = ctx.builder.write();
+        let mut wctx = cctx.write();
 
         wctx.data_desc.define(
             format!("{}\0", value.value)
@@ -102,7 +98,6 @@ impl<'a, M: Module, T: Backend<'a, M>> LiteralCompiler<'a, M> for T {
     fn compile_char(ctx: &mut CodegenContext<'a>, value: CharNode<'a>) -> Value {
         ctx.builder
             .write()
-            .unwrap()
             .ins()
             .iconst(types::I32, i64::from(value.value as u32))
     }

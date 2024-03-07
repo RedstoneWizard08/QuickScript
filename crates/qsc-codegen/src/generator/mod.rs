@@ -1,8 +1,9 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use cranelift_codegen::ir::{types, GlobalValue, InstBuilder, Type, Value};
 use cranelift_module::{DataId, Module};
 use miette::Result;
+use parking_lot::RwLock;
 use qsc_ast::ast::{
     decl::DeclarationNode,
     expr::{unary::UnaryExpr, ExpressionNode},
@@ -71,18 +72,18 @@ impl<'a, M: Module, T: BackendInternal<'a, M>> Backend<'a, M> for T {
     }
 
     fn ptr(cctx: Arc<RwLock<CompilerContext<'a, M>>>) -> Type {
-        cctx.read().unwrap().module.target_config().pointer_type()
+        cctx.read().module.target_config().pointer_type()
     }
 
     fn null(ctx: &mut CodegenContext<'a>) -> Value {
         // one null byte
-        ctx.builder.write().unwrap().ins().null(types::I8)
+        ctx.builder.write().ins().null(types::I8)
     }
 
     fn nullptr(cctx: Arc<RwLock<CompilerContext<'a, M>>>, ctx: &mut CodegenContext<'a>) -> Value {
         let ptr = Self::ptr(cctx);
 
-        ctx.builder.write().unwrap().ins().null(ptr)
+        ctx.builder.write().ins().null(ptr)
     }
 
     fn get_global(
@@ -91,9 +92,8 @@ impl<'a, M: Module, T: BackendInternal<'a, M>> Backend<'a, M> for T {
         id: DataId,
     ) -> GlobalValue {
         cctx.write()
-            .unwrap()
             .module
-            .declare_data_in_func(id, &mut ctx.builder.write().unwrap().func)
+            .declare_data_in_func(id, &mut ctx.builder.write().func)
     }
 
     fn compile(
@@ -116,7 +116,7 @@ impl<'a, M: Module, T: BackendInternal<'a, M>> Backend<'a, M> for T {
                 }) => Ok(if negative {
                     let val = Self::compile(cctx, ctx, value)?;
 
-                    ctx.builder.write().unwrap().ins().ineg(val)
+                    ctx.builder.write().ins().ineg(val)
                 } else {
                     Self::compile(cctx, ctx, value)?
                 }),

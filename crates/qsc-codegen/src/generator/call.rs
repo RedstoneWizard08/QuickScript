@@ -1,10 +1,11 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use super::Backend;
 use crate::context::{CodegenContext, CompilerContext};
 use cranelift_codegen::ir::{AbiParam, InstBuilder, Value};
 use cranelift_module::{Linkage, Module};
 use miette::{IntoDiagnostic, Result};
+use parking_lot::RwLock;
 use qsc_ast::ast::{literal::LiteralNode, stmt::call::CallNode};
 
 pub trait CallCompiler<'a, M: Module>: Backend<'a, M> {
@@ -21,7 +22,7 @@ impl<'a, M: Module, T: Backend<'a, M>> CallCompiler<'a, M> for T {
         ctx: &mut CodegenContext<'a>,
         call: CallNode<'a>,
     ) -> Result<Value> {
-        let mut wctx = cctx.write().unwrap();
+        let mut wctx = cctx.write();
         let mut sig = wctx.module.make_signature();
 
         if wctx.functions.contains_key(call.func) {
@@ -119,7 +120,7 @@ impl<'a, M: Module, T: Backend<'a, M>> CallCompiler<'a, M> for T {
 
         let local_callee = wctx
             .module
-            .declare_func_in_func(callee, &mut ctx.builder.write().unwrap().func);
+            .declare_func_in_func(callee, &mut ctx.builder.write().func);
 
         let mut args = Vec::new();
 
@@ -127,8 +128,8 @@ impl<'a, M: Module, T: Backend<'a, M>> CallCompiler<'a, M> for T {
             args.push(Self::compile(cctx.clone(), ctx, arg.value)?);
         }
 
-        let call = ctx.builder.write().unwrap().ins().call(local_callee, &args);
-        let result = ctx.builder.write().unwrap().inst_results(call)[0];
+        let call = ctx.builder.write().ins().call(local_callee, &args);
+        let result = ctx.builder.write().inst_results(call)[0];
 
         Ok(result)
     }

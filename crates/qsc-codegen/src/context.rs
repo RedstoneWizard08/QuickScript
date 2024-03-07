@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, RwLock},
-};
+use std::{collections::HashMap, sync::Arc};
 
 use cranelift_codegen::{
     ir::{Function, Value},
@@ -10,6 +7,7 @@ use cranelift_codegen::{
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_module::{DataDescription, DataId, Module};
 
+use parking_lot::RwLock;
 use qsc_ast::ast::{decl::func::FunctionNode, node::ty::TypeNode};
 
 pub struct CodegenContext<'a> {

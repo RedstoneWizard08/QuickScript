@@ -1,9 +1,10 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use cranelift_codegen::{entity::EntityRef, ir::Value};
 use cranelift_frontend::Variable;
 use cranelift_module::Module;
 use miette::Result;
+use parking_lot::RwLock;
 
 use crate::context::{CodegenContext, CompilerContext};
 use qsc_ast::ast::stmt::{
@@ -53,7 +54,7 @@ impl<'a, M: Module, T: Backend<'a, M>> ReturnCompiler<'a, M> for T {
             );
 
             let ref_ = Variable::new(ctx.vars.len());
-            let mut bctx = ctx.builder.write().unwrap();
+            let mut bctx = ctx.builder.write();
 
             bctx.declare_var(ref_, ty);
             bctx.def_var(ref_, val);

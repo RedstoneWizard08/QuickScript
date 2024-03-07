@@ -1,8 +1,9 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use cranelift_codegen::ir::{InstBuilder, Value};
 use cranelift_module::Module;
 use miette::Result;
+use parking_lot::RwLock;
 
 use crate::context::{CodegenContext, CompilerContext};
 use qsc_ast::ast::expr::{binary::BinaryExpr, operator::Operator};
@@ -25,7 +26,7 @@ impl<'a, M: Module, T: Backend<'a, M>> OperationCompiler<'a, M> for T {
     ) -> Result<Value> {
         let left = Self::compile(cctx.clone(), ctx, expr.lhs)?;
         let right = Self::compile(cctx, ctx, expr.rhs)?;
-        let mut bctx = ctx.builder.write().unwrap();
+        let mut bctx = ctx.builder.write();
 
         match expr.operator {
             Operator::Add => Ok(bctx.ins().iadd(left, right)),

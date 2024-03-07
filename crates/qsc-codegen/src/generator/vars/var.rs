@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use cranelift_codegen::{
     entity::EntityRef,
@@ -8,6 +8,7 @@ use cranelift_frontend::Variable;
 use cranelift_module::{DataId, Linkage, Module};
 use miette::{IntoDiagnostic, Result};
 
+use parking_lot::RwLock;
 use qsc_ast::ast::decl::var::VariableNode as Var;
 
 use crate::{
@@ -90,7 +91,7 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
         );
         let ref_ = Variable::new(ctx.vars.len());
 
-        ctx.builder.write().unwrap().declare_var(ref_, ty);
+        ctx.builder.write().declare_var(ref_, ty);
         ctx.vars.insert(var.name, (ref_, var.type_));
 
         Ok(ref_)
@@ -109,7 +110,7 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
                 .unwrap_or(String::new()),
         );
 
-        let mut bctx = ctx.builder.write().unwrap();
+        let mut bctx = ctx.builder.write();
         let null = bctx.ins().null(ty);
         let ref_ = Variable::new(ctx.vars.len());
 
@@ -128,7 +129,7 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
     ) -> Result<Self::O> {
         let val = Self::get_global(cctx.clone(), ctx, data);
 
-        let val = ctx.builder.write().unwrap().ins().symbol_value(
+        let val = ctx.builder.write().ins().symbol_value(
             Self::query_type(
                 cctx.clone(),
                 var.type_
@@ -147,7 +148,7 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
                 .unwrap_or(String::new()),
         );
         let ref_ = Variable::new(ctx.vars.len());
-        let mut bctx = ctx.builder.write().unwrap();
+        let mut bctx = ctx.builder.write();
 
         bctx.declare_var(ref_, ty);
         bctx.def_var(ref_, val);
@@ -171,7 +172,7 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
         );
 
         let ref_ = Variable::new(ctx.vars.len());
-        let mut bctx = ctx.builder.write().unwrap();
+        let mut bctx = ctx.builder.write();
 
         bctx.declare_var(ref_, ty);
         bctx.def_var(ref_, val);
@@ -186,8 +187,8 @@ impl<'a, M: Module, T: Backend<'a, M>> VariableCompiler<'a, M> for T {
         ident: &'a str,
     ) -> Result<Self::O> {
         let cctx_c = cctx.clone();
-        let mut wctx = cctx_c.write().unwrap();
-        let mut bctx = ctx.builder.write().unwrap();
+        let mut wctx = cctx_c.write();
+        let mut bctx = ctx.builder.write();
 
         if ctx.vars.contains_key(ident) {
             let (ref_, _) = *ctx.vars.get(ident).unwrap();

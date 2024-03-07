@@ -50,13 +50,12 @@ impl<'a> CodegenBackend<'a> for AotGenerator<'a> {
     fn finalize(self) -> ObjectProduct {
         unsafe { Arc::try_unwrap(self.ctx).unwrap_unchecked() }
             .into_inner()
-            .unwrap()
             .module
             .finish()
     }
 
     fn clif(&self) -> Result<String> {
-        let ctx = self.ctx.read().unwrap();
+        let ctx = self.ctx.read();
         let mut buf = String::new();
         let isa = ctx.module.isa();
 
@@ -86,7 +85,6 @@ impl<'a> CodegenBackend<'a> for AotGenerator<'a> {
     fn vcode(&self) -> String {
         self.ctx
             .read()
-            .unwrap()
             .vcode
             .iter()
             .map(|v| v.vcode.clone())
@@ -100,11 +98,11 @@ impl<'a> CodegenBackend<'a> for AotGenerator<'a> {
         let capstone = self
             .ctx
             .read()
-            .unwrap()
             .module
             .isa()
             .to_capstone()
             .map_err(|v| miette!(v))?;
+
         let product = self.finalize();
         let data = product.object.write().into_diagnostic()?;
 
@@ -150,7 +148,7 @@ impl<'a> CodegenBackend<'a> for JitGenerator<'a> {
     }
 
     fn clif(&self) -> Result<String> {
-        let ctx = self.ctx.read().unwrap();
+        let ctx = self.ctx.read();
         let mut buf = String::new();
         let isa = ctx.module.isa();
 
@@ -180,7 +178,6 @@ impl<'a> CodegenBackend<'a> for JitGenerator<'a> {
     fn vcode(&self) -> String {
         self.ctx
             .read()
-            .unwrap()
             .vcode
             .iter()
             .map(|v| v.vcode.clone())
@@ -191,7 +188,7 @@ impl<'a> CodegenBackend<'a> for JitGenerator<'a> {
     }
 
     fn asm(self) -> Result<String> {
-        let capstone = self.ctx.read().unwrap().module.isa().to_capstone().unwrap();
+        let capstone = self.ctx.read().module.isa().to_capstone().unwrap();
         let product = self.finalize();
         let data = product.emit().unwrap();
         let disasm = capstone.disasm_all(&*data.into_boxed_slice(), 0x0).unwrap();

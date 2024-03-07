@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, RwLock},
-};
+use std::{collections::HashMap, sync::Arc};
 
 use cranelift_codegen::{
     ir::{AbiParam, Function},
@@ -13,6 +10,7 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{default_libcall_names, DataDescription, DataId, Linkage, Module};
 use miette::{IntoDiagnostic, Result};
+use parking_lot::RwLock;
 use target_lexicon::Triple;
 
 use qsc_ast::ast::decl::func::FunctionNode as Func;
@@ -72,12 +70,11 @@ impl<'a> JitGenerator<'a> {
     pub fn setup_function(&mut self, func: &Func<'a>) -> Result<()> {
         debug!("Compiling function: {}", func.name);
 
-        let ptr = self.ctx.read().unwrap().module.isa().pointer_type();
+        let ptr = self.ctx.read().module.isa().pointer_type();
 
         for arg in func.args.clone() {
             self.ctx
                 .write()
-                .unwrap()
                 .ctx
                 .func
                 .signature
@@ -90,7 +87,6 @@ impl<'a> JitGenerator<'a> {
 
         self.ctx
             .write()
-            .unwrap()
             .ctx
             .func
             .signature
@@ -111,7 +107,7 @@ impl<'a> JitGenerator<'a> {
         let builder;
 
         {
-            let mut ctx = self.ctx.write().unwrap();
+            let mut ctx = self.ctx.write();
 
             builder = FunctionBuilder::new(
                 unsafe { ((&mut ctx.ctx.func) as *mut Function).as_mut() }.unwrap(),
@@ -133,8 +129,8 @@ impl<'a> JitGenerator<'a> {
 
         Self::compile_fn(cctx, ctx, func)?;
 
-        let builder = unsafe { Arc::try_unwrap(builder).unwrap_unchecked() };
-        let builder = RwLock::into_inner(builder).unwrap();
+        let builder = Arc::into_inner(builder).unwrap();
+        let builder = builder.into_inner();
 
         builder.finalize();
 
@@ -142,63 +138,50 @@ impl<'a> JitGenerator<'a> {
     }
 
     pub fn finalize_funciton(&mut self, func: Func<'a>) -> Result<()> {
-        let sig = self.ctx.read().unwrap().ctx.func.signature.clone();
+        let sig = self.ctx.read().ctx.func.signature.clone();
 
         let id = self
             .ctx
             .write()
-            .unwrap()
             .module
             .declare_function(&func.name, Linkage::Export, &sig)
             .into_diagnostic()?;
 
         {
-            let mut ctx = self.ctx.write().unwrap();
+            let mut ctx = self.ctx.write();
             let ctx_ref = unsafe { ((&mut ctx.ctx) as *mut Context).as_mut() }.unwrap();
 
             ctx.module.define_function(id, ctx_ref).into_diagnostic()?;
         }
 
-        let cg_func = self.ctx.read().unwrap().ctx.func.clone();
+        let cg_func = self.ctx.read().ctx.func.clone();
 
-        self.ctx.write().unwrap().fns.push(cg_func);
+        self.ctx.write().fns.push(cg_func);
 
         self.ctx
             .write()
-            .unwrap()
             .functions
             .insert(func.name.to_string(), func.clone());
 
-        self.ctx.write().unwrap().vcode.push(
-            self.ctx
-                .write()
-                .unwrap()
-                .ctx
-                .compiled_code()
-                .unwrap()
-                .clone(),
-        );
+        self.ctx
+            .write()
+            .vcode
+            .push(self.ctx.write().ctx.compiled_code().unwrap().clone());
 
         self.ctx
             .write()
-            .unwrap()
             .module
-            .clear_context(&mut self.ctx.write().unwrap().ctx);
+            .clear_context(&mut self.ctx.write().ctx);
 
         self.ctx
             .write()
-            .unwrap()
             .module
             .finalize_definitions()
             .into_diagnostic()?;
 
-        let code = self.ctx.read().unwrap().module.get_finalized_function(id);
+        let code = self.ctx.read().module.get_finalized_function(id);
 
-        self.ctx
-            .write()
-            .unwrap()
-            .code
-            .push((func.name.to_string(), code));
+        self.ctx.write().code.push((func.name.to_string(), code));
 
         debug!("Compiled function: {}", func.name);
 
@@ -208,7 +191,7 @@ impl<'a> JitGenerator<'a> {
     pub fn exec(&self) -> Result<i32> {
         let mut main = None;
 
-        for (name, code) in &self.ctx.read().unwrap().code {
+        for (name, code) in &self.ctx.read().code {
             if name == "main" {
                 main = Some(unsafe { std::mem::transmute::<_, fn() -> i32>(code) });
 
