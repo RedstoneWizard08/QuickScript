@@ -43,7 +43,7 @@ pub fn get_dynamic_linker(
         format!(
             "{}/lib/ld-linux-{}.so.1",
             prefix,
-            _target_arch.unwrap_or(std::env::consts::ARCH.to_string())
+            target_arch.unwrap_or(std::env::consts::ARCH.to_string())
         )
     }
 }
