@@ -1,0 +1,4 @@
+{
+    "capAdd": ["SYS_PTRACE"],
+    "securityOpt": ["seccomp=unconfined"]
+}
