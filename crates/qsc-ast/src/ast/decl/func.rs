@@ -1,27 +1,28 @@
-use pest::Span;
-
-use crate::ast::node::{block::Block, ty::TypeNode, vis::Visibility};
-
 use super::var::VariableNode;
+use crate::{
+    ast::node::{block::Block, ty::TypeNode, vis::Visibility},
+    span::StaticSpan,
+};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct FunctionNode<'i> {
-    pub span: Span<'i>,
-    pub name: &'i str,
-    pub args: Vec<FunctionArgument<'i>>,
-    pub ret: Option<TypeNode<'i>>,
-    pub content: Block<'i>,
+pub struct FunctionNode {
+    pub span: StaticSpan,
+    pub name: String,
+    pub args: Vec<FunctionArgument>,
+    pub ret: Option<TypeNode>,
+    pub content: Block,
     pub vis: Visibility,
 }
 
-impl<'i> FunctionNode<'i> {
-    pub fn vars(&self) -> Vec<VariableNode<'i>> {
-        let mut vars = Vec::new();
+impl FunctionNode {
+    pub fn variables(&self) -> HashMap<String, VariableNode> {
+        let mut vars = HashMap::new();
 
         for node in &self.content.data {
             if let Ok(decl) = node.data.as_decl() {
                 if let Ok(var) = decl.as_variable() {
-                    vars.push(var);
+                    vars.insert(var.name.clone(), var);
                 }
             }
         }
@@ -31,19 +32,19 @@ impl<'i> FunctionNode<'i> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct FunctionArgument<'i> {
-    pub span: Span<'i>,
+pub struct FunctionArgument {
+    pub span: StaticSpan,
     pub mutable: bool,
-    pub name: &'i str,
-    pub type_: TypeNode<'i>,
+    pub name: String,
+    pub type_: TypeNode,
 }
 
-impl<'i> Into<VariableNode<'i>> for FunctionArgument<'i> {
-    fn into(self) -> VariableNode<'i> {
+impl Into<VariableNode> for FunctionArgument {
+    fn into(self) -> VariableNode {
         VariableNode {
             span: self.span,
             mutable: self.mutable,
-            name: self.name.to_string(),
+            name: self.name,
             type_: Some(self.type_),
             value: None,
         }

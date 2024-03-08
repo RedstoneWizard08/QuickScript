@@ -12,7 +12,7 @@ macro_rules! is_enum_variant {
 #[macro_export]
 macro_rules! is_enum_variant_impl {
     ($name: ident -> $enum: ident::$variant: ident) => {
-        impl<'i> $enum<'i> {
+        impl $enum {
             pub fn $name(&self) -> bool {
                 $crate::is_enum_variant!(self == $enum::$variant);
             }
@@ -34,7 +34,7 @@ macro_rules! is_enum_variant_no_field {
 #[macro_export]
 macro_rules! is_enum_variant_no_field_impl {
     ($name: ident -> $enum: ident::$variant: ident) => {
-        impl<'i> $enum<'i> {
+        impl $enum {
             pub fn $name(&self) -> bool {
                 $crate::is_enum_variant_no_field!(self == $enum::$variant);
             }
@@ -60,8 +60,8 @@ macro_rules! get_enum_variant_value {
 #[macro_export]
 macro_rules! get_enum_variant_value_impl {
     ($name: ident -> $enum: ident::$variant: ident: $ty: ident) => {
-        impl<'i> $enum<'i> {
-            pub fn $name(&self) -> $crate::miette::Result<$ty<'i>> {
+        impl $enum {
+            pub fn $name(&self) -> $crate::miette::Result<$ty> {
                 $crate::get_enum_variant_value!(self -> $enum::$variant);
             }
         }

@@ -1242,7 +1242,9 @@ dependencies = [
  "miette",
  "pest",
  "pest_derive",
+ "qsc-core",
  "strum",
+ "thiserror",
 ]
 
 [[package]]
@@ -1258,6 +1260,7 @@ dependencies = [
  "notify",
  "pretty_env_logger",
  "qsc-codegen",
+ "qsc-compiler",
  "qsc-core",
  "qsc-lexer",
  "qsc-linker",
@@ -1284,13 +1287,34 @@ dependencies = [
  "qsc-jit",
  "qsc-object",
  "target-lexicon",
+ "thiserror",
+]
+
+[[package]]
+name = "qsc-compiler"
+version = "0.6.0"
+dependencies = [
+ "log",
+ "miette",
+ "qsc-ast",
+ "qsc-codegen",
+ "qsc-core",
+ "qsc-lexer",
+ "qsc-linker",
+ "qsc-object",
+ "qsc-processor",
+ "target-lexicon",
+ "tempfile",
+ "thiserror",
 ]
 
 [[package]]
 name = "qsc-core"
 version = "0.6.0"
 dependencies = [
+ "miette",
  "object 0.33.0",
+ "pest",
  "rand",
  "thiserror",
 ]
@@ -1321,6 +1345,7 @@ dependencies = [
  "pest",
  "pest_derive",
  "qsc-ast",
+ "qsc-core",
  "thiserror",
 ]
 
@@ -1361,6 +1386,13 @@ dependencies = [
 [[package]]
 name = "qsc-processor"
 version = "0.6.0"
+dependencies = [
+ "miette",
+ "pest",
+ "qsc-ast",
+ "qsc-core",
+ "thiserror",
+]
 
 [[package]]
 name = "quote"

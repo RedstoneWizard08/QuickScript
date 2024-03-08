@@ -1,8 +1,7 @@
-use crate::ast::node::Node;
-use pest::Span;
+use crate::{ast::node::Node, span::StaticSpan};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ReturnNode<'i> {
-    pub span: Span<'i>,
-    pub value: Option<Node<'i>>,
+pub struct ReturnNode {
+    pub span: StaticSpan,
+    pub value: Option<Node>,
 }

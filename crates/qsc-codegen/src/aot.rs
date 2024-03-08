@@ -4,7 +4,7 @@ use cranelift_codegen::{
     settings::{self, Configurable, Flags},
     Context,
 };
-use miette::{IntoDiagnostic, Result};
+use miette::{IntoDiagnostic, NamedSource, Result};
 use parking_lot::RwLock;
 use std::{collections::HashMap, sync::Arc};
 
@@ -14,17 +14,17 @@ use crate::{
 };
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{default_libcall_names, DataDescription, DataId, Linkage, Module};
-use qsc_ast::ast::decl::func::FunctionNode;
+use qsc_ast::ast::{decl::func::FunctionNode, AbstractTree};
 use qsc_object::{ObjectBuilder, ObjectModule, ObjectProduct};
 use target_lexicon::Triple;
 
-pub struct AotGenerator<'a> {
-    pub ctx: RwLock<CompilerContext<'a, ObjectModule>>,
+pub struct AotGenerator {
+    pub ctx: RwLock<CompilerContext<ObjectModule>>,
     pub builder_ctx: FunctionBuilderContext,
 }
 
-impl<'a> AotGenerator<'a> {
-    pub fn new(triple: Triple, name: String) -> Result<Self> {
+impl AotGenerator {
+    pub fn new(triple: Triple, name: String, source: String, tree: AbstractTree) -> Result<Self> {
         let mut flags = settings::builder();
 
         flags
@@ -47,8 +47,8 @@ impl<'a> AotGenerator<'a> {
             .finish(Flags::new(flags))
             .into_diagnostic()?;
 
-        let builder =
-            ObjectBuilder::new(isa, name + ".o", default_libcall_names()).into_diagnostic()?;
+        let builder = ObjectBuilder::new(isa, name.clone() + ".o", default_libcall_names())
+            .into_diagnostic()?;
         let module = ObjectModule::new(builder);
 
         let ctx = CompilerContext {
@@ -60,6 +60,8 @@ impl<'a> AotGenerator<'a> {
             code: Arc::new(RwLock::new(HashMap::new())),
             fns: Vec::new(),
             vcode: Vec::new(),
+            source: NamedSource::new(name, source),
+            tree,
         };
 
         Ok(Self {
@@ -68,7 +70,7 @@ impl<'a> AotGenerator<'a> {
         })
     }
 
-    pub fn compile_function(&mut self, mut func: FunctionNode<'a>) -> Result<()> {
+    pub fn compile_function(&mut self, mut func: FunctionNode) -> Result<()> {
         self.setup_function(&mut func)?;
         self.compile_function_code(&func)?;
         self.finalize_funciton(func)?;
@@ -76,10 +78,10 @@ impl<'a> AotGenerator<'a> {
         Ok(())
     }
 
-    pub fn setup_function(&mut self, func: &mut FunctionNode<'a>) -> Result<()> {
+    pub fn setup_function(&mut self, func: &mut FunctionNode) -> Result<()> {
         if func.name == "main" {
             // Make the linker happy :)
-            func.name = "_start";
+            func.name = "_start".to_string();
 
             debug!("Compiling function: _start (main)");
         } else {
@@ -118,7 +120,7 @@ impl<'a> AotGenerator<'a> {
         Ok(())
     }
 
-    pub fn compile_function_code(&mut self, func: &FunctionNode<'a>) -> Result<()> {
+    pub fn compile_function_code(&mut self, func: &FunctionNode) -> Result<()> {
         let builder;
 
         {
@@ -149,7 +151,7 @@ impl<'a> AotGenerator<'a> {
         Ok(())
     }
 
-    pub fn finalize_funciton(&mut self, func: FunctionNode<'a>) -> Result<()> {
+    pub fn finalize_funciton(&mut self, func: FunctionNode) -> Result<()> {
         let sig = self.ctx.read().ctx.func.signature.clone();
 
         let id = self
@@ -196,8 +198,8 @@ impl<'a> AotGenerator<'a> {
     }
 }
 
-impl<'a> BackendInternal<'a, ObjectModule> for AotGenerator<'a> {
-    fn post_define(_cctx: &RwLock<CompilerContext<'a, ObjectModule>>, _id: DataId) -> Result<()> {
+impl<'a> BackendInternal<ObjectModule> for AotGenerator {
+    fn post_define(_cctx: &RwLock<CompilerContext<ObjectModule>>, _id: DataId) -> Result<()> {
         Ok(())
     }
 

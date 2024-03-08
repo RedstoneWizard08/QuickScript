@@ -4,7 +4,7 @@ use parking_lot::RwLock;
 
 use crate::context::CompilerContext;
 
-pub trait BackendInternal<'a, M: Module> {
-    fn post_define(cctx: &RwLock<CompilerContext<'a, M>>, id: DataId) -> Result<()>;
+pub trait BackendInternal<M: Module> {
+    fn post_define(cctx: &RwLock<CompilerContext<M>>, id: DataId) -> Result<()>;
     fn is_jit() -> bool;
 }

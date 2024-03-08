@@ -8,23 +8,23 @@ use crate::{
     generator::{Backend, RETURN_VAR},
 };
 
-use qsc_ast::ast::decl::func::FunctionNode;
+use qsc_ast::ast::{decl::func::FunctionNode, node::sym::SymbolNode};
 
 use super::var::VariableCompiler;
 
 pub trait FunctionCompiler<'a, 'b, M: Module>: Backend<'a, 'b, M> {
     fn compile_fn(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        func: &FunctionNode<'a>,
+        func: &FunctionNode,
     ) -> Result<Value>;
 }
 
 impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> FunctionCompiler<'a, 'b, M> for T {
     fn compile_fn(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        func: &FunctionNode<'a>,
+        func: &FunctionNode,
     ) -> Result<Value> {
         let entry;
 
@@ -57,7 +57,14 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> FunctionCompiler<'a, 'b, M> for T
         debug!("Compiled all nodes for function: {}", func.name);
 
         if ctx.vars.contains_key(RETURN_VAR) {
-            let val = Self::compile_named_var(cctx, ctx, RETURN_VAR)?;
+            let val = Self::compile_named_var(
+                cctx,
+                ctx,
+                SymbolNode {
+                    value: RETURN_VAR.to_string(),
+                    span: func.span.clone(),
+                },
+            )?;
 
             ctx.builder.write().ins().return_(&[val]);
         } else {

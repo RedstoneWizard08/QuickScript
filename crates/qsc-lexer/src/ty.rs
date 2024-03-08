@@ -1,30 +1,30 @@
 use pest::iterators::Pair;
-use qsc_ast::ast::node::{sym::SymbolNode, ty::TypeNode};
+use qsc_ast::ast::node::ty::TypeNode;
 
 use crate::{
     lexer::{Lexer, Result},
     parser::Rule,
 };
 
-impl<'i> Lexer<'i> {
-    pub fn ty(&'i self, pair: &Pair<'i, Rule>) -> Result<TypeNode> {
+impl<'i> Lexer {
+    pub fn ty(&self, pair: Pair<'i, Rule>) -> Result<TypeNode> {
         let mut inner = pair.clone().into_inner();
         let name = inner.next().unwrap().as_str().trim();
+        let mut generics = Vec::new();
 
-        let generics = inner
-            .next()
-            .map(|pair| {
-                pair.into_inner()
-                    .map(|pair| self.parse(pair).unwrap())
-                    .filter(|v| v.data.is_symbol())
-                    .map(|v| v.data.as_symbol().unwrap())
-                    .collect::<Vec<SymbolNode<'i>>>()
-            })
-            .unwrap_or(Vec::new());
+        if let Some(pair) = inner.next() {
+            for pair in pair.into_inner() {
+                let pair = self.parse(pair)?;
+
+                if let Ok(sym) = pair.data.as_symbol() {
+                    generics.push(sym);
+                }
+            }
+        }
 
         Ok(TypeNode {
-            span: pair.as_span(),
-            name,
+            span: pair.as_span().into(),
+            name: name.to_string(),
             generics,
         })
     }

@@ -1,15 +1,14 @@
 use super::Node;
-use crate::ast::decl::var::VariableNode;
-use pest::Span;
+use crate::{ast::decl::var::VariableNode, span::StaticSpan};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Block<'i> {
-    pub span: Span<'i>,
-    pub data: Vec<Node<'i>>,
+pub struct Block {
+    pub span: StaticSpan,
+    pub data: Vec<Node>,
 }
 
-impl<'i> Block<'i> {
-    pub fn vars(&self) -> Vec<VariableNode<'i>> {
+impl Block {
+    pub fn vars(&self) -> Vec<VariableNode> {
         let mut vars = Vec::new();
 
         for node in &self.data {

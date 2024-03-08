@@ -1,7 +1,7 @@
-use pest::Span;
+use crate::span::StaticSpan;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct FloatNode<'i> {
-    pub span: Span<'i>,
+#[derive(Debug, Clone, PartialEq)]
+pub struct FloatNode {
+    pub span: StaticSpan,
     pub value: f64,
 }

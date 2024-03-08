@@ -1,7 +1,7 @@
-use pest::Span;
+use crate::span::StaticSpan;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct BoolNode<'i> {
-    pub span: Span<'i>,
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BoolNode {
+    pub span: StaticSpan,
     pub value: bool,
 }

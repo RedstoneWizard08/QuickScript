@@ -8,17 +8,17 @@ use qsc_ast::ast::decl::global::GlobalVariable;
 
 pub trait GlobalVariableCompiler<'a, 'b, M: Module>: Backend<'a, 'b, M> {
     fn compile_global(
-        cctx: &mut CompilerContext<'a, M>,
+        cctx: &mut CompilerContext<M>,
         ctx: &mut CodegenContext<'a, 'b>,
-        var: GlobalVariable<'a>,
+        var: GlobalVariable,
     ) -> Result<DataId>;
 }
 
 impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> GlobalVariableCompiler<'a, 'b, M> for T {
     fn compile_global(
-        _cctx: &mut CompilerContext<'a, M>,
+        _cctx: &mut CompilerContext<M>,
         _ctx: &mut CodegenContext<'a, 'b>,
-        _var: GlobalVariable<'a>,
+        _var: GlobalVariable,
     ) -> Result<DataId> {
         todo!();
 

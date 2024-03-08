@@ -1,0 +1,22 @@
+[package]
+name = "qsc-compiler"
+version.workspace = true
+repository.workspace = true
+authors.workspace = true
+description.workspace = true
+license.workspace = true
+edition.workspace = true
+
+[dependencies]
+miette.workspace = true
+log.workspace = true
+target-lexicon.workspace = true
+qsc-ast.workspace = true
+qsc-core.workspace = true
+qsc-codegen.workspace = true
+qsc-lexer.workspace = true
+qsc-linker.workspace = true
+qsc-processor.workspace = true
+qsc-object.workspace = true
+tempfile.workspace = true
+thiserror.workspace = true

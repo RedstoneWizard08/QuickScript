@@ -7,14 +7,14 @@ use cranelift_codegen::ir::{AbiParam, Function, InstBuilder, Value};
 use cranelift_module::{Linkage, Module};
 use miette::{IntoDiagnostic, Result};
 use parking_lot::{RwLock, RwLockWriteGuard};
-use qsc_ast::ast::{literal::LiteralNode, stmt::call::CallNode};
+use qsc_ast::ast::stmt::call::CallNode;
 use qsc_core::util::random_string;
 
 pub trait CallCompiler<'a, 'b, M: Module>: Backend<'a, 'b, M> {
     fn compile_call(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        call: CallNode<'a>,
+        call: CallNode,
     ) -> Result<Value>;
 }
 
@@ -22,9 +22,9 @@ impl<'a, 'b, M: Module + DeclareAliasedFunction, T: Backend<'a, 'b, M>> CallComp
     for T
 {
     fn compile_call(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        call: CallNode<'a>,
+        call: CallNode,
     ) -> Result<Value> {
         debug!("Trying to compile call: {:?}", call);
 
@@ -33,8 +33,8 @@ impl<'a, 'b, M: Module + DeclareAliasedFunction, T: Backend<'a, 'b, M>> CallComp
         let mut sig = wctx.module.make_signature();
         let mut func_name = call.func.to_string();
 
-        if wctx.functions.contains_key(call.func) {
-            let func = wctx.functions.get(call.func).unwrap();
+        if wctx.functions.contains_key(&call.func) {
+            let func = wctx.functions.get(&call.func).unwrap();
 
             let args = func
                 .args
@@ -75,10 +75,10 @@ impl<'a, 'b, M: Module + DeclareAliasedFunction, T: Backend<'a, 'b, M>> CallComp
                 .iter()
                 .map(|arg| {
                     if let Ok(ident) = arg.value.data.as_symbol() {
-                        if ctx.vars.contains_key(ident.value) {
+                        if ctx.vars.contains_key(&ident.value) {
                             return ctx
                                 .vars
-                                .get(ident.value)
+                                .get(&ident.value)
                                 .unwrap()
                                 .1
                                 .clone()
@@ -87,18 +87,10 @@ impl<'a, 'b, M: Module + DeclareAliasedFunction, T: Backend<'a, 'b, M>> CallComp
                         }
                     }
 
-                    if let Ok(literal) = arg.value.data.as_literal() {
-                        return match literal {
-                            LiteralNode::Bool(_) => "bool",
-                            LiteralNode::Char(_) => "char",
-                            LiteralNode::Float(_) => "f64",
-                            LiteralNode::Int(_) => "i32",
-                            LiteralNode::String(_) => "str",
-                        }
-                        .to_string();
-                    }
-
-                    "ptr".to_string()
+                    arg.value
+                        .data
+                        .get_type(&Some(ctx.func.name.to_string()), &wctx.tree)
+                        .unwrap_or("ptr".to_string())
                 })
                 .collect::<Vec<String>>();
 

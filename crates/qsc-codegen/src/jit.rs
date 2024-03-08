@@ -8,9 +8,9 @@ use cranelift_codegen::{
 };
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{default_libcall_names, DataDescription, DataId, Linkage, Module};
-use miette::{IntoDiagnostic, Result};
+use miette::{IntoDiagnostic, NamedSource, Result};
 use parking_lot::RwLock;
-use qsc_ast::ast::decl::func::FunctionNode;
+use qsc_ast::ast::{decl::func::FunctionNode, AbstractTree};
 use qsc_jit::{JITBuilder, JITModule};
 use target_lexicon::Triple;
 
@@ -21,13 +21,13 @@ use super::{
     generator::{unify::BackendInternal, vars::func::FunctionCompiler, Backend},
 };
 
-pub struct JitGenerator<'a> {
-    pub ctx: RwLock<CompilerContext<'a, JITModule>>,
+pub struct JitGenerator {
+    pub ctx: RwLock<CompilerContext<JITModule>>,
     pub builder_ctx: FunctionBuilderContext,
 }
 
-impl<'a> JitGenerator<'a> {
-    pub fn new(triple: Triple) -> Result<Self> {
+impl JitGenerator {
+    pub fn new(triple: Triple, name: String, source: String, tree: AbstractTree) -> Result<Self> {
         let mut flags = settings::builder();
 
         flags
@@ -57,6 +57,8 @@ impl<'a> JitGenerator<'a> {
             code: map,
             fns: Vec::new(),
             vcode: Vec::new(),
+            source: NamedSource::new(name, source),
+            tree,
         };
 
         Ok(Self {
@@ -65,7 +67,7 @@ impl<'a> JitGenerator<'a> {
         })
     }
 
-    pub fn compile_function(&mut self, func: FunctionNode<'a>) -> Result<()> {
+    pub fn compile_function(&mut self, func: FunctionNode) -> Result<()> {
         self.setup_function(&func)?;
         self.compile_function_code(&func)?;
         self.finalize_funciton(func)?;
@@ -73,7 +75,7 @@ impl<'a> JitGenerator<'a> {
         Ok(())
     }
 
-    pub fn setup_function(&mut self, func: &FunctionNode<'a>) -> Result<()> {
+    pub fn setup_function(&mut self, func: &FunctionNode) -> Result<()> {
         debug!("Compiling function: {}", func.name);
 
         let ptr = self.ctx.read().module.isa().pointer_type();
@@ -108,7 +110,7 @@ impl<'a> JitGenerator<'a> {
         Ok(())
     }
 
-    pub fn compile_function_code(&mut self, func: &FunctionNode<'a>) -> Result<()> {
+    pub fn compile_function_code(&mut self, func: &FunctionNode) -> Result<()> {
         let builder;
 
         {
@@ -139,7 +141,7 @@ impl<'a> JitGenerator<'a> {
         Ok(())
     }
 
-    pub fn finalize_funciton(&mut self, func: FunctionNode<'a>) -> Result<()> {
+    pub fn finalize_funciton(&mut self, func: FunctionNode) -> Result<()> {
         let sig = self.ctx.read().ctx.func.signature.clone();
 
         let id = self
@@ -216,8 +218,8 @@ impl<'a> JitGenerator<'a> {
     }
 }
 
-impl<'a> BackendInternal<'a, JITModule> for JitGenerator<'a> {
-    fn post_define(cctx: &RwLock<CompilerContext<'a, JITModule>>, id: DataId) -> Result<()> {
+impl BackendInternal<JITModule> for JitGenerator {
+    fn post_define(cctx: &RwLock<CompilerContext<JITModule>>, id: DataId) -> Result<()> {
         let mut wctx = cctx.write();
 
         wctx.module.finalize_definitions().into_diagnostic()?;

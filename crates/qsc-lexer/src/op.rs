@@ -1,18 +1,18 @@
 use pest::iterators::Pair;
 use qsc_ast::ast::expr::{binary::BinaryExpr, operator::Operator};
+use qsc_core::conv::IntoSourceSpan;
 
 use crate::{
-    conv::IntoSourceSpan,
-    error::LexerError,
+    error::TransformerError,
     lexer::{Lexer, Result},
     parser::Rule,
 };
 
-impl<'i> Lexer<'i> {
-    pub fn binary_op(&'i self, pair: &Pair<'i, Rule>) -> Result<BinaryExpr<'i>> {
+impl<'i> Lexer {
+    pub fn binary_op(&self, pair: Pair<'i, Rule>) -> Result<BinaryExpr> {
         let mut inner = pair.clone().into_inner();
 
-        let span = pair.as_span();
+        let span = pair.as_span().into();
         let lhs = self.parse(inner.next().unwrap())?;
         let op = inner.next().unwrap().as_str().trim().to_string();
         let rhs = self.parse(inner.next().unwrap())?;
@@ -215,11 +215,12 @@ impl<'i> Lexer<'i> {
             },
 
             val => {
-                return Err(LexerError {
+                return Err(TransformerError {
                     src: self.err_src.clone(),
                     location: pair.as_span().into_source_span(),
                     error: miette!("Unsupported operator: {}", val),
-                })
+                }
+                .into())
             }
         })
     }

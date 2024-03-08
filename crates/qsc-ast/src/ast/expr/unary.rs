@@ -1,10 +1,8 @@
-use pest::Span;
-
-use crate::ast::node::Node;
+use crate::{ast::node::Node, span::StaticSpan};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct UnaryExpr<'i> {
+pub struct UnaryExpr {
     pub negative: bool,
-    pub span: Span<'i>,
-    pub value: Node<'i>,
+    pub span: StaticSpan,
+    pub value: Node,
 }

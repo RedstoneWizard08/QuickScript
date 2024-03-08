@@ -1,6 +1,6 @@
 use crate::lexer::Lexer;
 
-impl<'i> Lexer<'i> {
+impl<'i> Lexer {
     pub fn interp_literal(&self, val: impl AsRef<str>) -> String {
         val.as_ref()
             .replace("\\n", "\n")

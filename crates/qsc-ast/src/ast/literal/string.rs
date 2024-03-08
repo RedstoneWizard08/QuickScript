@@ -1,7 +1,7 @@
-use pest::Span;
+use crate::span::StaticSpan;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct StringNode<'i> {
-    pub span: Span<'i>,
+pub struct StringNode {
+    pub span: StaticSpan,
     pub value: String,
 }

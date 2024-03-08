@@ -31,30 +31,28 @@ pub mod vars;
 
 pub const RETURN_VAR: &str = "__func_return__";
 
-pub trait Backend<'a, 'b, M: Module>: BackendInternal<'a, M> {
-    fn query_type(cctx: &RwLock<CompilerContext<'a, M>>, ty: String) -> Type;
+pub trait Backend<'a, 'b, M: Module>: BackendInternal<M> {
+    fn query_type(cctx: &RwLock<CompilerContext<M>>, ty: String) -> Type;
     fn query_type_with_pointer(ptr: Type, ty: String) -> Type;
-    fn ptr(cctx: &RwLock<CompilerContext<'a, M>>) -> Type;
+    fn ptr(cctx: &RwLock<CompilerContext<M>>) -> Type;
     fn null(ctx: &mut CodegenContext<'a, 'b>) -> Value;
-    fn nullptr(cctx: &RwLock<CompilerContext<'a, M>>, ctx: &mut CodegenContext<'a, 'b>) -> Value;
+    fn nullptr(cctx: &RwLock<CompilerContext<M>>, ctx: &mut CodegenContext<'a, 'b>) -> Value;
 
     fn compile(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        node: Node<'a>,
+        node: Node,
     ) -> Result<Value>;
 
     fn get_global(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
         id: DataId,
     ) -> GlobalValue;
 }
 
-impl<'a, 'b, M: Module + DeclareAliasedFunction, T: BackendInternal<'a, M>> Backend<'a, 'b, M>
-    for T
-{
-    fn query_type(cctx: &RwLock<CompilerContext<'a, M>>, ty: String) -> Type {
+impl<'a, 'b, M: Module + DeclareAliasedFunction, T: BackendInternal<M>> Backend<'a, 'b, M> for T {
+    fn query_type(cctx: &RwLock<CompilerContext<M>>, ty: String) -> Type {
         Self::query_type_with_pointer(Self::ptr(cctx), ty)
     }
 
@@ -64,7 +62,6 @@ impl<'a, 'b, M: Module + DeclareAliasedFunction, T: BackendInternal<'a, M>> Back
             "i16" | "u16" => types::I16,
             "i32" | "u32" => types::I32,
             "i64" | "u64" => types::I64,
-            "i128" | "u128" => types::I128,
             "f32" => types::F32,
             "f64" => types::F64,
             "bool" => Type::int(1).unwrap(),
@@ -73,7 +70,7 @@ impl<'a, 'b, M: Module + DeclareAliasedFunction, T: BackendInternal<'a, M>> Back
         }
     }
 
-    fn ptr(cctx: &RwLock<CompilerContext<'a, M>>) -> Type {
+    fn ptr(cctx: &RwLock<CompilerContext<M>>) -> Type {
         cctx.read().module.target_config().pointer_type()
     }
 
@@ -82,14 +79,14 @@ impl<'a, 'b, M: Module + DeclareAliasedFunction, T: BackendInternal<'a, M>> Back
         ctx.builder.write().ins().null(types::I8)
     }
 
-    fn nullptr(cctx: &RwLock<CompilerContext<'a, M>>, ctx: &mut CodegenContext<'a, 'b>) -> Value {
+    fn nullptr(cctx: &RwLock<CompilerContext<M>>, ctx: &mut CodegenContext<'a, 'b>) -> Value {
         let ptr = Self::ptr(cctx);
 
         ctx.builder.write().ins().null(ptr)
     }
 
     fn get_global(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
         id: DataId,
     ) -> GlobalValue {
@@ -99,15 +96,15 @@ impl<'a, 'b, M: Module + DeclareAliasedFunction, T: BackendInternal<'a, M>> Back
     }
 
     fn compile(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        node: Node<'a>,
+        node: Node,
     ) -> Result<Value> {
         debug!("Trying to compile: {:?}", node);
 
         let res = match *node.data {
             NodeData::Literal(literal) => Self::compile_literal(cctx, ctx, literal),
-            NodeData::Symbol(symbol) => Self::compile_named_var(cctx, ctx, symbol.value),
+            NodeData::Symbol(symbol) => Self::compile_named_var(cctx, ctx, symbol),
             NodeData::Type(_) | NodeData::EOI => Ok(Self::null(ctx)),
 
             NodeData::Expr(expr) => match expr {

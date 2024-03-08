@@ -17,6 +17,7 @@ pretty_env_logger.workspace = true
 target-lexicon.workspace = true
 qsc-core.workspace = true
 qsc-codegen.workspace = true
+qsc-compiler.workspace = true
 qsc-lexer.workspace = true
 qsc-linker.workspace = true
 const_format.workspace = true

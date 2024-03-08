@@ -6,8 +6,8 @@ use crate::{
     parser::Rule,
 };
 
-impl<'i> Lexer<'i> {
-    pub fn var(&'i self, pair: &Pair<'i, Rule>) -> Result<VariableNode<'i>> {
+impl<'i> Lexer {
+    pub fn var(&self, pair: Pair<'i, Rule>) -> Result<VariableNode> {
         let mut inner = pair.clone().into_inner();
 
         let mutable = inner
@@ -26,7 +26,7 @@ impl<'i> Lexer<'i> {
             .map(|pair| pair.as_rule() == Rule::r#type)
             .unwrap_or(false)
         {
-            Some(self.ty(&inner.next().unwrap())?)
+            Some(self.ty(inner.next().unwrap())?)
         } else {
             None
         };
@@ -34,7 +34,7 @@ impl<'i> Lexer<'i> {
         let value = inner.next().map(|pair| self.parse(pair).unwrap());
 
         Ok(VariableNode {
-            span: pair.as_span(),
+            span: pair.as_span().into(),
             name,
             type_,
             value,

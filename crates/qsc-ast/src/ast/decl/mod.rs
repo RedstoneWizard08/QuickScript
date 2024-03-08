@@ -7,10 +7,10 @@ pub mod global;
 pub mod var;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum DeclarationNode<'i> {
-    Function(FunctionNode<'i>),
-    Variable(VariableNode<'i>),
-    Global(GlobalVariable<'i>),
+pub enum DeclarationNode {
+    Function(FunctionNode),
+    Variable(VariableNode),
+    Global(GlobalVariable),
 }
 
 is_enum_variant_impl!(is_function -> DeclarationNode::Function);

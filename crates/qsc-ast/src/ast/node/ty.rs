@@ -1,15 +1,15 @@
-use pest::Span;
+use crate::span::StaticSpan;
 
 use super::sym::SymbolNode;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct TypeNode<'i> {
-    pub span: Span<'i>,
-    pub name: &'i str,
-    pub generics: Vec<SymbolNode<'i>>,
+pub struct TypeNode {
+    pub span: StaticSpan,
+    pub name: String,
+    pub generics: Vec<SymbolNode>,
 }
 
-impl<'i> TypeNode<'i> {
+impl TypeNode {
     pub fn as_str(&self) -> String {
         if self.generics.len() > 0 {
             format!(
@@ -17,8 +17,8 @@ impl<'i> TypeNode<'i> {
                 self.name,
                 self.generics
                     .iter()
-                    .map(|v| v.value)
-                    .collect::<Vec<&str>>()
+                    .map(|v| v.value.clone())
+                    .collect::<Vec<String>>()
                     .join(", ")
             )
         } else {

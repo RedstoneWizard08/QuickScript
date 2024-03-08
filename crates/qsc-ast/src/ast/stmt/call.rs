@@ -1,15 +1,14 @@
-use crate::ast::node::Node;
-use pest::Span;
+use crate::{ast::node::Node, span::StaticSpan};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct CallNode<'i> {
-    pub span: Span<'i>,
-    pub func: &'i str,
-    pub args: Vec<CallArgument<'i>>,
+pub struct CallNode {
+    pub span: StaticSpan,
+    pub func: String,
+    pub args: Vec<CallArgument>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct CallArgument<'i> {
-    pub span: Span<'i>,
-    pub value: Node<'i>,
+pub struct CallArgument {
+    pub span: StaticSpan,
+    pub value: Node,
 }

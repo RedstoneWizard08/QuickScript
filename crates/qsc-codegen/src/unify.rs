@@ -8,27 +8,30 @@ use qsc_ast::ast::AbstractTree;
 use qsc_object::ObjectProduct;
 use target_lexicon::Triple;
 
-pub trait CodegenBackend<'a> {
-    fn new(triple: Triple, name: String) -> Result<Self>
+pub trait CodegenBackend {
+    fn new(triple: Triple, name: String, source: String, tree: AbstractTree) -> Result<Self>
     where
         Self: Sized;
 
-    fn compile(&mut self, tree: AbstractTree<'a>) -> Result<()>;
+    fn compile(&mut self) -> Result<()>;
     fn is_jit(&self) -> bool;
     fn run(&self) -> Result<i32>;
     fn finalize(self) -> ObjectProduct;
     fn clif(&self) -> Result<String>;
     fn vcode(&self) -> String;
+    fn tree(&self) -> AbstractTree;
     fn asm(self) -> Result<String>;
 }
 
-impl<'a> CodegenBackend<'a> for AotGenerator<'a> {
-    fn new(triple: Triple, name: String) -> Result<Self> {
-        Ok(Self::new(triple, name)?)
+impl CodegenBackend for AotGenerator {
+    fn new(triple: Triple, name: String, source: String, tree: AbstractTree) -> Result<Self> {
+        Ok(Self::new(triple, name, source, tree)?)
     }
 
-    fn compile(&mut self, tree: AbstractTree<'a>) -> Result<()> {
-        for node in tree.data {
+    fn compile(&mut self) -> Result<()> {
+        let data = self.ctx.read().tree.clone();
+
+        for node in data.data {
             if let Ok(decl) = node.data.as_decl() {
                 if let Ok(func) = decl.as_function() {
                     self.compile_function(func)?;
@@ -91,6 +94,10 @@ impl<'a> CodegenBackend<'a> for AotGenerator<'a> {
             .join("\n")
     }
 
+    fn tree(&self) -> AbstractTree {
+        self.ctx.read().tree.clone()
+    }
+
     fn asm(self) -> Result<String> {
         let capstone = self
             .ctx
@@ -115,13 +122,15 @@ impl<'a> CodegenBackend<'a> for AotGenerator<'a> {
     }
 }
 
-impl<'a> CodegenBackend<'a> for JitGenerator<'a> {
-    fn new(triple: Triple, _name: String) -> Result<Self> {
-        Ok(Self::new(triple)?)
+impl CodegenBackend for JitGenerator {
+    fn new(triple: Triple, name: String, source: String, tree: AbstractTree) -> Result<Self> {
+        Ok(Self::new(triple, name, source, tree)?)
     }
 
-    fn compile(&mut self, tree: AbstractTree<'a>) -> Result<()> {
-        for node in tree.data {
+    fn compile(&mut self) -> Result<()> {
+        let data = self.ctx.read().tree.clone();
+
+        for node in data.data {
             if let Ok(decl) = node.data.as_decl() {
                 if let Ok(func) = decl.as_function() {
                     self.compile_function(func)?;
@@ -182,6 +191,10 @@ impl<'a> CodegenBackend<'a> for JitGenerator<'a> {
             .map(|v| v.unwrap())
             .collect::<Vec<String>>()
             .join("\n")
+    }
+
+    fn tree(&self) -> AbstractTree {
+        self.ctx.read().tree.clone()
     }
 
     fn asm(self) -> Result<String> {

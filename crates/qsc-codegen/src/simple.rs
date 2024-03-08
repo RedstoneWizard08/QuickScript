@@ -1,27 +1,30 @@
-use std::marker::PhantomData;
-
 use miette::Result;
 use qsc_ast::ast::AbstractTree;
 use qsc_object::ObjectProduct;
 use target_lexicon::Triple;
 
+use crate::error::BackendError;
+
 use super::unify::CodegenBackend;
 
-pub struct SimpleCompiler<'a, T: CodegenBackend<'a>> {
+pub struct SimpleCompiler<T: CodegenBackend> {
     pub backend: T,
-
-    _pdata0: PhantomData<&'a ()>,
 }
 
-impl<'a, T: CodegenBackend<'a>> SimpleCompiler<'a, T> {
-    pub fn new(triple: Triple, name: String) -> Result<Self> {
+impl<T: CodegenBackend> SimpleCompiler<T> {
+    pub fn new(
+        triple: Triple,
+        name: String,
+        source: &String,
+        tree: AbstractTree,
+    ) -> Result<Self, BackendError> {
         Ok(Self {
-            backend: T::new(triple, name)?,
-            _pdata0: PhantomData,
+            backend: T::new(triple, name, source.clone(), tree)?,
         })
     }
 
-    pub fn compile(&mut self, tree: AbstractTree<'a>) -> Result<()> {
+    pub fn compile(&mut self) -> Result<(), BackendError> {
+        let tree = self.backend.tree();
         let mut funcs = Vec::new();
 
         for node in &tree.data {
@@ -32,7 +35,7 @@ impl<'a, T: CodegenBackend<'a>> SimpleCompiler<'a, T> {
             }
         }
 
-        self.backend.compile(tree)?;
+        self.backend.compile()?;
 
         Ok(())
     }

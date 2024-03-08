@@ -2,11 +2,11 @@ use std::{fs, path::PathBuf, str::FromStr};
 
 use clap::Parser;
 use miette::{IntoDiagnostic, Result};
+use qsc_compiler::Compiler;
 use target_lexicon::Triple;
 use tempfile::NamedTempFile;
 
-use qsc_codegen::{aot::AotGenerator, simple::SimpleCompiler};
-use qsc_lexer::lexer::Lexer;
+use qsc_codegen::aot::AotGenerator;
 use qsc_linker::run_linker;
 
 use super::Command;
@@ -44,10 +44,6 @@ pub struct CompileCommand {
     #[arg(short = 'i', long = "clif")]
     pub clif: bool,
 
-    /// Instead of compiling, dump the tokens.
-    #[arg(long = "dump-tokens")]
-    pub dump_tokens: bool,
-
     /// Instead of compiling, dump the AST.
     #[arg(long = "dump-ast")]
     pub dump_ast: bool,
@@ -67,24 +63,20 @@ impl<'a> Command<'a> for CompileCommand {
 
         let name = self.file.file_name().unwrap().to_str().unwrap();
         let content = fs::read_to_string(self.file.clone()).into_diagnostic()?;
+        let mut compiler = Compiler::<AotGenerator>::new(name, content);
 
-        debug!("Lexing file: {}", self.file.to_str().unwrap());
-
-        let lexer = Lexer::new(&name, &content);
-        let exprs = lexer.lex()?;
-
-        if self.dump_ast {
-            println!("{:#?}", exprs);
-            return Ok(());
-        }
-
-        debug!("Compiling file: {}", self.file.to_str().unwrap());
-
-        let mut compiler = SimpleCompiler::<AotGenerator>::new(triple.clone(), name.to_string())?;
-
-        compiler.compile(exprs)?;
+        compiler.compile(triple.clone())?;
 
         debug!("Emitting object(s)...");
+
+        if self.dump_ast {
+            let ast = format!("{:#?}", compiler.ast());
+            let mut file = self.file.clone();
+
+            file.set_extension("ast");
+
+            fs::write(file, ast).into_diagnostic()?;
+        }
 
         if self.vcode {
             let mut file = self.file.clone();

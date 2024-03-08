@@ -9,12 +9,27 @@ pub mod int;
 pub mod string;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum LiteralNode<'i> {
-    Char(CharNode<'i>),
-    Float(FloatNode<'i>),
-    Int(IntNode<'i>),
-    String(StringNode<'i>),
-    Bool(BoolNode<'i>),
+pub enum LiteralNode {
+    Char(CharNode),
+    Float(FloatNode),
+    Int(IntNode),
+    String(StringNode),
+    Bool(BoolNode),
+}
+
+impl LiteralNode {
+    pub fn get_type(&self) -> Option<String> {
+        Some(
+            match self.clone() {
+                LiteralNode::Bool(_) => "bool",
+                LiteralNode::Char(_) => "char",
+                LiteralNode::Float(_) => "f32",
+                LiteralNode::Int(_) => "i32",
+                LiteralNode::String(_) => "str",
+            }
+            .to_string(),
+        )
+    }
 }
 
 is_enum_variant_impl!(is_char -> LiteralNode::Char);

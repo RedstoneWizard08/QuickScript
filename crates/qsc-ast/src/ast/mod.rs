@@ -7,36 +7,44 @@ pub mod literal;
 pub mod node;
 pub mod stmt;
 
+use std::collections::HashMap;
+
+use crate::span::StaticSpan;
+
 use self::{
     decl::{func::FunctionNode, global::GlobalVariable},
     node::Node,
 };
 
-use pest::Span;
+use miette::NamedSource;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct AbstractTree<'i> {
-    pub span: Span<'i>,
-    pub source: &'i str,
-    pub data: Vec<Node<'i>>,
+pub struct AbstractTree {
+    pub span: StaticSpan,
+    pub src: NamedSource<String>,
+    pub source: String,
+    pub data: Vec<Node>,
 }
 
-impl<'i> AbstractTree<'i> {
-    pub fn new(source: &'i str) -> Self {
+impl AbstractTree {
+    pub fn new(name: impl AsRef<str>, source: impl AsRef<str>) -> Self {
+        let src = source.as_ref().to_string();
+
         Self {
-            span: Span::new(source, 0, source.len()).unwrap(),
-            source,
+            src: NamedSource::new(name, src.clone()),
+            span: StaticSpan::new(src.clone(), 0, src.len()),
+            source: src,
             data: Vec::new(),
         }
     }
 
-    pub fn functions(&self) -> Vec<FunctionNode<'i>> {
-        let mut funcs = Vec::new();
+    pub fn functions(&self) -> HashMap<String, FunctionNode> {
+        let mut funcs = HashMap::new();
 
         for node in &self.data {
             if let Ok(decl) = node.data.as_decl() {
                 if let Ok(func) = decl.as_function() {
-                    funcs.push(func);
+                    funcs.insert(func.name.to_string(), func);
                 }
             }
         }
@@ -44,17 +52,30 @@ impl<'i> AbstractTree<'i> {
         funcs
     }
 
-    pub fn globals(&self) -> Vec<GlobalVariable<'i>> {
-        let mut globals = Vec::new();
+    pub fn globals(&self) -> HashMap<String, GlobalVariable> {
+        let mut globals = HashMap::new();
 
         for node in &self.data {
             if let Ok(decl) = node.data.as_decl() {
                 if let Ok(global) = decl.as_global() {
-                    globals.push(global);
+                    globals.insert(global.name.clone(), global);
                 }
             }
         }
 
         globals
+    }
+
+    // TODO: `use` statements and actually do this
+    pub fn imported_functions(&self) -> &[&str] {
+        &["printf", "puts"]
+    }
+
+    // TODO: add support for custom structs and types
+    pub fn types(&self) -> &[&str] {
+        &[
+            "i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64", "f32", "f64", "bool", "char",
+            "str",
+        ]
     }
 }

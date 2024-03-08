@@ -42,6 +42,7 @@ libc = { version = "0.2.42" }
 qsc-ast = { path = "./crates/qsc-ast" }
 qsc-cli = { path = "./crates/qsc-cli" }
 qsc-codegen = { path = "./crates/qsc-codegen" }
+qsc-compiler = { path = "./crates/qsc-compiler" }
 qsc-core = { path = "./crates/qsc-core" }
 qsc-jit = { path = "./crates/qsc-jit" }
 qsc-lexer = { path = "./crates/qsc-lexer" }
@@ -63,6 +64,7 @@ members = [
     "crates/qsc-ast",
     "crates/qsc-cli",
     "crates/qsc-codegen",
+    "crates/qsc-compiler",
     "crates/qsc-core",
     "crates/qsc-jit",
     "crates/qsc-lexer",

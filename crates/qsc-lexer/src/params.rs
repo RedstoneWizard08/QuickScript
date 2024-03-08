@@ -6,27 +6,30 @@ use crate::{
     parser::Rule,
 };
 
-impl<'i> Lexer<'i> {
-    pub fn params(&'i self, pair: Pair<'i, Rule>) -> Vec<FunctionArgument<'i>> {
-        pair.into_inner()
-            .map(|pair| self.param(&pair).unwrap())
-            .collect()
+impl<'i> Lexer {
+    pub fn params(&self, pair: Pair<'i, Rule>) -> Result<Vec<FunctionArgument>> {
+        let mut args = Vec::new();
+
+        for pair in pair.into_inner() {
+            args.push(self.param(pair)?);
+        }
+
+        Ok(args)
     }
 
-    pub fn param(&self, pair: &Pair<'i, Rule>) -> Result<FunctionArgument> {
+    pub fn param(&self, pair: Pair<'i, Rule>) -> Result<FunctionArgument> {
         let mut inner = pair.clone().into_inner();
-
         let mutable = inner.peek().unwrap().as_str().trim() == "mut";
 
         if mutable {
             inner.next();
         }
 
-        let name = inner.next().unwrap().as_str().trim();
-        let type_ = self.ty(&inner.next().unwrap())?;
+        let name = inner.next().unwrap().as_str().trim().to_string();
+        let type_ = self.ty(inner.next().unwrap())?;
 
         Ok(FunctionArgument {
-            span: pair.as_span(),
+            span: pair.as_span().into(),
             name,
             type_,
             mutable,

@@ -1,11 +1,13 @@
-use crate::ast::node::{ty::TypeNode, vis::Visibility, Node};
-use pest::Span;
+use crate::{
+    ast::node::{ty::TypeNode, vis::Visibility, Node},
+    span::StaticSpan,
+};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct GlobalVariable<'i> {
-    pub span: Span<'i>,
+pub struct GlobalVariable {
+    pub span: StaticSpan,
     pub name: String,
-    pub type_: TypeNode<'i>,
-    pub value: Node<'i>,
+    pub type_: TypeNode,
+    pub value: Node,
     pub vis: Visibility,
 }

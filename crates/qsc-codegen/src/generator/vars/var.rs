@@ -7,10 +7,12 @@ use cranelift_module::{DataId, Linkage, Module};
 use miette::{IntoDiagnostic, Result};
 
 use parking_lot::RwLock;
-use qsc_ast::ast::decl::var::VariableNode as Var;
+use qsc_ast::ast::{decl::var::VariableNode, node::sym::SymbolNode};
+use qsc_core::conv::IntoSourceSpan;
 
 use crate::{
     context::{CodegenContext, CompilerContext},
+    error::CodegenError,
     generator::Backend,
 };
 
@@ -18,41 +20,41 @@ pub trait VariableCompiler<'a, 'b, M: Module>: Backend<'a, 'b, M> {
     type O;
 
     fn compile_var(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        var: Var<'a>,
+        var: VariableNode,
     ) -> Result<Self::O>;
 
     fn declare_var(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        var: Var<'a>,
+        var: VariableNode,
     ) -> Result<Variable>;
 
     fn compile_empty_var(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        var: Var<'a>,
+        var: VariableNode,
     ) -> Result<Self::O>;
 
     fn compile_data_var(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        var: Var<'a>,
+        var: VariableNode,
         data: DataId,
     ) -> Result<Self::O>;
 
     fn compile_value_var(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        var: Var<'a>,
+        var: VariableNode,
         value: Value,
     ) -> Result<Self::O>;
 
     fn compile_named_var(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        ident: &'a str,
+        ident: SymbolNode,
     ) -> Result<Self::O>;
 }
 
@@ -60,9 +62,9 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> VariableCompiler<'a, 'b, M> for T
     type O = Value;
 
     fn compile_var(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        var: Var<'a>,
+        var: VariableNode,
     ) -> Result<Self::O> {
         match var.clone().value {
             Some(value) => {
@@ -76,9 +78,9 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> VariableCompiler<'a, 'b, M> for T
     }
 
     fn declare_var(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        var: Var<'a>,
+        var: VariableNode,
     ) -> Result<Variable> {
         let ty = Self::query_type(
             cctx,
@@ -96,9 +98,9 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> VariableCompiler<'a, 'b, M> for T
     }
 
     fn compile_empty_var(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        var: Var<'a>,
+        var: VariableNode,
     ) -> Result<Self::O> {
         let ty = Self::query_type(
             cctx,
@@ -120,9 +122,9 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> VariableCompiler<'a, 'b, M> for T
     }
 
     fn compile_data_var(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        var: Var<'a>,
+        var: VariableNode,
         data: DataId,
     ) -> Result<Self::O> {
         let val = Self::get_global(cctx, ctx, data);
@@ -156,9 +158,9 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> VariableCompiler<'a, 'b, M> for T
     }
 
     fn compile_value_var(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        var: Var<'a>,
+        var: VariableNode,
         val: Value,
     ) -> Result<Self::O> {
         let ty = Self::query_type(
@@ -180,34 +182,39 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> VariableCompiler<'a, 'b, M> for T
     }
 
     fn compile_named_var(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        ident: &'a str,
+        ident: SymbolNode,
     ) -> Result<Self::O> {
         let ptr = Self::ptr(cctx);
         let mut wctx = cctx.write();
         let mut bctx = ctx.builder.write();
 
-        if ctx.vars.contains_key(ident) {
-            let (ref_, _) = *ctx.vars.get(ident).unwrap();
+        if ctx.vars.contains_key(&ident.value) {
+            let (ref_, _) = *ctx.vars.get(&ident.value).unwrap();
 
             Ok(bctx.use_var(ref_))
-        } else if wctx.globals.contains_key(ident) {
+        } else if wctx.globals.contains_key(&ident.value) {
             let sym = wctx
                 .module
-                .declare_data(ident, Linkage::Export, true, false)
+                .declare_data(&ident.value, Linkage::Export, true, false)
                 .into_diagnostic()?;
 
             let local_id = wctx.module.declare_data_in_func(sym, bctx.func);
             let val = bctx.ins().symbol_value(ptr, local_id);
 
             Ok(val)
-        } else if ctx.values.contains_key(ident) {
-            let (val, _) = *ctx.values.get(ident).unwrap();
+        } else if ctx.values.contains_key(&ident.value) {
+            let (val, _) = *ctx.values.get(&ident.value).unwrap();
 
             Ok(val)
         } else {
-            Err(miette::miette!("Variable {} not found", ident))
+            Err(CodegenError {
+                error: miette!("Variable {} not found", ident.value),
+                location: ident.span.into_source_span(),
+                src: wctx.source.clone(),
+            }
+            .into())
         }
     }
 }

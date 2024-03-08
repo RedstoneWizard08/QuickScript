@@ -1,22 +1,21 @@
 fn get_name() -> str {
-    return "worlde";
+    return "world";
 }
 
 fn do_math(a: i32, b: i32) -> i32 {
-    let v: i32 = a - b;
+    let v = a - b;
 
     return v;
 }
 
 fn main() -> i32 {
-    let a: i32 = 4;
-    let b: i32 = 2;
+    let a = 4;
+    let b = 2;
     let val: i32 = do_math(a, b);
 
     printf("Hello, %s!\n", get_name());
-    puts("Hello, world!");
     puts("Another test!");
-    printf("Math: %i - %i = %i\n", a, b, val);
+    printf("Math: %i - %i = %i\n", a, b, do_math(a, b));
 
     return 0;
 }

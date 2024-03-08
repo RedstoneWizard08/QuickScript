@@ -1,7 +1,7 @@
-use pest::Span;
+use crate::span::StaticSpan;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct SymbolNode<'i> {
-    pub span: Span<'i>,
-    pub value: &'i str,
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SymbolNode {
+    pub span: StaticSpan,
+    pub value: String,
 }

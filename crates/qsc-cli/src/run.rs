@@ -2,10 +2,10 @@ use std::{fs, path::PathBuf, process::exit};
 
 use clap::Parser;
 use miette::{IntoDiagnostic, Result};
+use qsc_compiler::Compiler;
 use target_lexicon::Triple;
 
-use qsc_codegen::{jit::JitGenerator, simple::SimpleCompiler};
-use qsc_lexer::lexer::Lexer;
+use qsc_codegen::jit::JitGenerator;
 
 use super::Command;
 
@@ -13,10 +13,6 @@ use super::Command;
 pub struct RunCommand {
     /// The path to the file to compile.
     pub file: PathBuf,
-
-    /// Instead of running, dump the tokens.
-    #[arg(long = "dump-tokens")]
-    pub dump_tokens: bool,
 
     /// Instead of running, dump the AST.
     #[arg(long = "dump-ast")]
@@ -39,22 +35,14 @@ impl<'a> Command<'a> for RunCommand {
     fn execute(&'a mut self) -> Result<()> {
         let name = self.file.file_name().unwrap().to_str().unwrap();
         let content = fs::read_to_string(self.file.clone()).into_diagnostic()?;
+        let mut compiler = Compiler::<JitGenerator>::new(name, content);
 
-        debug!("Lexing file: {}", self.file.to_str().unwrap());
-
-        let lexer = Lexer::new(&name, &content);
-        let exprs = lexer.lex()?;
+        compiler.compile(Triple::host())?;
 
         if self.dump_ast {
-            println!("{:#?}", exprs);
+            println!("{:#?}", compiler.ast());
             return Ok(());
         }
-
-        debug!("Compiling file: {}", self.file.to_str().unwrap());
-
-        let mut compiler = SimpleCompiler::<JitGenerator>::new(Triple::host(), name.to_string())?;
-
-        compiler.compile(exprs)?;
 
         if self.vcode {
             let mut file = self.file.clone();

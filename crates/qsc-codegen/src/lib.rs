@@ -7,6 +7,7 @@ extern crate log;
 pub mod alias;
 pub mod aot;
 pub mod context;
+pub mod error;
 pub mod generator;
 pub mod jit;
 pub mod lookup;

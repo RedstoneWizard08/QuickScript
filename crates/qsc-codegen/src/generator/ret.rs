@@ -17,9 +17,9 @@ use super::{Backend, CallCompiler, RETURN_VAR};
 
 pub trait ReturnCompiler<'a, 'b, M: Module>: Backend<'a, 'b, M> {
     fn compile_return(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        node: ReturnNode<'a>,
+        node: ReturnNode,
     ) -> Result<Value>;
 }
 
@@ -27,9 +27,9 @@ impl<'a, 'b, M: Module + DeclareAliasedFunction, T: Backend<'a, 'b, M>> ReturnCo
     for T
 {
     fn compile_return(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        node: ReturnNode<'a>,
+        node: ReturnNode,
     ) -> Result<Value> {
         if let Some(value) = node.value {
             if (ctx.func.name == "main" || ctx.func.name == "_start") && !Self::is_jit() {
@@ -39,10 +39,10 @@ impl<'a, 'b, M: Module + DeclareAliasedFunction, T: Backend<'a, 'b, M>> ReturnCo
                     cctx,
                     ctx,
                     CallNode {
-                        span: node.span,
-                        func: "exit",
+                        span: node.span.clone(),
+                        func: "exit".to_string(),
                         args: vec![CallArgument {
-                            span: node.span,
+                            span: node.span.clone(),
                             value: value.clone(),
                         }],
                     },

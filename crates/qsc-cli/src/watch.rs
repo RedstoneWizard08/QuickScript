@@ -9,10 +9,10 @@ use std::{
 use clap::Parser;
 use miette::{IntoDiagnostic, Result};
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
+use qsc_compiler::Compiler;
 use target_lexicon::Triple;
 
-use qsc_codegen::{jit::JitGenerator, simple::SimpleCompiler};
-use qsc_lexer::lexer::Lexer;
+use qsc_codegen::jit::JitGenerator;
 
 use super::Command;
 
@@ -27,11 +27,9 @@ impl WatchCommand {
         let path = self.path.clone().join("main.qs");
         let name = path.file_name().unwrap().to_str().unwrap();
         let content = fs::read_to_string(path.clone()).into_diagnostic()?;
-        let lexer = Lexer::new(&name, &content);
-        let exprs = lexer.lex()?;
-        let mut compiler = SimpleCompiler::<JitGenerator>::new(Triple::host(), name.to_string())?;
+        let mut compiler = Compiler::<JitGenerator>::new(name, content);
 
-        compiler.compile(exprs)?;
+        compiler.compile(Triple::host())?;
 
         let code = compiler.run()?;
 

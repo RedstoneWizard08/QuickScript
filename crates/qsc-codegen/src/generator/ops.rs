@@ -10,17 +10,17 @@ use super::Backend;
 
 pub trait OperationCompiler<'a, 'b, M: Module>: Backend<'a, 'b, M> {
     fn compile_binary_expr(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        expr: BinaryExpr<'a>,
+        expr: BinaryExpr,
     ) -> Result<Value>;
 }
 
 impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> OperationCompiler<'a, 'b, M> for T {
     fn compile_binary_expr(
-        cctx: &RwLock<CompilerContext<'a, M>>,
+        cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        expr: BinaryExpr<'a>,
+        expr: BinaryExpr,
     ) -> Result<Value> {
         let left = Self::compile(cctx, ctx, expr.lhs)?;
         let right = Self::compile(cctx, ctx, expr.rhs)?;

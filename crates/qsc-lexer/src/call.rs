@@ -6,10 +6,10 @@ use crate::{
     parser::Rule,
 };
 
-impl<'i> Lexer<'i> {
-    pub fn call(&'i self, pair: &Pair<'i, Rule>) -> Result<CallNode<'i>> {
+impl<'i> Lexer {
+    pub fn call(&self, pair: Pair<'i, Rule>) -> Result<CallNode> {
         let mut inner = pair.clone().into_inner();
-        let func = inner.next().unwrap().as_str().trim();
+        let func = inner.next().unwrap().as_str().trim().to_string();
 
         let args = inner
             .next()
@@ -21,15 +21,15 @@ impl<'i> Lexer<'i> {
             .unwrap_or_default();
 
         Ok(CallNode {
-            span: pair.as_span(),
+            span: pair.as_span().into(),
             func,
             args,
         })
     }
 
-    pub fn call_arg(&'i self, pair: Pair<'i, Rule>) -> Result<CallArgument<'i>> {
+    pub fn call_arg(&self, pair: Pair<'i, Rule>) -> Result<CallArgument> {
         Ok(CallArgument {
-            span: pair.as_span(),
+            span: pair.as_span().into(),
             value: self.parse(pair)?,
         })
     }

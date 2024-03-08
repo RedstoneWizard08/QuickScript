@@ -11,3 +11,5 @@ edition.workspace = true
 object.workspace = true
 rand.workspace = true
 thiserror.workspace = true
+miette.workspace = true
+pest.workspace = true

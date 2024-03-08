@@ -11,5 +11,6 @@ edition.workspace = true
 pest.workspace = true
 pest_derive.workspace = true
 qsc-ast.workspace = true
+qsc-core.workspace = true
 miette.workspace = true
 thiserror.workspace = true
