@@ -1,3 +1,8 @@
+use qsc_core::{
+    conv::IntoSourceSpan,
+    error::{lexical::LexicalError, Result},
+};
+
 use crate::{
     ast::{
         decl::DeclarationNode, expr::ExpressionNode, literal::LiteralNode, stmt::StatementNode,
@@ -21,7 +26,7 @@ pub enum NodeData {
 }
 
 impl NodeData {
-    pub fn get_type(&self, func: &Option<String>, tree: &AbstractTree) -> Option<String> {
+    pub fn get_type(&self, func: &Option<String>, tree: &AbstractTree) -> Result<String> {
         let globals = tree.globals();
         let funcs = tree.functions();
 
@@ -30,30 +35,52 @@ impl NodeData {
                 .data
                 .last()
                 .map(|v| v.data.get_type(func, tree))
-                .flatten(),
-            NodeData::EOI | NodeData::Declaration(_) => None,
+                .unwrap_or(Err(LexicalError {
+                    location: block.span.into_source_span(),
+                    src: tree.src.clone().into(),
+                    error: miette!("Cannot get a return type for block!"),
+                }.into())),
+
+            NodeData::EOI | NodeData::Declaration(_) => Err(LexicalError {
+                location: (0..0).into(),
+                src: tree.src.clone().into(),
+                error: miette!("EOI and Declarations do not support types. This error shouldn't be shown. This shouldn't be an issue."),
+            }.into()),
+
             NodeData::Expr(expr) => expr.get_type(func, tree),
             NodeData::Literal(lit) => lit.get_type(),
             NodeData::Statement(stmt) => stmt.get_type(func, tree),
-            NodeData::Type(ty) => Some(ty.as_str()),
+            NodeData::Type(ty) => Ok(ty.as_str()),
 
             NodeData::Symbol(sym) => {
                 if func.is_none() {
                     if let Some(var) = globals.get(&sym.value) {
-                        Some(var.type_.as_str())
+                        Ok(var.type_.as_str())
                     } else {
-                        None
+                        Err(LexicalError {
+                            location: sym.span.into_source_span(),
+                            src: tree.src.clone().into(),
+                            error: miette!("Cannot find a type for symbol: {}", sym.value),
+                        }.into())
                     }
                 } else {
                     let func = funcs.get(&func.clone().unwrap()).unwrap();
                     let vars = func.variables();
 
                     if let Some(var) = vars.get(&sym.value) {
-                        var.type_.clone().map(|v| v.as_str())
+                        var.type_.clone().map(|v| v.as_str()).ok_or(LexicalError {
+                            location: var.span.into_source_span(),
+                            src: tree.src.clone().into(),
+                            error: miette!("Cannot find a type for symbol: {}", sym.value),
+                        }.into())
                     } else if let Some(var) = globals.get(&sym.value) {
-                        Some(var.type_.as_str())
+                        Ok(var.type_.as_str())
                     } else {
-                        None
+                        Err(LexicalError {
+                            location: sym.span.into_source_span(),
+                            src: tree.src.clone().into(),
+                            error: miette!("Cannot find a type for symbol: {}", sym.value),
+                        }.into())
                     }
                 }
             }

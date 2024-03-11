@@ -20,6 +20,10 @@ impl FunctionNode {
     pub fn variables(&self) -> HashMap<String, VariableNode> {
         let mut vars = HashMap::new();
 
+        for arg in &self.args {
+            vars.insert(arg.name.clone(), arg.clone().into());
+        }
+
         for node in &self.content.data {
             if let Ok(decl) = node.data.as_decl() {
                 if let Ok(var) = decl.as_variable() {

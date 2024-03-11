@@ -1,3 +1,5 @@
+use qsc_core::error::Result;
+
 use crate::{get_enum_variant_value_impl, is_enum_variant_impl};
 
 use self::{boolean::BoolNode, char::CharNode, float::FloatNode, int::IntNode, string::StringNode};
@@ -18,17 +20,15 @@ pub enum LiteralNode {
 }
 
 impl LiteralNode {
-    pub fn get_type(&self) -> Option<String> {
-        Some(
-            match self.clone() {
-                LiteralNode::Bool(_) => "bool",
-                LiteralNode::Char(_) => "char",
-                LiteralNode::Float(_) => "f32",
-                LiteralNode::Int(_) => "i32",
-                LiteralNode::String(_) => "str",
-            }
-            .to_string(),
-        )
+    pub fn get_type(&self) -> Result<String> {
+        Ok(match self.clone() {
+            LiteralNode::Bool(_) => "bool",
+            LiteralNode::Char(_) => "char",
+            LiteralNode::Float(_) => "f32",
+            LiteralNode::Int(_) => "i32",
+            LiteralNode::String(_) => "str",
+        }
+        .to_string())
     }
 }
 

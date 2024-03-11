@@ -46,8 +46,8 @@ impl Processor {
                     if let Some(val) = &var.value {
                         if val
                             .data
-                            .get_type(&ctx.func.clone().map(|v| v.name), &ctx.tree)
-                            != Some(ty.as_str())
+                            .get_type(&ctx.func.clone().map(|v| v.name), &ctx.tree)?
+                            != ty.as_str()
                         {
                             return Err(ProcessorError {
                                 src: ctx.tree.src.clone().into(),
@@ -59,7 +59,7 @@ impl Processor {
                     }
                 } else {
                     if let Some(val) = &var.value {
-                        if let Some(ty) = val
+                        if let Ok(ty) = val
                             .data
                             .get_type(&ctx.func.clone().map(|v| v.name), &ctx.tree)
                         {

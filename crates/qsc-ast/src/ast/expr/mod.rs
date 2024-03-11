@@ -1,4 +1,7 @@
-use qsc_core::{conv::IntoSourceSpan, error::lexical::LexicalError};
+use qsc_core::{
+    conv::IntoSourceSpan,
+    error::{lexical::LexicalError, Result},
+};
 
 use crate::{get_enum_variant_value_impl, is_enum_variant_impl};
 
@@ -17,31 +20,21 @@ pub enum ExpressionNode {
 }
 
 impl ExpressionNode {
-    pub fn get_type(&self, func: &Option<String>, tree: &AbstractTree) -> Option<String> {
+    pub fn get_type(&self, func: &Option<String>, tree: &AbstractTree) -> Result<String> {
         match self.clone() {
             ExpressionNode::Binary(expr) => {
-                let lhs = expr.lhs.data.get_type(func, tree);
-                let rhs = expr.rhs.data.get_type(func, tree);
+                let lhs = expr.lhs.data.get_type(func, tree)?;
+                let rhs = expr.rhs.data.get_type(func, tree)?;
 
-                if lhs.is_none() && rhs.is_some() {
-                    rhs
-                } else if rhs.is_none() && lhs.is_some() {
-                    lhs
-                } else if rhs.is_some() && lhs.is_some() {
-                    if rhs.unwrap() != lhs.clone().unwrap() {
-                        let err = LexicalError {
-                            location: expr.span.into_source_span(),
-                            src: tree.src.clone().into(),
-                            error: miette!("Left and right operands' types do not match!"),
-                        };
-
-                        Result::<(), _>::Err(err).unwrap();
-                        unreachable!();
-                    } else {
-                        Some(lhs.unwrap())
+                if rhs != lhs {
+                    Err(LexicalError {
+                        location: expr.span.into_source_span(),
+                        src: tree.src.clone().into(),
+                        error: miette!("Left and right operands' types do not match!"),
                     }
+                    .into())
                 } else {
-                    None
+                    Ok(lhs)
                 }
             }
 

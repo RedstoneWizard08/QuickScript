@@ -1,3 +1,8 @@
+use qsc_core::{
+    conv::IntoSourceSpan,
+    error::{lexical::LexicalError, Result},
+};
+
 use crate::{get_enum_variant_value_impl, is_enum_variant_impl};
 
 use self::{call::CallNode, ret::ReturnNode};
@@ -14,19 +19,36 @@ pub enum StatementNode {
 }
 
 impl StatementNode {
-    pub fn get_type(&self, _func: &Option<String>, tree: &AbstractTree) -> Option<String> {
+    pub fn get_type(&self, _func: &Option<String>, tree: &AbstractTree) -> Result<String> {
         let funcs = tree.functions();
 
         match self.clone() {
             Self::Call(call) => {
                 if let Some(func) = funcs.get(&call.func) {
-                    func.ret.clone().map(|v| v.as_str())
+                    func.ret.clone().map(|v| v.as_str()).ok_or(
+                        LexicalError {
+                            location: call.span.into_source_span(),
+                            src: tree.src.clone().into(),
+                            error: miette!("Cannot find a return type for call!"),
+                        }
+                        .into(),
+                    )
                 } else {
-                    None
+                    Err(LexicalError {
+                        location: call.span.into_source_span(),
+                        src: tree.src.clone().into(),
+                        error: miette!("Cannot find a return type for call!"),
+                    }
+                    .into())
                 }
             }
 
-            Self::Return(_) => None,
+            Self::Return(ret) => Err(LexicalError {
+                location: ret.span.into_source_span(),
+                src: tree.src.clone().into(),
+                error: miette!("Return types cannot have a type!"),
+            }
+            .into()),
         }
     }
 }

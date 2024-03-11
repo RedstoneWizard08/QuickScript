@@ -1,0 +1,279 @@
+(
+    data: [
+        (
+            data: Declaration(Function((
+                name: "get_name",
+                args: [],
+                ret: Some((
+                    name: "str",
+                    generics: [],
+                )),
+                content: (
+                    data: [
+                        (
+                            data: Statement(Return((
+                                value: Some((
+                                    data: Literal(String((
+                                        value: "world",
+                                    ))),
+                                )),
+                            ))),
+                        ),
+                    ],
+                ),
+                vis: Public,
+            ))),
+        ),
+        (
+            data: Declaration(Function((
+                name: "do_math",
+                args: [
+                    (
+                        mutable: false,
+                        name: "a",
+                        type_: (
+                            name: "i32",
+                            generics: [],
+                        ),
+                    ),
+                    (
+                        mutable: false,
+                        name: "b",
+                        type_: (
+                            name: "i32",
+                            generics: [],
+                        ),
+                    ),
+                ],
+                ret: Some((
+                    name: "i32",
+                    generics: [],
+                )),
+                content: (
+                    data: [
+                        (
+                            data: Declaration(Variable((
+                                name: "v",
+                                type_: Some((
+                                    name: "i32",
+                                    generics: [],
+                                )),
+                                value: Some((
+                                    data: Expr(Binary((
+                                        operator: Subtract,
+                                        rhs: (
+                                            data: Expr(Unary((
+                                                negative: false,
+                                                value: (
+                                                    data: Symbol((
+                                                        value: "b",
+                                                    )),
+                                                ),
+                                            ))),
+                                        ),
+                                        lhs: (
+                                            data: Expr(Unary((
+                                                negative: false,
+                                                value: (
+                                                    data: Symbol((
+                                                        value: "a",
+                                                    )),
+                                                ),
+                                            ))),
+                                        ),
+                                    ))),
+                                )),
+                                mutable: false,
+                            ))),
+                        ),
+                        (
+                            data: Statement(Return((
+                                value: Some((
+                                    data: Symbol((
+                                        value: "v",
+                                    )),
+                                )),
+                            ))),
+                        ),
+                    ],
+                ),
+                vis: Public,
+            ))),
+        ),
+        (
+            data: Declaration(Function((
+                name: "main",
+                args: [],
+                ret: Some((
+                    name: "i32",
+                    generics: [],
+                )),
+                content: (
+                    data: [
+                        (
+                            data: Declaration(Variable((
+                                name: "a",
+                                type_: Some((
+                                    name: "i32",
+                                    generics: [],
+                                )),
+                                value: Some((
+                                    data: Literal(Int((
+                                        value: 4,
+                                    ))),
+                                )),
+                                mutable: false,
+                            ))),
+                        ),
+                        (
+                            data: Declaration(Variable((
+                                name: "b",
+                                type_: Some((
+                                    name: "i32",
+                                    generics: [],
+                                )),
+                                value: Some((
+                                    data: Literal(Int((
+                                        value: 2,
+                                    ))),
+                                )),
+                                mutable: false,
+                            ))),
+                        ),
+                        (
+                            data: Declaration(Variable((
+                                name: "val",
+                                type_: Some((
+                                    name: "i32",
+                                    generics: [],
+                                )),
+                                value: Some((
+                                    data: Statement(Call((
+                                        func: "do_math",
+                                        args: [
+                                            (
+                                                value: (
+                                                    data: Symbol((
+                                                        value: "a",
+                                                    )),
+                                                ),
+                                            ),
+                                            (
+                                                value: (
+                                                    data: Symbol((
+                                                        value: "b",
+                                                    )),
+                                                ),
+                                            ),
+                                        ],
+                                    ))),
+                                )),
+                                mutable: false,
+                            ))),
+                        ),
+                        (
+                            data: Statement(Call((
+                                func: "printf",
+                                args: [
+                                    (
+                                        value: (
+                                            data: Literal(String((
+                                                value: "Hello, %s!\n",
+                                            ))),
+                                        ),
+                                    ),
+                                    (
+                                        value: (
+                                            data: Statement(Call((
+                                                func: "get_name",
+                                                args: [],
+                                            ))),
+                                        ),
+                                    ),
+                                ],
+                            ))),
+                        ),
+                        (
+                            data: Statement(Call((
+                                func: "puts",
+                                args: [
+                                    (
+                                        value: (
+                                            data: Literal(String((
+                                                value: "Another test!",
+                                            ))),
+                                        ),
+                                    ),
+                                ],
+                            ))),
+                        ),
+                        (
+                            data: Statement(Call((
+                                func: "printf",
+                                args: [
+                                    (
+                                        value: (
+                                            data: Literal(String((
+                                                value: "Math: %i - %i = %i\n",
+                                            ))),
+                                        ),
+                                    ),
+                                    (
+                                        value: (
+                                            data: Symbol((
+                                                value: "a",
+                                            )),
+                                        ),
+                                    ),
+                                    (
+                                        value: (
+                                            data: Symbol((
+                                                value: "b",
+                                            )),
+                                        ),
+                                    ),
+                                    (
+                                        value: (
+                                            data: Statement(Call((
+                                                func: "do_math",
+                                                args: [
+                                                    (
+                                                        value: (
+                                                            data: Symbol((
+                                                                value: "a",
+                                                            )),
+                                                        ),
+                                                    ),
+                                                    (
+                                                        value: (
+                                                            data: Symbol((
+                                                                value: "b",
+                                                            )),
+                                                        ),
+                                                    ),
+                                                ],
+                                            ))),
+                                        ),
+                                    ),
+                                ],
+                            ))),
+                        ),
+                        (
+                            data: Statement(Return((
+                                value: Some((
+                                    data: Literal(Int((
+                                        value: 0,
+                                    ))),
+                                )),
+                            ))),
+                        ),
+                    ],
+                ),
+                vis: Public,
+            ))),
+        ),
+        (
+            data: EOI,
+        ),
+    ],
+)
