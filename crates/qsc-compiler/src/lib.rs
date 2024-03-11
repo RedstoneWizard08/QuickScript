@@ -53,7 +53,7 @@ impl<B: CodegenBackend> Compiler<B> {
     }
 
     pub fn dump_pst(name: impl AsRef<str>, source: impl AsRef<str>) -> Result<String> {
-        debug!("[1/2] Running lexer...");
+        debug!("[Stage 1/2] Running lexer...");
 
         let mut lexer = Lexer::new(name, source);
         let ast = lexer.lex()?;
