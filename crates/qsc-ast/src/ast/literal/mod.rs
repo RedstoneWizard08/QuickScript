@@ -8,7 +8,7 @@ pub mod float;
 pub mod int;
 pub mod string;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum LiteralNode {
     Char(CharNode),
     Float(FloatNode),

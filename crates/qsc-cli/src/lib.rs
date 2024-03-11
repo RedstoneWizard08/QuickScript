@@ -10,12 +10,14 @@ pub mod run;
 pub mod style;
 pub mod watch;
 
+use std::env;
+
 use clap::{Parser, Subcommand};
 use clap_verbosity_flag::Verbosity;
 use const_format::formatcp;
 use log::LevelFilter;
-use miette::Result;
 use pretty_env_logger::formatted_builder;
+use qsc_core::error::Result;
 
 use self::{
     compile::CompileCommand, completions::CompletionsCommand, run::RunCommand, style::get_styles,
@@ -35,8 +37,8 @@ pub const LONG_VERSION: &str = formatcp!(
     env!("CARGO_PKG_REPOSITORY")
 );
 
-pub trait Command<'a> {
-    fn execute(&'a mut self) -> Result<()>;
+pub trait Command {
+    fn execute(&mut self) -> Result<()>;
 }
 
 #[derive(Debug, Clone, Parser)]
@@ -84,25 +86,29 @@ pub enum Commands {
     Version,
 }
 
-impl<'a> Command<'a> for Cli {
-    fn execute(&'a mut self) -> Result<()> {
-        formatted_builder()
-            .parse_default_env()
-            .filter(Some("cranelift_jit::backend"), LevelFilter::Warn)
-            .filter(Some("cranelift_object::backend"), LevelFilter::Warn)
-            .filter(
-                Some("cranelift_codegen::timing::enabled"),
-                LevelFilter::Warn,
-            )
-            .filter_level(self.verbose.log_level_filter())
-            .init();
+impl Command for Cli {
+    fn execute(&mut self) -> Result<()> {
+        if env::var("RUST_LOG").is_ok() {
+            pretty_env_logger::init();
+        } else {
+            formatted_builder()
+                .parse_default_env()
+                .filter(Some("cranelift_jit::backend"), LevelFilter::Warn)
+                .filter(Some("cranelift_object::backend"), LevelFilter::Warn)
+                .filter(
+                    Some("cranelift_codegen::timing::enabled"),
+                    LevelFilter::Warn,
+                )
+                .filter_level(self.verbose.log_level_filter())
+                .init();
+        }
 
         self.command.execute()
     }
 }
 
-impl<'a> Command<'a> for Commands {
-    fn execute(&'a mut self) -> Result<()> {
+impl Command for Commands {
+    fn execute(&mut self) -> Result<()> {
         match self.clone() {
             Commands::Run(mut cmd) => cmd.execute(),
             Commands::Compile(mut cmd) => cmd.execute(),

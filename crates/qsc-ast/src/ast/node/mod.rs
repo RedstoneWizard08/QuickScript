@@ -8,8 +8,9 @@ use crate::span::StaticSpan;
 
 use self::data::NodeData;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Node {
+    #[serde(skip)]
     pub span: StaticSpan,
     pub data: Box<NodeData>,
 }

@@ -7,9 +7,10 @@ use std::{
 };
 
 use clap::Parser;
-use miette::{IntoDiagnostic, Result};
+use miette::IntoDiagnostic;
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 use qsc_compiler::Compiler;
+use qsc_core::error::Result;
 use target_lexicon::Triple;
 
 use qsc_codegen::jit::JitGenerator;
@@ -27,10 +28,7 @@ impl WatchCommand {
         let path = self.path.clone().join("main.qs");
         let name = path.file_name().unwrap().to_str().unwrap();
         let content = fs::read_to_string(path.clone()).into_diagnostic()?;
-        let mut compiler = Compiler::<JitGenerator>::new(name, content);
-
-        compiler.compile(Triple::host())?;
-
+        let compiler = Compiler::<JitGenerator>::compile(name, content, Triple::host())?;
         let code = compiler.run()?;
 
         println!("=> Process exited with code {}", code);
@@ -39,8 +37,8 @@ impl WatchCommand {
     }
 }
 
-impl<'a> Command<'a> for WatchCommand {
-    fn execute(&'a mut self) -> Result<()> {
+impl Command for WatchCommand {
+    fn execute(&mut self) -> Result<()> {
         self.path = canonicalize(&self.path).into_diagnostic()?;
 
         let (tx, rx) = channel();
@@ -75,12 +73,16 @@ impl<'a> Command<'a> for WatchCommand {
 
                         // Events fire twice, so consume an extra.
                         if let Err(err) = rx.recv().into_diagnostic()? {
-                            return Err(miette!("The file watcher encountered an error: {}", err));
+                            return Err(
+                                miette!("The file watcher encountered an error: {}", err).into()
+                            );
                         }
                     }
                 }
 
-                Err(err) => return Err(miette!("The file watcher encountered an error: {}", err)),
+                Err(err) => {
+                    return Err(miette!("The file watcher encountered an error: {}", err).into())
+                }
             }
         }
 

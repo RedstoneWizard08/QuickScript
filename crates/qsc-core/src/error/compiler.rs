@@ -2,9 +2,9 @@ use miette::{Diagnostic, NamedSource, Report, SourceSpan};
 use thiserror::Error;
 
 #[derive(Debug, Error, Diagnostic)]
-#[error("Lexical Error")]
-#[diagnostic(code(qsc_ast::error), url(docsrs))]
-pub struct LexicalError {
+#[error("Compiler Error")]
+#[diagnostic(code(qsc_compiler::error), url(docsrs))]
+pub struct CompilerError {
     #[source_code]
     pub src: NamedSource<String>,
 
@@ -12,6 +12,5 @@ pub struct LexicalError {
     pub location: SourceSpan,
 
     #[help]
-    #[diagnostic(transparent)]
     pub error: Report,
 }

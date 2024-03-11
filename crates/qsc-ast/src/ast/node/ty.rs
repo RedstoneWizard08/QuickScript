@@ -2,8 +2,9 @@ use crate::span::StaticSpan;
 
 use super::sym::SymbolNode;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct TypeNode {
+    #[serde(skip)]
     pub span: StaticSpan,
     pub name: String,
     pub generics: Vec<SymbolNode>,

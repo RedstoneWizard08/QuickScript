@@ -8,11 +8,10 @@ use miette::{IntoDiagnostic, Result};
 
 use parking_lot::RwLock;
 use qsc_ast::ast::{decl::var::VariableNode, node::sym::SymbolNode};
-use qsc_core::conv::IntoSourceSpan;
+use qsc_core::{conv::IntoSourceSpan, error::codegen::CodegenError};
 
 use crate::{
     context::{CodegenContext, CompilerContext},
-    error::CodegenError,
     generator::Backend,
 };
 
@@ -163,6 +162,7 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> VariableCompiler<'a, 'b, M> for T
         var: VariableNode,
         val: Value,
     ) -> Result<Self::O> {
+        dbg!(&var);
         let ty = Self::query_type(
             cctx,
             var.type_

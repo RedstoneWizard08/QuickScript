@@ -166,6 +166,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "base64"
+version = "0.21.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d297deb1925b89f2ccc13d7635fa0714f12c87adce1c75356b39ca9b7178567"
+
+[[package]]
 name = "bincode"
 version = "1.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -185,6 +191,9 @@ name = "bitflags"
 version = "2.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed570934406eb16438a4e976b1b4500774099c13b8cb96eec99f620f05090ddf"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "block-buffer"
@@ -514,6 +523,17 @@ name = "debug-ignore"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ffe7ed1d93f4553003e20b629abe9085e1e81b1429520f897f8f8860bc6dfc21"
+
+[[package]]
+name = "derivative"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcc3dd5e9e9c0b295d6e1e4d811fb6f157d5ffd784b8d202fc62eac8035a770b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
 
 [[package]]
 name = "derive_more"
@@ -987,6 +1007,7 @@ dependencies = [
  "backtrace-ext",
  "miette-derive",
  "owo-colors",
+ "serde",
  "supports-color",
  "supports-hyperlinks",
  "supports-unicode",
@@ -1239,10 +1260,12 @@ dependencies = [
 name = "qsc-ast"
 version = "0.6.0"
 dependencies = [
+ "derivative",
  "miette",
  "pest",
  "pest_derive",
  "qsc-core",
+ "serde",
  "strum",
  "thiserror",
 ]
@@ -1266,6 +1289,7 @@ dependencies = [
  "qsc-linker",
  "target-lexicon",
  "tempfile",
+ "thiserror",
 ]
 
 [[package]]
@@ -1296,6 +1320,7 @@ version = "0.6.0"
 dependencies = [
  "log",
  "miette",
+ "parking_lot",
  "qsc-ast",
  "qsc-codegen",
  "qsc-core",
@@ -1303,6 +1328,7 @@ dependencies = [
  "qsc-linker",
  "qsc-object",
  "qsc-processor",
+ "ron",
  "target-lexicon",
  "tempfile",
  "thiserror",
@@ -1387,6 +1413,7 @@ dependencies = [
 name = "qsc-processor"
 version = "0.6.0"
 dependencies = [
+ "log",
  "miette",
  "pest",
  "qsc-ast",
@@ -1494,6 +1521,18 @@ dependencies = [
  "libc",
  "mach",
  "winapi",
+]
+
+[[package]]
+name = "ron"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b91f7eff05f748767f183df4320a63d6936e9c6107d97c9e6bdd9784f4289c94"
+dependencies = [
+ "base64",
+ "bitflags 2.4.2",
+ "serde",
+ "serde_derive",
 ]
 
 [[package]]

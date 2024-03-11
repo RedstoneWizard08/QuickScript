@@ -1,8 +1,9 @@
 use std::{fs, path::PathBuf, str::FromStr};
 
 use clap::Parser;
-use miette::{IntoDiagnostic, Result};
+use miette::IntoDiagnostic;
 use qsc_compiler::Compiler;
+use qsc_core::error::Result;
 use target_lexicon::Triple;
 use tempfile::NamedTempFile;
 
@@ -44,17 +45,21 @@ pub struct CompileCommand {
     #[arg(short = 'i', long = "clif")]
     pub clif: bool,
 
-    /// Instead of compiling, dump the AST.
+    /// Instead of compiling, dump the Abstract Syntax Tree.
     #[arg(long = "dump-ast")]
     pub dump_ast: bool,
+
+    /// Instead of compiling, dump the Processed Syntax Tree.
+    #[arg(long = "dump-pst")]
+    pub dump_pst: bool,
 
     /// The linker. Defaults to mold, lld, gold, ld, clang, gcc, or cc, in order of weight.
     #[arg(short = 'l', long = "linker")]
     pub linker: Option<String>,
 }
 
-impl<'a> Command<'a> for CompileCommand {
-    fn execute(&'a mut self) -> Result<()> {
+impl Command for CompileCommand {
+    fn execute(&mut self) -> Result<()> {
         let triple = self
             .target
             .clone()
@@ -63,20 +68,28 @@ impl<'a> Command<'a> for CompileCommand {
 
         let name = self.file.file_name().unwrap().to_str().unwrap();
         let content = fs::read_to_string(self.file.clone()).into_diagnostic()?;
-        let mut compiler = Compiler::<AotGenerator>::new(name, content);
-
-        compiler.compile(triple.clone())?;
-
-        debug!("Emitting object(s)...");
 
         if self.dump_ast {
-            let ast = format!("{:#?}", compiler.ast());
+            let ast = Compiler::<AotGenerator>::dump_ast(name, &content)?;
             let mut file = self.file.clone();
 
-            file.set_extension("ast");
+            file.set_extension("ast.ron");
 
             fs::write(file, ast).into_diagnostic()?;
         }
+
+        if self.dump_pst {
+            let ast = Compiler::<AotGenerator>::dump_pst(name, &content)?;
+            let mut file = self.file.clone();
+
+            file.set_extension("pst.ron");
+
+            fs::write(file, ast).into_diagnostic()?;
+        }
+
+        let compiler = Compiler::<AotGenerator>::compile(name, content, triple.clone())?;
+
+        debug!("Emitting object(s)...");
 
         if self.vcode {
             let mut file = self.file.clone();

@@ -7,7 +7,7 @@ use super::AbstractTree;
 pub mod call;
 pub mod ret;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum StatementNode {
     Call(CallNode),
     Return(ReturnNode),

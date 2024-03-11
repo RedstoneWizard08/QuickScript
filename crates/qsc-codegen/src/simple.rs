@@ -1,9 +1,8 @@
 use miette::Result;
 use qsc_ast::ast::AbstractTree;
+use qsc_core::error::backend::BackendError;
 use qsc_object::ObjectProduct;
 use target_lexicon::Triple;
-
-use crate::error::BackendError;
 
 use super::unify::CodegenBackend;
 

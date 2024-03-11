@@ -9,7 +9,7 @@ pub mod stmt;
 
 use std::collections::HashMap;
 
-use crate::span::StaticSpan;
+use crate::{compat::WrappedNamedSource, span::StaticSpan};
 
 use self::{
     decl::{func::FunctionNode, global::GlobalVariable},
@@ -18,10 +18,13 @@ use self::{
 
 use miette::NamedSource;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AbstractTree {
+    #[serde(skip)]
     pub span: StaticSpan,
-    pub src: NamedSource<String>,
+    #[serde(skip)]
+    pub src: WrappedNamedSource<String>,
+    #[serde(skip)]
     pub source: String,
     pub data: Vec<Node>,
 }
@@ -31,7 +34,7 @@ impl AbstractTree {
         let src = source.as_ref().to_string();
 
         Self {
-            src: NamedSource::new(name, src.clone()),
+            src: NamedSource::new(name, src.clone()).into(),
             span: StaticSpan::new(src.clone(), 0, src.len()),
             source: src,
             data: Vec::new(),

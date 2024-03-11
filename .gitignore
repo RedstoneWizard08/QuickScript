@@ -13,3 +13,5 @@
 /dev/main.exe
 perf.data*
 perf-*.map
+*.ast
+*.ast.ron

@@ -1,25 +1,25 @@
 #![feature(box_into_inner)]
 
 #[macro_use]
+extern crate log;
+
+#[macro_use]
 extern crate miette;
 
 pub mod block;
 pub mod ctx;
 pub mod decl;
-pub mod error;
 pub mod expr;
 pub mod stmt;
 pub mod sym;
 pub mod ty;
 
 use ctx::ProcessorContext;
-use error::ProcessorError;
 use qsc_ast::ast::{
     node::{data::NodeData, Node},
     AbstractTree,
 };
-
-pub type Result<T> = std::result::Result<T, ProcessorError>;
+use qsc_core::error::Result;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Processor {

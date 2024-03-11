@@ -1,7 +1,7 @@
 use qsc_ast::ast::{node::data::NodeData, stmt::StatementNode};
-use qsc_core::conv::IntoSourceSpan;
+use qsc_core::{conv::IntoSourceSpan, error::processor::ProcessorError};
 
-use crate::{ctx::ProcessorContext, error::ProcessingError, Processor, Result};
+use crate::{ctx::ProcessorContext, Processor, Result};
 
 impl Processor {
     pub fn process_stmt(
@@ -14,13 +14,12 @@ impl Processor {
                 if !self.ast.functions().contains_key(&call.func)
                     && !self.ast.imported_functions().contains(&call.func.as_str())
                 {
-                    let err = ProcessingError {
-                        src: ctx.tree.src.clone(),
+                    return Err(ProcessorError {
+                        src: ctx.tree.src.clone().into(),
                         location: call.span.into_source_span(),
                         error: miette!("Cannot find function \"{}\"!", call.func),
-                    };
-
-                    std::result::Result::<(), _>::Err(err).unwrap();
+                    }
+                    .into());
                 }
 
                 for arg in &mut call.args {

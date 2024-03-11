@@ -1,9 +1,15 @@
+use derivative::Derivative;
 use miette::SourceSpan;
 use pest::Span;
 use qsc_core::conv::IntoSourceSpan;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[derive(
+    Derivative, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize, Deserialize,
+)]
+#[derivative(Debug)]
 pub struct StaticSpan {
+    #[serde(skip)]
+    #[derivative(Debug = "ignore")]
     pub input: String,
     pub start: usize,
     pub end: usize,

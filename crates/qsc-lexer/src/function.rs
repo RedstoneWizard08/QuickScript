@@ -1,12 +1,10 @@
-use crate::{
-    lexer::{Lexer, Result},
-    parser::Rule,
-};
+use crate::{lexer::Lexer, parser::Rule};
 use pest::iterators::Pair;
 use qsc_ast::ast::{
     decl::func::FunctionNode,
     node::{block::Block, vis::Visibility},
 };
+use qsc_core::error::Result;
 
 impl<'i> Lexer {
     pub fn function(&self, pair: Pair<'i, Rule>) -> Result<FunctionNode> {

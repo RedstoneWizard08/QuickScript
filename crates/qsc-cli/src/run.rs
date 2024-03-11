@@ -1,8 +1,9 @@
 use std::{fs, path::PathBuf, process::exit};
 
 use clap::Parser;
-use miette::{IntoDiagnostic, Result};
+use miette::IntoDiagnostic;
 use qsc_compiler::Compiler;
+use qsc_core::error::Result;
 use target_lexicon::Triple;
 
 use qsc_codegen::jit::JitGenerator;
@@ -14,9 +15,13 @@ pub struct RunCommand {
     /// The path to the file to compile.
     pub file: PathBuf,
 
-    /// Instead of running, dump the AST.
+    /// Instead of running, dump the Abstract Syntax Tree.
     #[arg(long = "dump-ast")]
     pub dump_ast: bool,
+
+    /// Instead of running, dump the Processed Syntax Tree.
+    #[arg(long = "dump-pst")]
+    pub dump_pst: bool,
 
     /// Output VCode.
     #[arg(short = 'e', long = "vcode")]
@@ -31,18 +36,30 @@ pub struct RunCommand {
     pub clif: bool,
 }
 
-impl<'a> Command<'a> for RunCommand {
-    fn execute(&'a mut self) -> Result<()> {
+impl Command for RunCommand {
+    fn execute(&mut self) -> Result<()> {
         let name = self.file.file_name().unwrap().to_str().unwrap();
         let content = fs::read_to_string(self.file.clone()).into_diagnostic()?;
-        let mut compiler = Compiler::<JitGenerator>::new(name, content);
-
-        compiler.compile(Triple::host())?;
 
         if self.dump_ast {
-            println!("{:#?}", compiler.ast());
-            return Ok(());
+            let ast = Compiler::<JitGenerator>::dump_ast(name, &content)?;
+            let mut file = self.file.clone();
+
+            file.set_extension("ast.ron");
+
+            fs::write(file, ast).into_diagnostic()?;
         }
+
+        if self.dump_pst {
+            let ast = Compiler::<JitGenerator>::dump_pst(name, &content)?;
+            let mut file = self.file.clone();
+
+            file.set_extension("pst.ron");
+
+            fs::write(file, ast).into_diagnostic()?;
+        }
+
+        let compiler = Compiler::<JitGenerator>::compile(name, content, Triple::host())?;
 
         if self.vcode {
             let mut file = self.file.clone();

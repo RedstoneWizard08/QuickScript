@@ -1,10 +1,8 @@
 use pest::iterators::Pair;
 use qsc_ast::ast::decl::var::VariableNode;
+use qsc_core::error::Result;
 
-use crate::{
-    lexer::{Lexer, Result},
-    parser::Rule,
-};
+use crate::{lexer::Lexer, parser::Rule};
 
 impl<'i> Lexer {
     pub fn var(&self, pair: Pair<'i, Rule>) -> Result<VariableNode> {

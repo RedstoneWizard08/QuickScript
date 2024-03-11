@@ -2,7 +2,7 @@ use std::io::stdout;
 
 use clap::{CommandFactory, Parser};
 use clap_complete::{generate, Shell};
-use miette::Result;
+use qsc_core::error::Result;
 
 use super::{Cli, Command};
 
@@ -12,8 +12,8 @@ pub struct CompletionsCommand {
     pub shell: Shell,
 }
 
-impl<'a> Command<'a> for CompletionsCommand {
-    fn execute(&'a mut self) -> Result<()> {
+impl Command for CompletionsCommand {
+    fn execute(&mut self) -> Result<()> {
         let mut cmd = Cli::command();
         let name = cmd.get_name().to_string();
 

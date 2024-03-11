@@ -1,6 +1,19 @@
 use strum::EnumString;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default, EnumString)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Default,
+    EnumString,
+    Serialize,
+    Deserialize,
+)]
 pub enum Visibility {
     #[strum(ascii_case_insensitive, serialize = "public", serialize = "pub")]
     Public,

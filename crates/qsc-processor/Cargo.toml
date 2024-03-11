@@ -13,3 +13,4 @@ qsc-core.workspace = true
 miette.workspace = true
 thiserror.workspace = true
 pest.workspace = true
+log.workspace = true

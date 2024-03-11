@@ -8,7 +8,7 @@ use crate::{
 
 use super::{block::Block, sym::SymbolNode, ty::TypeNode};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum NodeData {
     Expr(ExpressionNode),
     Literal(LiteralNode),

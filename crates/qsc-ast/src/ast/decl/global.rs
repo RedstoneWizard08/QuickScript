@@ -3,8 +3,9 @@ use crate::{
     span::StaticSpan,
 };
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GlobalVariable {
+    #[serde(skip)]
     pub span: StaticSpan,
     pub name: String,
     pub type_: TypeNode,

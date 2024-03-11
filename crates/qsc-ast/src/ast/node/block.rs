@@ -1,8 +1,9 @@
 use super::Node;
 use crate::{ast::decl::var::VariableNode, span::StaticSpan};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Block {
+    #[serde(skip)]
     pub span: StaticSpan,
     pub data: Vec<Node>,
 }

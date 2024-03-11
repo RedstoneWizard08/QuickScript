@@ -1,6 +1,6 @@
-use qsc_core::conv::IntoSourceSpan;
+use qsc_core::{conv::IntoSourceSpan, error::lexical::LexicalError};
 
-use crate::{error::LexicalError, get_enum_variant_value_impl, is_enum_variant_impl};
+use crate::{get_enum_variant_value_impl, is_enum_variant_impl};
 
 use self::{binary::BinaryExpr, unary::UnaryExpr};
 
@@ -10,7 +10,7 @@ pub mod binary;
 pub mod operator;
 pub mod unary;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ExpressionNode {
     Binary(BinaryExpr),
     Unary(UnaryExpr),
@@ -31,7 +31,7 @@ impl ExpressionNode {
                     if rhs.unwrap() != lhs.clone().unwrap() {
                         let err = LexicalError {
                             location: expr.span.into_source_span(),
-                            src: tree.src.clone(),
+                            src: tree.src.clone().into(),
                             error: miette!("Left and right operands' types do not match!"),
                         };
 

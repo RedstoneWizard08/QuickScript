@@ -1,4 +1,4 @@
-use miette::NamedSource;
+use miette::{IntoDiagnostic, NamedSource};
 use pest::{iterators::Pair, Parser};
 
 use qsc_ast::ast::{
@@ -13,14 +13,12 @@ use qsc_ast::ast::{
     AbstractTree,
 };
 
-use qsc_core::conv::IntoSourceSpan;
-
-use crate::{
-    error::{LexerError, TransformerError},
-    parser::{CodeParser, Rule},
+use qsc_core::{
+    conv::IntoSourceSpan,
+    error::{lexer::LexerError, Result},
 };
 
-pub type Result<T> = std::result::Result<T, LexerError>;
+use crate::parser::{CodeParser, Rule};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Lexer {
@@ -43,7 +41,7 @@ impl<'i> Lexer {
     }
 
     pub fn lex(&mut self) -> Result<AbstractTree> {
-        let data = CodeParser::parse(Rule::main, self.src.as_str())?;
+        let data = CodeParser::parse(Rule::main, self.src.as_str()).into_diagnostic()?;
 
         for pair in data {
             if let Rule::main = pair.as_rule() {
@@ -152,7 +150,7 @@ impl<'i> Lexer {
                     Rule::float => self.parse_data(pair)?,
 
                     val => {
-                        return Err(TransformerError {
+                        return Err(LexerError {
                             src: self.err_src.clone(),
                             location: pair.as_span().into_source_span(),
                             error: miette!("Unsupported number child: {:?}", val),
@@ -206,7 +204,7 @@ impl<'i> Lexer {
             Rule::EOI => NodeData::EOI,
 
             val => {
-                return Err(TransformerError {
+                return Err(LexerError {
                     src: self.err_src.clone(),
                     location: pair.as_span().into_source_span(),
                     error: miette!("Unsupported pair: {:?}", val),

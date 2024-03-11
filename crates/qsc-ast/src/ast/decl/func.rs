@@ -5,8 +5,9 @@ use crate::{
 };
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FunctionNode {
+    #[serde(skip)]
     pub span: StaticSpan,
     pub name: String,
     pub args: Vec<FunctionArgument>,
@@ -31,8 +32,9 @@ impl FunctionNode {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FunctionArgument {
+    #[serde(skip)]
     pub span: StaticSpan,
     pub mutable: bool,
     pub name: String,

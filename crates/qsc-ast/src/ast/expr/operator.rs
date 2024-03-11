@@ -1,6 +1,8 @@
 use strum::EnumString;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, EnumString)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, EnumString, Serialize, Deserialize,
+)]
 pub enum Operator {
     // Basic Operations
     #[strum(serialize = "+")]
