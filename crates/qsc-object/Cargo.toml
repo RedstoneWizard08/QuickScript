@@ -2,9 +2,10 @@
 name = "qsc-object"
 version.workspace = true
 repository.workspace = true
-authors.workspace = true
-description.workspace = true
-license.workspace = true
+authors = ["The Cranelift Project Developers", "QuickScript Contributors"]
+description = "Emit Cranelift output to native object files with `object`"
+license = "Apache-2.0 WITH LLVM-exception"
+readme = "README.md"
 edition.workspace = true
 
 [dependencies]

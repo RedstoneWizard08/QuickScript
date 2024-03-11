@@ -21,6 +21,5 @@ qsc-core.workspace = true
 qsc-jit.workspace = true
 qsc-object.workspace = true
 parking_lot.workspace = true
-debug-ignore.workspace = true
 libc.workspace = true
 thiserror.workspace = true

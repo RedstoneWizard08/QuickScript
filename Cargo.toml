@@ -1,8 +1,8 @@
 [workspace.package]
 version = "0.6.0"
 repository = "https://github.com/RedstoneWizard08/QuickScript"
-authors = ["RedstoneWizard08", "td5038"]
-description = "A quick programming language with a compiler implemented in Rust."
+authors = ["RedstoneWizard08", "td5038", "QuickScript Contributors"]
+description = "A quick programming language with a fast and efficient compiler implemented in Rust."
 license = "MIT"
 edition = "2021"
 
@@ -43,6 +43,7 @@ ron = "0.8.1"
 region = "2.2.0"
 memmap2 = "0.2.1"
 derivative = "2.2.0"
+windows-sys = { version = "0.52.0", features = ["Win32_Foundation", "Win32_System_LibraryLoader", "Win32_System_Memory"] }
 
 qsc-ast = { path = "./crates/qsc-ast" }
 qsc-cli = { path = "./crates/qsc-cli" }

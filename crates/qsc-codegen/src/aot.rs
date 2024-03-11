@@ -49,7 +49,7 @@ impl AotGenerator {
 
         let builder = ObjectBuilder::new(isa, name.clone() + ".o", default_libcall_names())
             .into_diagnostic()?;
-        
+
         let module = ObjectModule::new(builder);
 
         let ctx = CompilerContext {

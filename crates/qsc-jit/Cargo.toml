@@ -2,10 +2,15 @@
 name = "qsc-jit"
 version.workspace = true
 repository.workspace = true
-authors.workspace = true
-description.workspace = true
-license.workspace = true
+authors = ["The Cranelift Project Developers", "QuickScript Contributors"]
+description = "A JIT library backed by Cranelift"
+license = "Apache-2.0 WITH LLVM-exception"
+readme = "README.md"
 edition.workspace = true
+
+[features]
+selinux-fix = ['memmap2']
+default = []
 
 [dependencies]
 cranelift-module.workspace = true
@@ -20,3 +25,6 @@ target-lexicon.workspace = true
 memmap2 = { workspace = true, optional = true }
 log.workspace = true
 wasmtime-jit-icache-coherence.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys.workspace = true

@@ -519,12 +519,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "debug-ignore"
-version = "1.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ffe7ed1d93f4553003e20b629abe9085e1e81b1429520f897f8f8860bc6dfc21"
-
-[[package]]
 name = "derivative"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1263,7 +1257,6 @@ dependencies = [
  "derivative",
  "miette",
  "pest",
- "pest_derive",
  "qsc-core",
  "serde",
  "strum",
@@ -1300,7 +1293,6 @@ dependencies = [
  "cranelift-frontend",
  "cranelift-module",
  "cranelift-native",
- "debug-ignore",
  "libc",
  "log",
  "miette",
@@ -1325,12 +1317,10 @@ dependencies = [
  "qsc-codegen",
  "qsc-core",
  "qsc-lexer",
- "qsc-linker",
  "qsc-object",
  "qsc-processor",
  "ron",
  "target-lexicon",
- "tempfile",
  "thiserror",
 ]
 
@@ -1361,6 +1351,7 @@ dependencies = [
  "region",
  "target-lexicon",
  "wasmtime-jit-icache-coherence",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
