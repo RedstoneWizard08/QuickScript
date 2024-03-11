@@ -13,10 +13,12 @@ fn main() -> i32 {
     let b = 2;
     let val = do_math(a, b);
 
-    if val == 2 {
+    if val == 3 {
         printf("It works!\n");
 
         return 0;
+    } else {
+        printf("It wasn't 3...\n");
     }
 
     printf("Hello, %s!\n", get_name());

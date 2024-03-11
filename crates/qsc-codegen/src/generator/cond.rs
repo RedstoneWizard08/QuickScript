@@ -12,7 +12,7 @@ pub trait ConditionalCompiler<'a, 'b, M: Module>: Backend<'a, 'b, M> {
     fn compile_conditional(
         cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        expr: ConditionalNode,
+        cond: ConditionalNode,
     ) -> Result<Value>;
 }
 
@@ -20,10 +20,10 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> ConditionalCompiler<'a, 'b, M> fo
     fn compile_conditional(
         cctx: &RwLock<CompilerContext<M>>,
         ctx: &mut CodegenContext<'a, 'b>,
-        expr: ConditionalNode,
+        cond: ConditionalNode,
     ) -> Result<Value> {
         let ptr = Self::ptr(cctx);
-        let cond_value = Self::compile(cctx, ctx, expr.condition)?;
+        let cond_value = Self::compile(cctx, ctx, cond.condition)?;
         let mut builder = ctx.builder.write();
 
         let then = builder.create_block();
@@ -40,7 +40,7 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> ConditionalCompiler<'a, 'b, M> fo
 
         RwLockWriteGuard::unlock_fair(builder);
 
-        for node in expr.block.data {
+        for node in cond.block.data {
             // TODO: Use last value as a return
             Self::compile(cctx, ctx, node)?;
         }
@@ -54,7 +54,16 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> ConditionalCompiler<'a, 'b, M> fo
 
         let else_ret = builder.ins().iconst(ptr, 0);
 
-        // TODO: Else conditions
+        RwLockWriteGuard::unlock_fair(builder);
+
+        if let Some(else_block) = cond.else_block {
+            for node in else_block.data {
+                // TODO: Use last value as a return
+                Self::compile(cctx, ctx, node)?;
+            }
+        }
+
+        let mut builder = ctx.builder.write();
 
         builder.ins().jump(merge, &[else_ret]);
 

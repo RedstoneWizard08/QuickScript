@@ -9,4 +9,5 @@ pub struct ConditionalNode {
     pub span: StaticSpan,
     pub condition: Node,
     pub block: Block,
+    pub else_block: Option<Block>,
 }

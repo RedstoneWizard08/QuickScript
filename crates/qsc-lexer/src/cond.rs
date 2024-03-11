@@ -10,10 +10,17 @@ impl<'i> Lexer {
         let condition = self.parse(inner.next().unwrap())?;
         let block = self.parse_data(inner.next().unwrap())?.as_block()?;
 
+        let mut else_block = None;
+
+        if let Some(val) = inner.next() {
+            else_block = Some(self.parse_data(val)?.as_block()?);
+        }
+
         Ok(ConditionalNode {
             span: pair.as_span().into(),
             condition,
             block,
+            else_block,
         })
     }
 }
