@@ -13,7 +13,9 @@ fn main() -> i32 {
     let b = 2;
     let val = do_math(a, b);
 
-    if val == 3 {
+    if val == 2 {
+        printf("It works!\n");
+
         return 0;
     }
 
