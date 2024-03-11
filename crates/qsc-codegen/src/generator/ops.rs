@@ -1,4 +1,4 @@
-use cranelift_codegen::ir::{InstBuilder, Value};
+use cranelift_codegen::ir::{condcodes::IntCC, InstBuilder, Value};
 use cranelift_module::Module;
 use miette::Result;
 use parking_lot::RwLock;
@@ -31,6 +31,8 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> OperationCompiler<'a, 'b, M> for 
             Operator::Subtract => Ok(bctx.ins().isub(left, right)),
             Operator::Multiply => Ok(bctx.ins().imul(left, right)),
             Operator::Divide => Ok(bctx.ins().fdiv(left, right)),
+            Operator::Equal => Ok(bctx.ins().icmp(IntCC::Equal, left, right)),
+            Operator::NotEqual => Ok(bctx.ins().icmp(IntCC::NotEqual, left, right)),
 
             _ => todo!("This operation is not implemented yet!"),
         }

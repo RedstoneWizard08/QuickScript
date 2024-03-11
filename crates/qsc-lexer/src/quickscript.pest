@@ -2,12 +2,13 @@
 main = { SOI ~ function* ~ EOI }
 
 // Blocks & Statements
-function  = { "fn" ~ ident ~ "(" ~ params? ~ ")" ~ ("->" ~ type)? ~ block }
-block     = { "{" ~ statement* ~ "}" }
-expr      = { binary_op | term }
-term      = { call | literal | ident }
-statement = { real_stmt ~ ";"? | COMMENT | WHITESPACE }
-real_stmt = { ret | var | expr | block }
+function    = { "fn" ~ ident ~ "(" ~ params? ~ ")" ~ ("->" ~ type)? ~ block }
+block       = { "{" ~ statement* ~ "}" }
+expr        = { binary_op | term }
+term        = { call | literal | ident }
+statement   = { real_stmt ~ ";"? | COMMENT | WHITESPACE }
+real_stmt   = { conditional | ret | var | expr | block }
+conditional = { "if" ~ expr ~ block }
 
 // Keywords
 var = { "let" ~ "mut"? ~ ident ~ (":" ~ type)? ~ "=" ~ expr ~ ";" }
@@ -21,10 +22,10 @@ ident   = ${ ('a'..'z' | 'A'..'Z') ~ ident_char* }
 bool    =  { "true" | "false" }
 
 // Type helpers
-params  =  { param ~ ("," ~ param)* }
-param   =  { "mut"? ~ ident ~ ":" ~ type }
-type    =  { ident ~ ("<" ~ type ~ ">")? }
-args    =  { expr ~ ("," ~ expr)* }
+params = { param ~ ("," ~ param)* }
+param  = { "mut"? ~ ident ~ ":" ~ type }
+type   = { ident ~ ("<" ~ type ~ ">")? }
+args   = { expr ~ ("," ~ expr)* }
 
 // Primitives & Helpers
 int        = { digit+ }
@@ -35,8 +36,8 @@ digit      = { '0'..'9' }
 ident_char = { 'a'..'z' | 'A'..'Z' | digit | "_" }
 
 // Operators
-binary_op  = { unary_op ~ operator ~ unary_op }
-unary_op   = { (("+" | "-") ~ term) | term }
+binary_op = { unary_op ~ operator ~ unary_op }
+unary_op  = { (("+" | "-") ~ term) | term }
 
 operator = {
     "+"

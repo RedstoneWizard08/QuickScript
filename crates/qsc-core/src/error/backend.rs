@@ -6,7 +6,6 @@ use thiserror::Error;
 #[diagnostic(code(qsc_codegen::backend::error), url(docsrs))]
 pub struct BackendError {
     #[help]
-    #[diagnostic(transparent)]
     pub error: Report,
 }
 

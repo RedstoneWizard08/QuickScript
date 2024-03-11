@@ -5,17 +5,19 @@ use qsc_core::{
 
 use crate::{get_enum_variant_value_impl, is_enum_variant_impl};
 
-use self::{call::CallNode, ret::ReturnNode};
+use self::{call::CallNode, cond::ConditionalNode, ret::ReturnNode};
 
 use super::AbstractTree;
 
 pub mod call;
+pub mod cond;
 pub mod ret;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum StatementNode {
     Call(CallNode),
     Return(ReturnNode),
+    Condition(ConditionalNode),
 }
 
 impl StatementNode {
@@ -42,6 +44,13 @@ impl StatementNode {
                     .into())
                 }
             }
+
+            Self::Condition(cond) => Err(LexicalError {
+                location: cond.span.into_source_span(),
+                src: tree.src.clone().into(),
+                error: miette!("Conditional return values are not currently supported!"),
+            }
+            .into()),
 
             Self::Return(ret) => Err(LexicalError {
                 location: ret.span.into_source_span(),

@@ -13,6 +13,7 @@ use crate::alias::DeclareAliasedFunction;
 
 use self::{
     call::CallCompiler,
+    cond::ConditionalCompiler,
     literal::LiteralCompiler,
     ops::OperationCompiler,
     ret::ReturnCompiler,
@@ -23,6 +24,7 @@ use self::{
 use super::context::{CodegenContext, CompilerContext};
 
 pub mod call;
+pub mod cond;
 pub mod literal;
 pub mod ops;
 pub mod ret;
@@ -126,6 +128,7 @@ impl<'a, 'b, M: Module + DeclareAliasedFunction, T: BackendInternal<M>> Backend<
             NodeData::Statement(stmt) => match stmt {
                 StatementNode::Call(call) => Self::compile_call(cctx, ctx, call),
                 StatementNode::Return(ret) => Self::compile_return(cctx, ctx, ret),
+                StatementNode::Condition(cond) => Self::compile_conditional(cctx, ctx, cond),
             },
 
             NodeData::Declaration(decl) => match decl {

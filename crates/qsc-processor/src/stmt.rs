@@ -32,6 +32,11 @@ impl Processor {
                     *val = self.process_node(ctx, val.clone())?;
                 }
             }
+
+            StatementNode::Condition(cond) => {
+                cond.condition = self.process_node(ctx, cond.condition.clone())?;
+                cond.block = self.process_block(ctx, cond.block.clone())?.as_block()?;
+            }
         };
 
         Ok(NodeData::Statement(stmt))

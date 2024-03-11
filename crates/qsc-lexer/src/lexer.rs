@@ -125,7 +125,14 @@ impl<'i> Lexer {
                     Rule::literal => self.parse_data(pair)?,
                     Rule::ident => self.parse_data(pair)?,
 
-                    _ => unreachable!(),
+                    _ => {
+                        return Err(LexerError {
+                            src: self.err_src.clone(),
+                            location: pair.as_span().into_source_span(),
+                            error: miette!("Unsupported pair: {:?}", pair),
+                        }
+                        .into())
+                    }
                 }
             }
 
@@ -138,7 +145,14 @@ impl<'i> Lexer {
                         NodeData::Expr(ExpressionNode::Binary(self.binary_op(pair)?))
                     }
 
-                    _ => unreachable!(),
+                    _ => {
+                        return Err(LexerError {
+                            src: self.err_src.clone(),
+                            location: pair.as_span().into_source_span(),
+                            error: miette!("Unsupported pair: {:?}", pair),
+                        }
+                        .into())
+                    }
                 }
             }
 
@@ -166,7 +180,14 @@ impl<'i> Lexer {
                 match pair.as_rule() {
                     Rule::real_stmt => self.parse_data(pair)?,
 
-                    _ => unreachable!(),
+                    _ => {
+                        return Err(LexerError {
+                            src: self.err_src.clone(),
+                            location: pair.as_span().into_source_span(),
+                            error: miette!("Unsupported pair: {:?}", pair),
+                        }
+                        .into())
+                    }
                 }
             }
 
@@ -178,8 +199,16 @@ impl<'i> Lexer {
                     Rule::var => self.parse_data(pair)?,
                     Rule::expr => self.parse_data(pair)?,
                     Rule::block => self.parse_data(pair)?,
+                    Rule::conditional => self.parse_data(pair)?,
 
-                    _ => unreachable!(),
+                    _ => {
+                        return Err(LexerError {
+                            src: self.err_src.clone(),
+                            location: pair.as_span().into_source_span(),
+                            error: miette!("Unsupported pair: {:?}", pair),
+                        }
+                        .into())
+                    }
                 }
             }
 
@@ -190,6 +219,10 @@ impl<'i> Lexer {
                     .map(|pair| self.parse(pair).unwrap())
                     .collect::<Vec<_>>(),
             }),
+
+            Rule::conditional => {
+                NodeData::Statement(StatementNode::Condition(self.condition(pair)?))
+            }
 
             // Simple ones
             Rule::ret => NodeData::Statement(StatementNode::Return(ReturnNode {

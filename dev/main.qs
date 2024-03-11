@@ -13,6 +13,10 @@ fn main() -> i32 {
     let b = 2;
     let val = do_math(a, b);
 
+    if val == 3 {
+        return 0;
+    }
+
     printf("Hello, %s!\n", get_name());
     puts("Another test!");
     printf("Math: %i - %i = %i\n", a, b, do_math(a, b));
