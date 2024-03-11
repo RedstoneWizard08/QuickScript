@@ -15,3 +15,5 @@ perf.data*
 perf-*.map
 *.ast
 *.ast.ron
+*.pst
+*.pst.ron
