@@ -66,7 +66,7 @@ impl<'a, 'b, M: Module + DeclareAliasedFunction, T: BackendInternal<M>> Backend<
             "i64" | "u64" => types::I64,
             "f32" => types::F32,
             "f64" => types::F64,
-            "bool" => Type::int(1).unwrap(),
+            "bool" => types::I8,
             "char" => types::I32,
             "str" | "ptr" | _ => ptr,
         }

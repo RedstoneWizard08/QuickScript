@@ -36,12 +36,18 @@ impl StatementNode {
                         .into(),
                     )
                 } else {
-                    Err(LexicalError {
-                        location: call.span.into_source_span(),
-                        src: tree.src.clone().into(),
-                        error: miette!("Cannot find a return type for call!"),
+                    if tree.intrinsics().contains_key(&call.func) {
+                        Ok(tree.intrinsics().get(&call.func).unwrap().to_string())
+                    } else if tree.imported_functions().contains(&call.func.as_str()) {
+                        Ok("ptr".to_string())
+                    } else {
+                        Err(LexicalError {
+                            location: call.span.into_source_span(),
+                            src: tree.src.clone().into(),
+                            error: miette!("Cannot find a return type for call!"),
+                        }
+                        .into())
                     }
-                    .into())
                 }
             }
 

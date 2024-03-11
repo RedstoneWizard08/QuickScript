@@ -1,4 +1,4 @@
-use cranelift_codegen::ir::{types, InstBuilder, Type, Value};
+use cranelift_codegen::ir::{types, InstBuilder, Value};
 use cranelift_module::{Linkage, Module};
 use miette::{IntoDiagnostic, Result};
 use parking_lot::{RwLock, RwLockWriteGuard};
@@ -50,7 +50,7 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> LiteralCompiler<'a, 'b, M> for T 
         ctx.builder
             .write()
             .ins()
-            .iconst(Type::int(1).unwrap(), i64::from(value.value))
+            .iconst(types::I8, i64::from(value.value))
     }
 
     fn compile_int(ctx: &mut CodegenContext<'a, 'b>, value: IntNode) -> Value {

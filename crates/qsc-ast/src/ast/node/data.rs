@@ -86,6 +86,39 @@ impl NodeData {
             }
         }
     }
+
+    pub fn is_int(&self, func: &Option<String>, tree: &AbstractTree) -> Result<bool> {
+        if let Ok(lit) = self.as_literal() {
+            Ok(lit.is_int())
+        } else {
+            Ok(["i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64"]
+                .contains(&self.get_type(func, tree)?.as_str()))
+        }
+    }
+
+    pub fn is_float(&self, func: &Option<String>, tree: &AbstractTree) -> Result<bool> {
+        if let Ok(lit) = self.as_literal() {
+            Ok(lit.is_float())
+        } else {
+            Ok(["f32", "f64"].contains(&self.get_type(func, tree)?.as_str()))
+        }
+    }
+
+    pub fn is_char(&self, func: &Option<String>, tree: &AbstractTree) -> Result<bool> {
+        if let Ok(lit) = self.as_literal() {
+            Ok(lit.is_char())
+        } else {
+            Ok(self.get_type(func, tree)? == "char")
+        }
+    }
+
+    pub fn is_str(&self, func: &Option<String>, tree: &AbstractTree) -> Result<bool> {
+        if let Ok(lit) = self.as_literal() {
+            Ok(lit.is_string())
+        } else {
+            Ok(self.get_type(func, tree)? == "str")
+        }
+    }
 }
 
 is_enum_variant_impl!(is_expr -> NodeData::Expr);

@@ -88,6 +88,7 @@ pub fn run_linker(
     linker: Option<String>,
     tmp_file: PathBuf,
     triple: Triple,
+    extra_args: Vec<String>,
 ) -> Result<()> {
     let linker = linker.unwrap_or(get_default_linker().to_string());
 
@@ -100,10 +101,11 @@ pub fn run_linker(
     );
 
     let cmd_str = format!(
-        "{} -o {} {} {}",
+        "{} -o {} {} {} {}",
         linker,
         out_path.to_str().unwrap(),
         args.join(" "),
+        extra_args.join(" "),
         tmp_file.to_str().unwrap()
     );
 
@@ -113,6 +115,7 @@ pub fn run_linker(
         .arg("-o")
         .arg(out_path)
         .args(args)
+        .args(extra_args)
         .arg(tmp_file)
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())

@@ -13,6 +13,7 @@ impl Processor {
             StatementNode::Call(call) => {
                 if !self.ast.functions().contains_key(&call.func)
                     && !self.ast.imported_functions().contains(&call.func.as_str())
+                    && !self.ast.intrinsics().contains_key(&call.func)
                 {
                     return Err(ProcessorError {
                         src: ctx.tree.src.clone().into(),

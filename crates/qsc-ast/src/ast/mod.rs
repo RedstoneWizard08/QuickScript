@@ -71,7 +71,18 @@ impl AbstractTree {
 
     // TODO: `use` statements and actually do this
     pub fn imported_functions(&self) -> &[&str] {
-        &["printf", "puts"]
+        &["printf", "puts", "getchar"]
+    }
+
+    // Intrinsics
+    // TODO: Better way?
+    pub fn intrinsics(&self) -> HashMap<String, &str> {
+        let mut map = HashMap::new();
+
+        map.insert("getchar".into(), "char");
+        map.insert("getch".into(), "char");
+
+        map
     }
 
     // TODO: add support for custom structs and types

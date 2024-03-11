@@ -56,6 +56,10 @@ pub struct CompileCommand {
     /// The linker. Defaults to mold, lld, gold, ld, clang, gcc, or cc, in order of weight.
     #[arg(short = 'l', long = "linker")]
     pub linker: Option<String>,
+
+    /// Extra flags for the linker.
+    #[arg(short = 'a', long = "link-flag")]
+    pub extra_flags: Vec<String>,
 }
 
 impl Command for CompileCommand {
@@ -186,6 +190,7 @@ impl Command for CompileCommand {
             self.linker.clone(),
             tmp_file.path().into(),
             triple,
+            self.extra_flags.clone(),
         )?;
 
         Ok(())

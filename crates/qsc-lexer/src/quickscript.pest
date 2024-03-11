@@ -16,7 +16,7 @@ ret = { "return" ~ expr? ~ ";" }
 
 // Types
 call    =  { ident ~ "(" ~ args? ~ ")" }
-literal =  { number | string | char | bool }
+literal =  { char | number | string | bool }
 number  =  { int | float }
 ident   = ${ ('a'..'z' | 'A'..'Z') ~ ident_char* }
 bool    =  { "true" | "false" }
@@ -31,7 +31,7 @@ args   = { expr ~ ("," ~ expr)* }
 int        = { digit+ }
 float      = { digit+ ~ "." ~ digit+ }
 string     = { "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
-char       = { "'" ~ (!"'" ~ ANY) ~ "'" }
+char       = { "'" ~ (!"'" ~ ANY)+ ~ "'" }
 digit      = { '0'..'9' }
 ident_char = { 'a'..'z' | 'A'..'Z' | digit | "_" }
 
