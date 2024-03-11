@@ -162,7 +162,6 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> VariableCompiler<'a, 'b, M> for T
         var: VariableNode,
         val: Value,
     ) -> Result<Self::O> {
-        dbg!(&var);
         let ty = Self::query_type(
             cctx,
             var.type_

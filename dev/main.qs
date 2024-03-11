@@ -11,7 +11,7 @@ fn do_math(a: i32, b: i32) -> i32 {
 fn main() -> i32 {
     let a = 4;
     let b = 2;
-    let val: i32 = do_math(a, b);
+    let val = do_math(a, b);
 
     printf("Hello, %s!\n", get_name());
     puts("Another test!");
