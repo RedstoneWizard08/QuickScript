@@ -58,15 +58,37 @@ pub fn lookup_symbol<'a>(
     Box::new(move |name| {
         debug!("Looking for symbol: {}", name);
 
-        if let Some((_, ptr, size)) = map.read().get(name) {
-            debug!(
-                "Found symbol {} at address {:?} ({} bytes)",
-                name, *ptr, size
-            );
+        if name.starts_with("__qsc::alias::") {
+            let mut real_name = name.to_string();
 
-            Some(*ptr)
+            // Remove the "_[random]" 9 chars.
+            for _ in 0..9 {
+                real_name.pop();
+            }
+
+            let real_name = real_name.trim_start_matches("__qsc::alias::");
+
+            if let Some((_, ptr, size)) = map.read().get(real_name) {
+                debug!(
+                    "Found symbol {} ({}) at address {:?} ({} bytes)",
+                    real_name, name, *ptr, size
+                );
+
+                Some(*ptr)
+            } else {
+                lookup_with_dlsym(real_name)
+            }
         } else {
-            lookup_with_dlsym(name)
+            if let Some((_, ptr, size)) = map.read().get(name) {
+                debug!(
+                    "Found symbol {} at address {:?} ({} bytes)",
+                    name, *ptr, size
+                );
+
+                Some(*ptr)
+            } else {
+                lookup_with_dlsym(name)
+            }
         }
     })
 }
