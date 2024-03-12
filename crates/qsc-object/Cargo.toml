@@ -18,5 +18,5 @@ anyhow.workspace = true
 log.workspace = true
 
 [dev-dependencies]
-qsc-frontend.workspace = true
+cranelift-frontend.workspace = true
 cranelift-entity.workspace = true

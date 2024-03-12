@@ -6,11 +6,11 @@ use cranelift_codegen::{
     settings::{self, Configurable, Flags},
     Context,
 };
+use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{default_libcall_names, DataDescription, DataId, Linkage, Module};
 use miette::{IntoDiagnostic, NamedSource, Result};
 use parking_lot::RwLock;
 use qsc_ast::ast::{decl::func::FunctionNode, AbstractTree};
-use qsc_frontend::{FunctionBuilder, FunctionBuilderContext};
 use qsc_jit::{JITBuilder, JITModule};
 use target_lexicon::Triple;
 
@@ -132,7 +132,6 @@ impl JitGenerator {
             values: HashMap::new(),
             ret: func.ret.clone(),
             func: func.clone(),
-            end: None,
         };
 
         Self::compile_fn(&self.ctx, ctx, func)?;

@@ -432,6 +432,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a71e11061a75b1184c09bea97c026a88f08b59ade96a7bb1f259d4ea0df2e942"
 
 [[package]]
+name = "cranelift-frontend"
+version = "0.105.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af5d4da63143ee3485c7bcedde0a818727d737d1083484a0ceedb8950c89e495"
+dependencies = [
+ "cranelift-codegen",
+ "log",
+ "smallvec",
+ "target-lexicon",
+]
+
+[[package]]
 name = "cranelift-isle"
 version = "0.105.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1278,6 +1290,7 @@ name = "qsc-codegen"
 version = "0.6.0"
 dependencies = [
  "cranelift-codegen",
+ "cranelift-frontend",
  "cranelift-module",
  "cranelift-native",
  "libc",
@@ -1287,7 +1300,6 @@ dependencies = [
  "parking_lot",
  "qsc-ast",
  "qsc-core",
- "qsc-frontend",
  "qsc-jit",
  "qsc-object",
  "target-lexicon",
@@ -1321,18 +1333,6 @@ dependencies = [
  "pest",
  "rand",
  "thiserror",
-]
-
-[[package]]
-name = "qsc-frontend"
-version = "0.6.0"
-dependencies = [
- "cranelift-codegen",
- "hashbrown 0.14.3",
- "log",
- "similar",
- "smallvec",
- "target-lexicon",
 ]
 
 [[package]]
@@ -1393,10 +1393,10 @@ dependencies = [
  "cranelift-codegen",
  "cranelift-control",
  "cranelift-entity",
+ "cranelift-frontend",
  "cranelift-module",
  "log",
  "object 0.33.0",
- "qsc-frontend",
  "target-lexicon",
 ]
 
@@ -1641,12 +1641,6 @@ dependencies = [
  "cpufeatures",
  "digest",
 ]
-
-[[package]]
-name = "similar"
-version = "2.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32fea41aca09ee824cc9724996433064c89f7777e60762749a4170a14abbfa21"
 
 [[package]]
 name = "slab"

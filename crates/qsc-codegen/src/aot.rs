@@ -12,9 +12,9 @@ use crate::{
     context::{CodegenContext, CompilerContext},
     generator::{unify::BackendInternal, vars::func::FunctionCompiler, Backend},
 };
+use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{default_libcall_names, DataDescription, DataId, Linkage, Module};
 use qsc_ast::ast::{decl::func::FunctionNode, AbstractTree};
-use qsc_frontend::{FunctionBuilder, FunctionBuilderContext};
 use qsc_object::{ObjectBuilder, ObjectModule, ObjectProduct};
 use target_lexicon::Triple;
 
@@ -143,7 +143,6 @@ impl AotGenerator {
             values: HashMap::new(),
             ret: func.ret.clone(),
             func: func.clone(),
-            end: None,
         };
 
         Self::compile_fn(&self.ctx, ctx, func)?;

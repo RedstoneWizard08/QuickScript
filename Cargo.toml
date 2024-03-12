@@ -13,6 +13,7 @@ clap-verbosity-flag = "2.2.0"
 clap_complete = "4.5.0"
 const_format = "0.2.32"
 cranelift-codegen = { version = "0.105.2", features = ["all-arch", "anyhow", "core", "bincode", "disas"] }
+cranelift-frontend = "0.105.2"
 cranelift-module = "0.105.2"
 cranelift-native = "0.105.2"
 cranelift-control = "0.105.2"
@@ -57,7 +58,6 @@ qsc-linker = { path = "./crates/qsc-linker" }
 qsc-lsp = { path = "./crates/qsc-lsp" }
 qsc-object = { path = "./crates/qsc-object" }
 qsc-processor = { path = "./crates/qsc-processor" }
-qsc-frontend = { path = "./crates/qsc-frontend" }
 
 [profile.release]
 strip = true
@@ -74,7 +74,6 @@ members = [
     "crates/qsc-codegen",
     "crates/qsc-compiler",
     "crates/qsc-core",
-    "crates/qsc-frontend",
     "crates/qsc-jit",
     "crates/qsc-lexer",
     "crates/qsc-linker",

@@ -1,3 +1,11 @@
+//! !! IMPORTANT !!
+//!
+//! This program requires ncurses to run!
+//!
+//! During compilation, add `-a=-lncurses` to your compiler command
+//! and make sure that ncurses is installed on your system for this
+//! to work!
+
 extern fn initscr();
 extern fn endwin();
 
