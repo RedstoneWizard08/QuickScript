@@ -3,3 +3,8 @@ target
 Dockerfile
 .dockerignore
 build.sh
+node_modules
+dist
+out
+.vscode-
+.vscode-test-web

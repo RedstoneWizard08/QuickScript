@@ -1,0 +1,92 @@
+{
+    "name": "qsc-lsp-client",
+    "version": "0.6.0",
+    "description": "The QuickScript Language Server",
+    "main": "./dist/extension.js",
+    "scripts": {
+        "fmt": "prettier --write .",
+        "vspack": "vsce package",
+        "vscode:prepublish": "npm run esbuild-base -- --minify",
+        "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node",
+        "esbuild": "npm run esbuild-base -- --sourcemap",
+        "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+        "test-compile": "tsc -p ./",
+        "compile": "cross-env NODE_ENV=production tsc -b",
+        "watch": "rm -rf dist && tsc -b -w",
+        "lint": "eslint src --ext ts",
+        "pretest": "npm run compile && npm run lint",
+        "test": "node ./out/test/runTest.js",
+        "build": "webpack --config webpack.config.js",
+        "package": "vsce package --no-dependencies",
+        "publish": "vsce publish --no-dependencies",
+        "run:web": "vscode-test-web --browser=none --headless --host 0.0.0.0 --port 4000 --printServerLog"
+    },
+    "keywords": [],
+    "author": "QuickScript Contributors",
+    "license": "MIT",
+    "engines": {
+        "vscode": "^1.65.0"
+    },
+    "enabledApiProposals": [],
+    "activationEvents": [
+        "onLanguage:quickscript"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "quickscript",
+                "extensions": [
+                    ".qs"
+                ]
+            }
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "qsc-lsp",
+            "properties": {
+                "qsc-lsp.trace.server": {
+                    "type": "string",
+                    "scope": "window",
+                    "enum": [
+                        "off",
+                        "messages",
+                        "verbose"
+                    ],
+                    "enumDescriptions": [
+                        "No traces",
+                        "Error only",
+                        "Full log"
+                    ],
+                    "default": "off",
+                    "description": "Traces the communication between VS Code and the language server."
+                }
+            }
+        }
+    },
+    "devDependencies": {
+        "@electron/rebuild": "^3.6.0",
+        "@types/glob": "^8.1.0",
+        "@types/mocha": "^10.0.6",
+        "@types/node": "^20.11.26",
+        "@types/vscode": "^1.87.0",
+        "@typescript-eslint/eslint-plugin": "^7.2.0",
+        "@typescript-eslint/parser": "^7.2.0",
+        "@vscode/test-electron": "^2.3.9",
+        "@vscode/test-web": "^0.0.52",
+        "@vscode/vsce": "^2.24.0",
+        "cross-env": "^7.0.3",
+        "esbuild": "^0.20.1",
+        "glob": "^10.3.10",
+        "mocha": "^10.3.0",
+        "prettier": "^3.2.5",
+        "ts-loader": "^9.5.1",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.4.2",
+        "vscode-uri": "^3.0.8",
+        "webpack": "^5.90.3",
+        "webpack-cli": "^5.1.4"
+    },
+    "dependencies": {
+        "vscode-languageclient": "^9.0.1"
+    }
+}

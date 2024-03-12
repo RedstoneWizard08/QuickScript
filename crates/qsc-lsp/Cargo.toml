@@ -9,3 +9,18 @@ edition.workspace = true
 
 [dependencies]
 tower-lsp.workspace = true
+dashmap.workspace = true
+miette.workspace = true
+serde.workspace = true
+tokio.workspace = true
+ron.workspace = true
+log.workspace = true
+pretty_env_logger.workspace = true
+ropey.workspace = true
+async-trait.workspace = true
+serde_json.workspace = true
+im-rc.workspace = true
+qsc-ast.workspace = true
+qsc-core.workspace = true
+qsc-lexer.workspace = true
+qsc-processor.workspace = true

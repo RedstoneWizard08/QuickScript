@@ -17,3 +17,8 @@ perf-*.map
 *.ast.ron
 *.pst
 *.pst.ron
+node_modules
+dist
+out
+.vscode-test
+.vscode-test-web
