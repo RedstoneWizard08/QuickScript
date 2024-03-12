@@ -36,8 +36,8 @@ impl StatementNode {
                         .into(),
                     )
                 } else {
-                    if tree.intrinsics().contains_key(&call.func) {
-                        Ok(tree.intrinsics().get(&call.func).unwrap().to_string())
+                    if let Some(func) = tree.externs().get(&call.func) {
+                        Ok(func.ret.clone().map(|v| v.as_str()).unwrap_or("ptr".into()))
                     } else if tree.imported_functions().contains(&call.func.as_str()) {
                         Ok("ptr".to_string())
                     } else {

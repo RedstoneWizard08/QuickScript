@@ -66,7 +66,7 @@ impl<'a, 'b, M: Module + DeclareAliasedFunction, T: BackendInternal<M>> Backend<
             "i64" | "u64" => types::I64,
             "f32" => types::F32,
             "f64" => types::F64,
-            "bool" => types::I8,
+            "bool" => types::I8.as_truthy(),
             "char" => types::I32,
             "str" | "ptr" | _ => ptr,
         }
@@ -135,6 +135,7 @@ impl<'a, 'b, M: Module + DeclareAliasedFunction, T: BackendInternal<M>> Backend<
                 DeclarationNode::Variable(var) => Self::compile_var(cctx, ctx, var),
                 DeclarationNode::Function(func) => Self::compile_fn(cctx, ctx, &func),
                 DeclarationNode::Global(_global) => unimplemented!(),
+                DeclarationNode::Extern(_) => Ok(Self::null(ctx)),
             },
 
             NodeData::Block(block) => {

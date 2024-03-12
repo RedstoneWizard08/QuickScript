@@ -67,6 +67,7 @@ impl<'i> Lexer {
                 NodeData::Declaration(DeclarationNode::Function(self.function(pair)?))
             }
 
+            Rule::r#extern => NodeData::Declaration(DeclarationNode::Extern(self.extern_(pair)?)),
             Rule::binary_op => NodeData::Expr(ExpressionNode::Binary(self.binary_op(pair)?)),
             Rule::call => NodeData::Statement(StatementNode::Call(self.call(pair)?)),
             Rule::var => NodeData::Declaration(DeclarationNode::Variable(self.var(pair)?)),

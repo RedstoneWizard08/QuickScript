@@ -28,6 +28,16 @@ impl Processor {
                 ctx.func = None;
             }
 
+            DeclarationNode::Extern(func) => {
+                if func.ret.is_none() {
+                    func.ret = Some(TypeNode {
+                        generics: Vec::new(),
+                        name: "void".to_string(),
+                        span: func.span.clone(),
+                    })
+                }
+            }
+
             DeclarationNode::Global(_global) => todo!(),
 
             DeclarationNode::Variable(var) => {

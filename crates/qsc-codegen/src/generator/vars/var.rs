@@ -2,9 +2,9 @@ use cranelift_codegen::{
     entity::EntityRef,
     ir::{InstBuilder, Value},
 };
-use cranelift_frontend::Variable;
 use cranelift_module::{DataId, Linkage, Module};
 use miette::{IntoDiagnostic, Result};
+use qsc_frontend::Variable;
 
 use parking_lot::RwLock;
 use qsc_ast::ast::{decl::var::VariableNode, node::sym::SymbolNode};

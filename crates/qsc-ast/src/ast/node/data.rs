@@ -119,6 +119,14 @@ impl NodeData {
             Ok(self.get_type(func, tree)? == "str")
         }
     }
+
+    pub fn is_bool(&self, func: &Option<String>, tree: &AbstractTree) -> Result<bool> {
+        if let Ok(lit) = self.as_literal() {
+            Ok(lit.is_bool())
+        } else {
+            Ok(self.get_type(func, tree)? == "bool")
+        }
+    }
 }
 
 is_enum_variant_impl!(is_expr -> NodeData::Expr);

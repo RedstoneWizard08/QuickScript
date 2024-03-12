@@ -5,11 +5,11 @@ use std::{
 };
 
 use cranelift_codegen::{
-    ir::{Function, Value},
+    ir::{Block, Function, Value},
     CompiledCode, Context,
 };
-use cranelift_frontend::{FunctionBuilder, Variable};
 use cranelift_module::{DataDescription, DataId, Module};
+use qsc_frontend::{FunctionBuilder, Variable};
 
 use miette::NamedSource;
 use parking_lot::RwLock;
@@ -22,6 +22,7 @@ pub struct CodegenContext<'a, 'b> {
     pub builder: &'b RwLock<FunctionBuilder<'a>>,
     pub ret: Option<TypeNode>,
     pub func: FunctionNode,
+    pub end: Option<Block>,
 }
 
 #[derive(Debug)]

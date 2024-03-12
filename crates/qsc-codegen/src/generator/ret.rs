@@ -1,8 +1,11 @@
-use cranelift_codegen::{entity::EntityRef, ir::Value};
-use cranelift_frontend::Variable;
+use cranelift_codegen::{
+    entity::EntityRef,
+    ir::{InstBuilder, Value},
+};
 use cranelift_module::Module;
 use miette::Result;
 use parking_lot::RwLock;
+use qsc_frontend::Variable;
 
 use crate::{
     alias::DeclareAliasedFunction,
@@ -65,8 +68,14 @@ impl<'a, 'b, M: Module + DeclareAliasedFunction, T: Backend<'a, 'b, M>> ReturnCo
             ctx.vars
                 .insert(RETURN_VAR.to_string(), (ref_, ctx.ret.clone()));
 
-            Ok(bctx.use_var(ref_))
+            let val = bctx.use_var(ref_);
+
+            bctx.ins().jump(ctx.end.unwrap(), &[]);
+
+            Ok(val)
         } else {
+            ctx.builder.write().ins().jump(ctx.end.unwrap(), &[]);
+
             Ok(Self::null(ctx))
         }
     }

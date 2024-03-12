@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use crate::{compat::WrappedNamedSource, span::StaticSpan};
 
 use self::{
-    decl::{func::FunctionNode, global::GlobalVariable},
+    decl::{external::ExternFunctionNode, func::FunctionNode, global::GlobalVariable},
     node::Node,
 };
 
@@ -76,11 +76,16 @@ impl AbstractTree {
 
     // Intrinsics
     // TODO: Better way?
-    pub fn intrinsics(&self) -> HashMap<String, &str> {
+    pub fn externs(&self) -> HashMap<String, ExternFunctionNode> {
         let mut map = HashMap::new();
 
-        map.insert("getchar".into(), "char");
-        map.insert("getch".into(), "char");
+        for node in &self.data {
+            if let Ok(decl) = node.data.as_decl() {
+                if let Ok(func) = decl.as_extern() {
+                    map.insert(func.name.clone(), func);
+                }
+            }
+        }
 
         map
     }

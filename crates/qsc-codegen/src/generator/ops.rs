@@ -110,6 +110,25 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> OperationCompiler<'a, 'b, M> for 
                 }
                 .into())
             }
+        } else if expr.lhs.data.is_bool(&fn_name, &tree)? {
+            if expr.rhs.data.is_bool(&fn_name, &tree)? {
+                match expr.operator {
+                    Operator::Equal => Ok(bctx.ins().icmp(IntCC::Equal, left, right)),
+                    Operator::NotEqual => Ok(bctx.ins().icmp(IntCC::NotEqual, left, right)),
+
+                    _ => todo!("This operation is not supported for booleans yet!"),
+                }
+            } else {
+                Err(CompilerError {
+                    location: expr.span.into_source_span(),
+                    src: tree.src.clone().into(),
+                    error: miette!(
+                        "A boolean cannot be converted to a {}!",
+                        expr.rhs.data.get_type(&fn_name, &tree)?
+                    ),
+                }
+                .into())
+            }
         } else {
             Err(CompilerError {
                 location: expr.span.into_source_span(),

@@ -50,7 +50,7 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> LiteralCompiler<'a, 'b, M> for T 
         ctx.builder
             .write()
             .ins()
-            .iconst(types::I8, i64::from(value.value))
+            .iconst(types::I8.as_truthy(), if value.value { 1 } else { 0 })
     }
 
     fn compile_int(ctx: &mut CodegenContext<'a, 'b>, value: IntNode) -> Value {

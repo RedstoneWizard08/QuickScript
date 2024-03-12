@@ -1,8 +1,9 @@
 // The main lexer entrypoint
-main = { SOI ~ function* ~ EOI }
+main = { SOI ~ (function | extern)* ~ EOI }
 
 // Blocks & Statements
 function    = { "fn" ~ ident ~ "(" ~ params? ~ ")" ~ ("->" ~ type)? ~ block }
+extern      = { "extern" ~ "fn" ~ ident ~ "(" ~ params? ~ ")" ~ ("->" ~ type)? ~ ";" }
 block       = { "{" ~ statement* ~ "}" }
 expr        = { binary_op | term }
 term        = { call | literal | ident }

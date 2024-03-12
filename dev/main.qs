@@ -1,3 +1,9 @@
+extern fn initscr();
+extern fn endwin();
+
+extern fn getch() -> char;
+extern fn getchar() -> char;
+
 fn get_name() -> str {
     return "world";
 }
@@ -9,20 +15,26 @@ fn do_math(a: i32, b: i32) -> i32 {
 }
 
 fn get_hi() -> bool {
+    initscr();
+
     let h = getch();
     let i = getch();
-    let e = getchar();
+    let e = getch();
 
-    printf("Input: H: %c | I: %c | E: %c\n", h, i, e);
+    let rh = 'h';
+    let ri = 'i';
+    let re = '!';
 
-    if h == 'h' {
-        if i == 'i' {
-            if e == '!' {
+    endwin();
+
+    if h == rh {
+        if i == ri {
+            if e == re {
                 return true;
             }
         }
     }
-    
+
     return false;
 }
 

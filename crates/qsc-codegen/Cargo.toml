@@ -10,7 +10,6 @@ edition.workspace = true
 [dependencies]
 miette.workspace = true
 cranelift-codegen.workspace = true
-cranelift-frontend.workspace = true
 cranelift-module.workspace = true
 cranelift-native.workspace = true
 log.workspace = true
@@ -20,6 +19,7 @@ qsc-ast.workspace = true
 qsc-core.workspace = true
 qsc-jit.workspace = true
 qsc-object.workspace = true
+qsc-frontend.workspace = true
 parking_lot.workspace = true
 libc.workspace = true
 thiserror.workspace = true

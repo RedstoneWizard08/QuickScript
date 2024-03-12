@@ -40,14 +40,21 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> ConditionalCompiler<'a, 'b, M> fo
 
         RwLockWriteGuard::unlock_fair(builder);
 
-        for node in cond.block.data {
-            // TODO: Use last value as a return
-            Self::compile(cctx, ctx, node)?;
+        for node in &cond.block.data {
+            Self::compile(cctx, ctx, node.clone())?;
         }
 
         let mut builder = ctx.builder.write();
 
-        builder.ins().jump(merge, &[then_ret]);
+        if !cond
+            .block
+            .data
+            .last()
+            .map(|v| v.data.as_stmt().map(|v| v.is_return()).unwrap_or(false))
+            .unwrap_or(false)
+        {
+            builder.ins().jump(merge, &[then_ret]);
+        }
 
         builder.switch_to_block(else_);
         builder.seal_block(else_);
@@ -57,16 +64,14 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> ConditionalCompiler<'a, 'b, M> fo
         RwLockWriteGuard::unlock_fair(builder);
 
         if let Some(else_block) = cond.else_block {
-            for node in else_block.data {
-                // TODO: Use last value as a return
-                Self::compile(cctx, ctx, node)?;
+            for node in &else_block.data {
+                Self::compile(cctx, ctx, node.clone())?;
             }
         }
 
         let mut builder = ctx.builder.write();
 
         builder.ins().jump(merge, &[else_ret]);
-
         builder.switch_to_block(merge);
         builder.seal_block(merge);
 

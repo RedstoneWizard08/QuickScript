@@ -27,17 +27,21 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> FunctionCompiler<'a, 'b, M> for T
         func: &FunctionNode,
     ) -> Result<Value> {
         let entry;
+        let end;
 
         debug!("Creating entry block for function: {}", func.name);
 
         {
             let mut bctx = ctx.builder.write();
             entry = bctx.create_block();
+            end = bctx.create_block();
 
             bctx.append_block_params_for_function_params(entry);
             bctx.switch_to_block(entry);
             bctx.seal_block(entry);
         }
+
+        ctx.end = Some(end);
 
         debug!("Declaring argument variables for function: {}", func.name);
 
@@ -53,6 +57,28 @@ impl<'a, 'b, M: Module, T: Backend<'a, 'b, M>> FunctionCompiler<'a, 'b, M> for T
         for node in func.content.data.clone() {
             Self::compile(cctx, ctx, node)?;
         }
+
+        // Is this needed?
+        // ctx.builder.write().ins().jump(end, &[]);
+
+        // debug_assert!(
+        //     self.position.is_none()
+        //         || self.is_unreachable()
+        //         || self.is_pristine(self.position.unwrap())
+        //         || self.is_filled(self.position.unwrap()),
+        //     "you have to fill your block before switching"
+        // );
+
+        if !ctx.builder.read().position.is_none()
+            && !ctx.builder.read().is_unreachable()
+            && !ctx.builder.read().is_pristine(entry)
+            && !ctx.builder.read().is_filled(entry)
+        {
+            ctx.builder.write().ins().jump(end, &[]);
+        }
+
+        ctx.builder.write().switch_to_block(end);
+        ctx.builder.write().seal_block(end);
 
         debug!("Compiled all nodes for function: {}", func.name);
 
