@@ -3,8 +3,8 @@ FROM rust:bookworm
 RUN mkdir -p /usr/src/qsc
 WORKDIR /usr/src/qsc
 
-ARG ZIG_VERSION=0.12.0-dev.2834+30f15e3af
-ARG ZIGBUILD_VERSION=0.18.3
+ARG ZIG_VERSION=0.14.0-dev.1472+3929cac15
+ARG ZIGBUILD_VERSION=0.19.1
 
 RUN curl -fsSLo /zig.tar.xz \
         "https://ziglang.org/builds/zig-linux-$(uname -m)-${ZIG_VERSION}.tar.xz"
