@@ -1,6 +1,6 @@
-use qsc_ast::ast::{decl::func::FunctionNode, AbstractTree};
+use qsc_ast::ast::AbstractTree;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct ProcessorContext {
     pub func: Option<FunctionNode>,
     pub tree: AbstractTree,

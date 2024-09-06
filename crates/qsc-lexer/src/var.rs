@@ -1,42 +1,41 @@
-use pest::iterators::Pair;
-use qsc_ast::ast::decl::var::VariableNode;
-use qsc_core::error::Result;
+use chumsky::{primitive::just, Parser};
+use qsc_ast::{expr::Expr, token::Token, var::Variable};
 
-use crate::{lexer::Lexer, parser::Rule};
+use crate::{parser::raw_ident, CodeParser, Spanned};
 
-impl<'i> Lexer {
-    pub fn var(&self, pair: Pair<'i, Rule>) -> Result<VariableNode> {
-        let mut inner = pair.clone().into_inner();
-
-        let mutable = inner
-            .peek()
-            .map(|pair| pair.as_str().trim() == "mut")
-            .unwrap_or(false);
-
-        if mutable {
-            inner.next();
-        }
-
-        let name = inner.next().unwrap().as_str().trim().to_string();
-
-        let type_ = if inner
-            .peek()
-            .map(|pair| pair.as_rule() == Rule::r#type)
-            .unwrap_or(false)
-        {
-            Some(self.ty(inner.next().unwrap())?)
-        } else {
-            None
-        };
-
-        let value = inner.next().map(|pair| self.parse(pair).unwrap());
-
-        Ok(VariableNode {
-            span: pair.as_span().into(),
-            name,
-            type_,
-            value,
-            mutable,
+pub fn var<'t, 's: 't>(expr: impl CodeParser<'t, 's>) -> impl CodeParser<'t, 's> {
+    just(Token::Let)
+        .ignore_then(just(Token::Mut).or_not().map(|v| v.is_some()))
+        .then(raw_ident())
+        .then(maybe_type())
+        .then(maybe_val(expr.clone()))
+        .map_with(|(((mutable, name), typ), value), x| {
+            (
+                Expr::Variable(Variable {
+                    name,
+                    typ,
+                    value: value.map(|v| Box::new(v.0)),
+                    mutable,
+                }),
+                x.span(),
+            )
         })
-    }
+        .map(|v| {
+            debug!("Found variable: {:?}", v);
+
+            v
+        })
+}
+
+fn maybe_type<'t, 's: 't>() -> impl CodeParser<'t, 's, Option<String>> {
+    just(Token::Control(':')).ignore_then(raw_ident()).or_not()
+}
+
+fn maybe_val<'t, 's: 't>(
+    expr: impl CodeParser<'t, 's>,
+) -> impl CodeParser<'t, 's, Option<Spanned<Expr>>> {
+    just(Token::Operation("="))
+        .ignore_then(expr.clone())
+        .map(|v| v)
+        .or_not()
 }

@@ -1,4 +1,4 @@
-use qsc_ast::ast::node::{block::Block, data::NodeData};
+use qsc_ast::{block::Block, expr::Expr};
 
 use crate::{ctx::ProcessorContext, Processor, Result};
 
@@ -7,11 +7,11 @@ impl Processor {
         &mut self,
         ctx: &mut ProcessorContext,
         mut block: Block,
-    ) -> Result<NodeData> {
-        for item in &mut block.data {
-            *item = self.process_node(ctx, item.clone())?;
+    ) -> Result<Expr> {
+        for item in &mut block.body {
+            *item = self.process_expr(ctx, item.clone())?;
         }
 
-        Ok(NodeData::Block(block))
+        Ok(Expr::Block(block))
     }
 }

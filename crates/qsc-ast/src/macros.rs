@@ -67,3 +67,41 @@ macro_rules! get_enum_variant_value_impl {
         }
     }
 }
+
+#[macro_export]
+macro_rules! string_enum {
+    ($name: ident = { $($item: ident: $value: expr,)+ }) => {
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+        pub enum $name {
+            $($item,)+
+        }
+
+        impl $name {
+            pub fn to_string(&self) -> &'static str {
+                match self.clone() {
+                    $(
+                        Self::$item => $value,
+                    )+
+                }
+            }
+
+            pub fn from_str(val: impl AsRef<str>) -> Option<Self> {
+                let val = val.as_ref();
+
+                match val {
+                    $(
+                        $value => Some(Self::$item),
+                    )+
+
+                    _ => None,
+                }
+            }
+
+            pub fn values() -> Vec<Self> {
+                vec![
+                    $(Self::$item,)+
+                ]
+            }
+        }
+    }
+}

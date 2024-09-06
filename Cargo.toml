@@ -7,51 +7,55 @@ license = "MIT"
 edition = "2021"
 
 [workspace.dependencies]
-anyhow = "1.0.79"
-clap = { version = "4.5.1", features = ["derive", "color"] }
-clap-verbosity-flag = "2.2.0"
-clap_complete = "4.5.0"
+anyhow = "1.0.86"
+clap = { version = "4.5.17", features = ["derive", "color"] }
+clap-verbosity-flag = "2.2.1"
+clap_complete = "4.5.26"
 const_format = "0.2.32"
 cranelift-codegen = { version = "0.105.2", features = ["all-arch", "anyhow", "core", "bincode", "disas"] }
-cranelift-frontend = "0.105.2"
-cranelift-module = "0.105.2"
-cranelift-native = "0.105.2"
-cranelift-control = "0.105.2"
-cranelift-entity = "0.105.2"
-wasmtime-jit-icache-coherence = "18.0.2"
-log = "0.4.20"
+cranelift-frontend = "0.111.0"
+cranelift-module = "0.111.0"
+cranelift-native = "0.111.0"
+cranelift-control = "0.111.0"
+cranelift-entity = "0.111.0"
+wasmtime-jit-icache-coherence = "24.0.0"
+log = "0.4.22"
 notify = "6.1.1"
-object = { version = "0.33.0", features = ["write"] }
+object = { version = "0.36.4", features = ["write"] }
 pretty_env_logger = "0.5.0"
 rand = "0.8.5"
-target-lexicon = "0.12.13"
-tempfile = "3.10.0"
-which = "6.0.0"
-thiserror = "1.0.57"
+target-lexicon = "0.12.16"
+tempfile = "3.12.0"
+which = "6.0.3"
+thiserror = "1.0.63"
 lnk = "0.5.1"
 tower-lsp = "0.20.0"
-pest = { version = "2.7.7", features = ["pretty-print"] }
-pest_derive = "2.7.7"
-strum = { version = "0.26.1", features = ["derive"] }
-miette = { version = "7.1.0", features = ["fancy", "serde"] }
-parking_lot = { version = "0.12.1", features = ["arc_lock"] }
+pest = { version = "2.7.11", features = ["pretty-print"] }
+pest_derive = "2.7.11"
+strum = { version = "0.26.3", features = ["derive"] }
+miette = { version = "7.2.0", features = ["fancy", "serde"] }
+parking_lot = { version = "0.12.3", features = ["arc_lock"] }
 debug-ignore = "1.0.5"
-libc = { version = "0.2.42" }
-serde = { version = "1.0.197", features = ["derive"] }
+libc = { version = "0.2.158" }
+serde = { version = "1.0.209", features = ["derive"] }
 ron = "0.8.1"
-region = "2.2.0"
-memmap2 = "0.2.1"
+region = "3.0.2"
+memmap2 = "0.9.4"
 derivative = "2.2.0"
-windows-sys = { version = "0.52.0", features = ["Win32_Foundation", "Win32_System_LibraryLoader", "Win32_System_Memory"] }
-smallvec = { version = "1.6.1", features = ["union"] }
-hashbrown = { version = "0.14", default-features = false }
-similar = "2.1.0"
-dashmap = "5.5.3"
-tokio = { version = "1.36.0", features = ["full"] }
+windows-sys = { version = "0.59.0", features = ["Win32_Foundation", "Win32_System_LibraryLoader", "Win32_System_Memory"] }
+smallvec = { version = "1.13.2", features = ["union"] }
+hashbrown = { version = "0.14.5", default-features = false }
+similar = "2.6.0"
+dashmap = "6.1.0"
+tokio = { version = "1.40.0", features = ["full"] }
 ropey = "1.6.1"
-async-trait = "0.1.77"
-serde_json = "1.0.114"
+async-trait = "0.1.82"
+serde_json = "1.0.128"
 im-rc = "15.1.0"
+chumsky = { version = "1.0.0-alpha.7", features = ["label"] }
+itertools = "0.13.0"
+ariadne = "0.4.1"
+backtrace-on-stack-overflow = "0.3.0"
 
 qsc-ast = { path = "./crates/qsc-ast" }
 qsc-cli = { path = "./crates/qsc-cli" }

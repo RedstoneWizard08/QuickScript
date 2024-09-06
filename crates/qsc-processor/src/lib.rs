@@ -9,16 +9,13 @@ extern crate miette;
 pub mod block;
 pub mod ctx;
 pub mod decl;
-pub mod expr;
+pub mod op;
 pub mod stmt;
 pub mod sym;
 pub mod ty;
 
 use ctx::ProcessorContext;
-use qsc_ast::ast::{
-    node::{data::NodeData, Node},
-    AbstractTree,
-};
+use qsc_ast::{ast::AbstractTree, expr::Expr};
 use qsc_core::error::Result;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -36,27 +33,26 @@ impl Processor {
         let mut ctx = ProcessorContext::new(ast.clone());
 
         for node in &mut ast.data {
-            *node = self.process_node(&mut ctx, node.clone())?;
+            *node = self.process_expr(&mut ctx, node.clone())?;
         }
 
         Ok(ast)
     }
 
-    pub fn process_node(&mut self, ctx: &mut ProcessorContext, node: Node) -> Result<Node> {
-        let data = match Box::into_inner(node.data) {
-            NodeData::Block(block) => self.process_block(ctx, block),
-            NodeData::Declaration(decl) => self.process_decl(ctx, decl),
-            NodeData::Expr(expr) => self.process_expr(ctx, expr),
-            NodeData::Literal(lit) => Ok(NodeData::Literal(lit)),
-            NodeData::Statement(stmt) => self.process_stmt(ctx, stmt),
-            NodeData::Symbol(sym) => self.process_symbol(ctx, sym),
-            NodeData::Type(ty) => self.process_type(ctx, ty),
-            NodeData::EOI => Ok(NodeData::EOI),
+    pub fn process_expr(&mut self, ctx: &mut ProcessorContext, expr: Expr) -> Result<Expr> {
+        let data = match expr {
+            Expr::Literal(lit) => Ok(Expr::Literal(lit)),
+            Expr::Name(name) => self.process_name(name),
+            Expr::Block(block) => self.process_block(ctx, block),
+            Expr::Variable(var) => self.process_decl(ctx, var),
+            Expr::Operation(op) => self.process_operation(ctx, op),
+            Expr::Call(call) => self.process_call(ctx, call),
+            Expr::Return(ret) => self.process_return(ctx, ret),
+            Expr::Conditional(cond) => self.process_cond(ctx, cond),
+            Expr::Function(func) => self.process_func(ctx, func),
+            Expr::Type(ty) => self.process_type(ctx, ty),
         }?;
 
-        Ok(Node {
-            data: Box::new(data),
-            span: node.span,
-        })
+        Ok(expr)
     }
 }

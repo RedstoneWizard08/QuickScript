@@ -1,34 +1,30 @@
-use pest::iterators::Pair;
-use qsc_ast::ast::stmt::call::{CallArgument, CallNode};
-use qsc_core::error::Result;
+use chumsky::{primitive::just, IterParser, Parser};
+use qsc_ast::{call::Call, expr::Expr, token::Token};
 
-use crate::{lexer::Lexer, parser::Rule};
+use crate::{parser::raw_ident, CodeParser, Spanned};
 
-impl<'i> Lexer {
-    pub fn call(&self, pair: Pair<'i, Rule>) -> Result<CallNode> {
-        let mut inner = pair.clone().into_inner();
-        let func = inner.next().unwrap().as_str().trim().to_string();
-
-        let args = inner
-            .next()
-            .map(|pair| {
-                pair.into_inner()
-                    .map(|pair| self.call_arg(pair).unwrap())
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_default();
-
-        Ok(CallNode {
-            span: pair.as_span().into(),
-            func,
-            args,
+pub fn call<'t, 's: 't>(expr: impl CodeParser<'t, 's>) -> impl CodeParser<'t, 's> {
+    raw_ident()
+        .then_ignore(just(Token::Control('(')))
+        .then(
+            expr.clone()
+                .separated_by(just(Token::Control(',')))
+                .allow_trailing()
+                .collect::<Vec<_>>(),
+        )
+        .then_ignore(just(Token::Control(')')))
+        .map_with(|(func, args): (String, Vec<Spanned<Expr>>), x| {
+            (
+                Expr::Call(Call {
+                    func,
+                    args: args.iter().map(|v| v.0.clone()).collect(),
+                }),
+                x.span(),
+            )
         })
-    }
+        .map(|v| {
+            debug!("Found call: {:?}", v);
 
-    pub fn call_arg(&self, pair: Pair<'i, Rule>) -> Result<CallArgument> {
-        Ok(CallArgument {
-            span: pair.as_span().into(),
-            value: self.parse(pair)?,
+            v
         })
-    }
 }

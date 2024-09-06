@@ -9,7 +9,7 @@ edition.workspace = true
 
 [dependencies]
 miette.workspace = true
-pest.workspace = true
+chumsky.workspace = true
 strum.workspace = true
 thiserror.workspace = true
 qsc-core.workspace = true
