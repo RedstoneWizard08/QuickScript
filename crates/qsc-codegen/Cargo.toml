@@ -23,4 +23,3 @@ qsc-object.workspace = true
 parking_lot.workspace = true
 libc.workspace = true
 thiserror.workspace = true
-libloading.workspace = true
