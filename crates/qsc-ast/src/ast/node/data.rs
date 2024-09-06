@@ -64,22 +64,30 @@ impl NodeData {
                         }.into())
                     }
                 } else {
-                    let func = funcs.get(&func.clone().unwrap()).unwrap();
-                    let vars = func.variables();
+                    let funct = funcs.get(&func.clone().unwrap()).unwrap();
+                    let vars = funct.variables();
 
                     if let Some(var) = vars.get(&sym.value) {
-                        var.type_.clone().map(|v| v.as_str()).ok_or(LexicalError {
-                            location: var.span.into_source_span(),
-                            src: tree.src.clone().into(),
-                            error: miette!("Cannot find a type for symbol: {}", sym.value),
-                        }.into())
+                        debug!("{:?}", var);
+
+                        if let Some(ty) = &var.type_ {
+                            Ok(ty.as_str())
+                        } else if let Some(val) = &var.value {
+                            val.data.get_type(func, tree)
+                        } else {
+                            Err(LexicalError {
+                                location: var.span.into_source_span(),
+                                src: tree.src.clone().into(),
+                                error: miette!("Cannot find a type for symbol: {}", sym.value),
+                            }.into())
+                        }
                     } else if let Some(var) = globals.get(&sym.value) {
                         Ok(var.type_.as_str())
                     } else {
                         Err(LexicalError {
                             location: sym.span.into_source_span(),
                             src: tree.src.clone().into(),
-                            error: miette!("Cannot find a type for symbol: {}", sym.value),
+                            error: miette!("Cannot find symbol: {}", sym.value),
                         }.into())
                     }
                 }

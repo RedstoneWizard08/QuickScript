@@ -1,3 +1,5 @@
+#![allow(unexpected_cfgs)]
+
 #[cfg(target_env = "gnu")]
 pub const ENV: &str = "gnu";
 

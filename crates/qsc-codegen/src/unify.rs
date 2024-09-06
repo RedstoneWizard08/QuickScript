@@ -9,7 +9,13 @@ use qsc_object::ObjectProduct;
 use target_lexicon::Triple;
 
 pub trait CodegenBackend {
-    fn new(triple: Triple, name: String, source: String, tree: AbstractTree) -> Result<Self>
+    fn new(
+        triple: Triple,
+        name: String,
+        source: String,
+        tree: AbstractTree,
+        libs: Vec<String>,
+    ) -> Result<Self>
     where
         Self: Sized;
 
@@ -21,10 +27,17 @@ pub trait CodegenBackend {
     fn vcode(&self) -> String;
     fn tree(&self) -> AbstractTree;
     fn asm(self) -> Result<String>;
+    fn clean(self);
 }
 
 impl CodegenBackend for AotGenerator {
-    fn new(triple: Triple, name: String, source: String, tree: AbstractTree) -> Result<Self> {
+    fn new(
+        triple: Triple,
+        name: String,
+        source: String,
+        tree: AbstractTree,
+        _libs: Vec<String>,
+    ) -> Result<Self> {
         Ok(Self::new(triple, name, source, tree)?)
     }
 
@@ -120,11 +133,19 @@ impl CodegenBackend for AotGenerator {
             .collect::<Vec<String>>()
             .join("\n"))
     }
+
+    fn clean(self) {}
 }
 
 impl CodegenBackend for JitGenerator {
-    fn new(triple: Triple, name: String, source: String, tree: AbstractTree) -> Result<Self> {
-        Ok(Self::new(triple, name, source, tree)?)
+    fn new(
+        triple: Triple,
+        name: String,
+        source: String,
+        tree: AbstractTree,
+        libs: Vec<String>,
+    ) -> Result<Self> {
+        Ok(Self::new(triple, name, source, tree, libs)?)
     }
 
     fn compile(&mut self) -> Result<()> {
@@ -229,5 +250,9 @@ impl CodegenBackend for JitGenerator {
             .map(|v| format!("{} {}", v.mnemonic().unwrap(), v.op_str().unwrap()))
             .collect::<Vec<String>>()
             .join("\n"))
+    }
+
+    fn clean(self) {
+        self.dlclose_all();
     }
 }

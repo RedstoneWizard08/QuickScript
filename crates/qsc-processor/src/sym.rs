@@ -4,11 +4,7 @@ use qsc_core::{conv::IntoSourceSpan, error::processor::ProcessorError};
 use crate::{ctx::ProcessorContext, Processor, Result};
 
 impl Processor {
-    pub fn process_symbol(
-        &mut self,
-        ctx: &mut ProcessorContext,
-        sym: SymbolNode,
-    ) -> Result<NodeData> {
+    pub fn process_symbol(&self, ctx: &mut ProcessorContext, sym: SymbolNode) -> Result<NodeData> {
         if let Some(func) = &ctx.func {
             if !func.variables().contains_key(&sym.value)
                 && !ctx.tree.globals().contains_key(&sym.value)

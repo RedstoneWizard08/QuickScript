@@ -21,6 +21,10 @@ use super::Command;
 pub struct WatchCommand {
     /// The path to the directory to watch.
     pub path: PathBuf,
+
+    /// Additional libraries.
+    #[arg(short = 'l', long = "link")]
+    pub libraries: Vec<String>,
 }
 
 impl WatchCommand {
@@ -28,7 +32,14 @@ impl WatchCommand {
         let path = self.path.clone().join("main.qs");
         let name = path.file_name().unwrap().to_str().unwrap();
         let content = fs::read_to_string(path.clone()).into_diagnostic()?;
-        let compiler = Compiler::<JitGenerator>::compile(name, content, Triple::host())?;
+
+        let compiler = Compiler::<JitGenerator>::compile(
+            name,
+            content,
+            Triple::host(),
+            self.libraries.clone(),
+        )?;
+
         let code = compiler.run()?;
 
         println!("=> Process exited with code {}", code);

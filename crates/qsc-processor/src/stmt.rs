@@ -5,7 +5,7 @@ use crate::{ctx::ProcessorContext, Processor, Result};
 
 impl Processor {
     pub fn process_stmt(
-        &mut self,
+        &self,
         ctx: &mut ProcessorContext,
         mut stmt: StatementNode,
     ) -> Result<NodeData> {
@@ -24,18 +24,18 @@ impl Processor {
                 }
 
                 for arg in &mut call.args {
-                    arg.value = self.process_node(ctx, arg.value.clone())?;
+                    arg.value = self.process_node(ctx, &mut arg.value)?;
                 }
             }
 
             StatementNode::Return(ret) => {
                 if let Some(val) = &mut ret.value {
-                    *val = self.process_node(ctx, val.clone())?;
+                    *val = self.process_node(ctx, val)?;
                 }
             }
 
             StatementNode::Condition(cond) => {
-                cond.condition = self.process_node(ctx, cond.condition.clone())?;
+                cond.condition = self.process_node(ctx, &mut cond.condition)?;
                 cond.block = self.process_block(ctx, cond.block.clone())?.as_block()?;
             }
         };

@@ -15,3 +15,4 @@ thiserror.workspace = true
 qsc-core.workspace = true
 serde.workspace = true
 derivative.workspace = true
+log.workspace = true

@@ -4,18 +4,18 @@ use crate::{ctx::ProcessorContext, Processor, Result};
 
 impl Processor {
     pub fn process_expr(
-        &mut self,
+        &self,
         ctx: &mut ProcessorContext,
         mut expr: ExpressionNode,
     ) -> Result<NodeData> {
         match &mut expr {
             ExpressionNode::Binary(binary) => {
-                binary.lhs = self.process_node(ctx, binary.lhs.clone())?;
-                binary.rhs = self.process_node(ctx, binary.rhs.clone())?;
+                binary.lhs = self.process_node(ctx, &mut binary.lhs)?;
+                binary.rhs = self.process_node(ctx, &mut binary.rhs)?;
             }
 
             ExpressionNode::Unary(unary) => {
-                unary.value = self.process_node(ctx, unary.value.clone())?;
+                unary.value = self.process_node(ctx, &mut unary.value)?;
             }
         };
 

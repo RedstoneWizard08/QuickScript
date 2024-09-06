@@ -8,7 +8,7 @@ use crate::{ctx::ProcessorContext, Processor, Result};
 
 impl Processor {
     pub fn process_decl(
-        &mut self,
+        &self,
         ctx: &mut ProcessorContext,
         mut decl: DeclarationNode,
     ) -> Result<NodeData> {
@@ -41,7 +41,7 @@ impl Processor {
             DeclarationNode::Global(_global) => todo!(),
 
             DeclarationNode::Variable(var) => {
-                if var.mutable && var.value.is_none() {
+                if !var.mutable && var.value.is_none() {
                     return Err(ProcessorError {
                         src: ctx.tree.src.clone().into(),
                         location: var.span.into_source_span(),
@@ -69,29 +69,21 @@ impl Processor {
                     }
                 } else {
                     if let Some(val) = &var.value {
-                        if let Ok(ty) = val
+                        let ty = val
                             .data
-                            .get_type(&ctx.func.clone().map(|v| v.name), &ctx.tree)
-                        {
-                            var.type_ = Some(TypeNode {
-                                generics: Vec::new(),
-                                name: ty,
-                                span: val.span.clone(),
-                            });
+                            .get_type(&ctx.func.clone().map(|v| v.name), &ctx.tree)?;
 
-                            debug!(
-                                "Changed {}'s type to: {}",
-                                var.name,
-                                var.type_.clone().unwrap().as_str()
-                            );
-                        } else {
-                            return Err(ProcessorError {
-                                src: ctx.tree.src.clone().into(),
-                                location: var.span.into_source_span(),
-                                error: miette!("Cannot infer type based on value!"),
-                            }
-                            .into());
-                        }
+                        var.type_ = Some(TypeNode {
+                            generics: Vec::new(),
+                            name: ty,
+                            span: val.span.clone(),
+                        });
+
+                        debug!(
+                            "Changed {}'s type to: {}",
+                            var.name,
+                            var.type_.clone().unwrap().as_str()
+                        );
                     } else {
                         return Err(ProcessorError {
                             src: ctx.tree.src.clone().into(),

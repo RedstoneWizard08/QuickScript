@@ -34,6 +34,10 @@ pub struct RunCommand {
     /// Output CLIF.
     #[arg(short = 'i', long = "clif")]
     pub clif: bool,
+
+    /// Additional libraries.
+    #[arg(short = 'l', long = "lib")]
+    pub libraries: Vec<String>,
 }
 
 impl Command for RunCommand {
@@ -59,7 +63,12 @@ impl Command for RunCommand {
             fs::write(file, ast).into_diagnostic()?;
         }
 
-        let compiler = Compiler::<JitGenerator>::compile(name, content, Triple::host())?;
+        let compiler = Compiler::<JitGenerator>::compile(
+            name,
+            content,
+            Triple::host(),
+            self.libraries.clone(),
+        )?;
 
         if self.vcode {
             let mut file = self.file.clone();

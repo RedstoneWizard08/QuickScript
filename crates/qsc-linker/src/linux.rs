@@ -88,8 +88,11 @@ pub fn run_linker(
     linker: Option<String>,
     tmp_file: PathBuf,
     triple: Triple,
-    extra_args: Vec<String>,
+    mut extra_args: Vec<String>,
+    extra_libs: Vec<String>,
 ) -> Result<()> {
+    extra_args.extend(extra_libs.iter().map(|v| format!("-l{}", v)));
+
     let linker = linker.unwrap_or(get_default_linker().to_string());
 
     // using super:: here allows android to work with its custom library dir

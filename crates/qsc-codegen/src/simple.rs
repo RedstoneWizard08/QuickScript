@@ -16,9 +16,10 @@ impl<T: CodegenBackend> SimpleCompiler<T> {
         name: String,
         source: &String,
         tree: AbstractTree,
+        libs: Vec<String>,
     ) -> Result<Self, BackendError> {
         Ok(Self {
-            backend: T::new(triple, name, source.clone(), tree)?,
+            backend: T::new(triple, name, source.clone(), tree, libs)?,
         })
     }
 
@@ -61,5 +62,9 @@ impl<T: CodegenBackend> SimpleCompiler<T> {
 
     pub fn asm(self) -> Result<String> {
         self.backend.asm()
+    }
+
+    pub fn clean(self) {
+        self.backend.clean()
     }
 }

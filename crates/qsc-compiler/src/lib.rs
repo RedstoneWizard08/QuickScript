@@ -21,7 +21,12 @@ pub struct Compiler<B: CodegenBackend> {
 }
 
 impl<B: CodegenBackend> Compiler<B> {
-    pub fn compile(name: impl AsRef<str>, source: impl AsRef<str>, triple: Triple) -> Result<Self> {
+    pub fn compile(
+        name: impl AsRef<str>,
+        source: impl AsRef<str>,
+        triple: Triple,
+        libs: Vec<String>,
+    ) -> Result<Self> {
         debug!("[Stage 1/3] Running lexer...");
 
         let mut lexer = Lexer::new(&name, &source);
@@ -39,6 +44,7 @@ impl<B: CodegenBackend> Compiler<B> {
             name.as_ref().to_string(),
             &source.as_ref().to_string(),
             ast.clone(),
+            libs,
         )?;
 
         backend.compile()?;
@@ -102,9 +108,13 @@ impl<B: CodegenBackend> Compiler<B> {
     }
 
     pub fn run(self) -> Result<i32> {
-        let code = RwLock::into_inner(self.backend).run();
+        let backend = RwLock::into_inner(self.backend);
+        let code = backend.run();
+        let res = code.map_err(|v| v.into());
 
-        code.map_err(|v| v.into())
+        backend.clean();
+
+        res
     }
 
     pub fn finalize(self) -> ObjectProduct {

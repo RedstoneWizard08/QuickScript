@@ -54,12 +54,16 @@ pub struct CompileCommand {
     pub dump_pst: bool,
 
     /// The linker. Defaults to mold, lld, gold, ld, clang, gcc, or cc, in order of weight.
-    #[arg(short = 'l', long = "linker")]
+    #[arg(short = 'k', long = "linker")]
     pub linker: Option<String>,
 
     /// Extra flags for the linker.
     #[arg(short = 'a', long = "link-flag")]
     pub extra_flags: Vec<String>,
+
+    /// Additional libraries.
+    #[arg(short = 'l', long = "link")]
+    pub libraries: Vec<String>,
 }
 
 impl Command for CompileCommand {
@@ -91,7 +95,12 @@ impl Command for CompileCommand {
             fs::write(file, ast).into_diagnostic()?;
         }
 
-        let compiler = Compiler::<AotGenerator>::compile(name, content, triple.clone())?;
+        let compiler = Compiler::<AotGenerator>::compile(
+            name,
+            content,
+            triple.clone(),
+            self.libraries.clone(),
+        )?;
 
         debug!("Emitting object(s)...");
 
@@ -191,6 +200,7 @@ impl Command for CompileCommand {
             tmp_file.path().into(),
             triple,
             self.extra_flags.clone(),
+            self.libraries.clone(),
         )?;
 
         Ok(())

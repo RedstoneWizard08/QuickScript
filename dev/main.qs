@@ -12,6 +12,8 @@ extern fn endwin();
 extern fn getch() -> char;
 extern fn getchar() -> char;
 
+extern fn mvprintw(row: i32, col: i32, s: str);
+
 fn get_name() -> str {
     return "world";
 }
@@ -24,6 +26,8 @@ fn do_math(a: i32, b: i32) -> i32 {
 
 fn get_hi() -> bool {
     initscr();
+
+    mvprintw(0, 0, "Say 'hi!'\n> ");
 
     let h = getch();
     let i = getch();
@@ -54,7 +58,7 @@ fn main() -> i32 {
     if get_hi() {
         printf("Well, hello to you too!\n");
     } else {
-        printf("So rude! You didn't say hi!\n");
+        printf("So rude! You didn't even say hi!\n");
     }
 
     if val == 3 {
@@ -62,12 +66,12 @@ fn main() -> i32 {
 
         return 0;
     } else {
-        printf("It wasn't 3...\n");
+        printf("The answer wasn't 3... it was %i!\n", val);
     }
 
     printf("Hello, %s!\n", get_name());
-    puts("Another test!");
-    printf("Math: %i - %i = %i\n", a, b, do_math(a, b));
+    puts("A test with puts!");
+    printf("I can do math! %i - %i = %i\n", a, b, do_math(a, b));
 
     return 0;
 }

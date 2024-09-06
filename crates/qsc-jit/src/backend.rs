@@ -1,5 +1,6 @@
 //! Defines `JITModule`.
 
+use crate::libs::find_library;
 use crate::{compiled_blob::CompiledBlob, memory::BranchProtection, memory::Memory};
 use cranelift_codegen::binemit::Reloc;
 use cranelift_codegen::isa::{OwnedTargetIsa, TargetIsa};
@@ -11,11 +12,14 @@ use cranelift_module::{
     DataDescription, DataId, FuncId, Init, Linkage, Module, ModuleDeclarations, ModuleError,
     ModuleReloc, ModuleRelocTarget, ModuleResult,
 };
+use libc::{dlclose, dlopen, RTLD_LAZY, RTLD_LOCAL};
 use log::info;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ffi::CString;
 use std::io::Write;
+use std::os::raw::{c_int, c_void};
+use std::path::PathBuf;
 use std::ptr;
 use std::ptr::NonNull;
 use std::sync::atomic::{AtomicPtr, Ordering};
@@ -23,6 +27,7 @@ use target_lexicon::PointerWidth;
 
 const WRITABLE_DATA_ALIGNMENT: u64 = 0x8;
 const READONLY_DATA_ALIGNMENT: u64 = 0x1;
+const DLOPEN_FLAG: c_int = RTLD_LOCAL | RTLD_LAZY;
 
 /// A builder for `JITModule`.
 pub struct JITBuilder {
@@ -30,6 +35,8 @@ pub struct JITBuilder {
     symbols: HashMap<String, *const u8>,
     lookup_symbols: Vec<Box<dyn Fn(&str) -> Option<*const u8>>>,
     libcall_names: Box<dyn Fn(ir::LibCall) -> String + Send + Sync>,
+    libraries: Vec<PathBuf>,
+    pc_libraries: Vec<String>,
     hotswap_enabled: bool,
 }
 
@@ -89,12 +96,15 @@ impl JITBuilder {
     ) -> Self {
         let symbols = HashMap::new();
         let lookup_symbols = vec![Box::new(lookup_with_dlsym) as Box<_>];
+
         Self {
             isa,
             symbols,
             lookup_symbols,
             libcall_names,
             hotswap_enabled: false,
+            libraries: Vec::new(),
+            pc_libraries: Vec::new(),
         }
     }
 
@@ -154,6 +164,31 @@ impl JITBuilder {
         self.hotswap_enabled = enabled;
         self
     }
+
+    /// Attach a library to this builder.
+    pub fn lib(&mut self, lib: impl AsRef<str>) -> &mut Self {
+        let lib = lib.as_ref();
+
+        if let Ok(_) = find_library(lib) {
+            self.lib_pc(lib)
+        } else if PathBuf::from(lib).exists() {
+            self.lib_path(lib)
+        } else {
+            self
+        }
+    }
+
+    /// Attach a library from a path to this builder.
+    pub fn lib_path(&mut self, lib: impl AsRef<str>) -> &mut Self {
+        self.libraries.push(PathBuf::from(lib.as_ref()));
+        self
+    }
+
+    /// Attach a library from pkg_config to this builder.
+    pub fn lib_pc(&mut self, lib: impl AsRef<str>) -> &mut Self {
+        self.pc_libraries.push(lib.as_ref().to_string());
+        self
+    }
 }
 
 /// A pending update to the GOT.
@@ -186,6 +221,7 @@ pub struct JITModule {
     compiled_data_objects: SecondaryMap<DataId, Option<CompiledBlob>>,
     functions_to_finalize: Vec<FuncId>,
     data_objects_to_finalize: Vec<DataId>,
+    lib_handles: Vec<*mut c_void>,
 
     /// Updates to the GOT awaiting relocations to be made and region protections to be set
     pending_got_updates: Vec<GotUpdate>,
@@ -211,21 +247,93 @@ impl JITModule {
         self.memory.code.free_memory();
         self.memory.readonly.free_memory();
         self.memory.writable.free_memory();
+
+        for handle in self.lib_handles {
+            dlclose(handle);
+        }
+    }
+
+    /// Add a library from a path
+    pub fn add_library_from_path(&mut self, path: impl Into<PathBuf>) {
+        let path = path.into();
+        let lib = path.as_os_str().to_str().unwrap();
+
+        if path.exists() {
+            unsafe {
+                self.lib_handles.push(dlopen(lib.as_ptr(), DLOPEN_FLAG));
+            }
+        }
+    }
+
+    /// Add a library from pkg_config
+    pub fn add_library_from_pkgconfig(&mut self, lib: String) {
+        let res = find_library(&lib);
+
+        if let Ok(item) = res {
+            for file in item {
+                unsafe {
+                    let handle = dlopen(file.as_os_str().to_str().unwrap().as_ptr(), DLOPEN_FLAG);
+
+                    self.lib_handles.push(handle);
+                }
+            }
+        }
     }
 
     pub fn lookup_symbol(&self, name: &str) -> Option<*const u8> {
         match self.symbols.borrow_mut().entry(name.to_owned()) {
             std::collections::hash_map::Entry::Occupied(occ) => Some(*occ.get()),
             std::collections::hash_map::Entry::Vacant(vac) => {
-                let ptr = self
+                if name.starts_with("__qsc::alias::") {
+                    let mut real_name = name.to_string();
+
+                    // Remove the "_[random]" 9 chars.
+                    for _ in 0..9 {
+                        real_name.pop();
+                    }
+
+                    let real_name = real_name.trim_start_matches("__qsc::alias::");
+
+                    let mut rptr = self
+                        .lookup_symbols
+                        .iter()
+                        .rev() // Try last lookup function first
+                        .find_map(|lookup| lookup(real_name));
+
+                    if let Some(ptr) = rptr {
+                        vac.insert(ptr);
+                    } else {
+                        for lib in &self.lib_handles {
+                            if let Some(ptr) = lookup_from_library(real_name, *lib) {
+                                vac.insert(ptr);
+                                rptr = Some(ptr);
+                                break;
+                            }
+                        }
+                    }
+
+                    return rptr;
+                }
+
+                let mut rptr = self
                     .lookup_symbols
                     .iter()
                     .rev() // Try last lookup function first
                     .find_map(|lookup| lookup(name));
-                if let Some(ptr) = ptr {
+
+                if let Some(ptr) = rptr {
                     vac.insert(ptr);
+                } else {
+                    for lib in &self.lib_handles {
+                        if let Some(ptr) = lookup_from_library(name, *lib) {
+                            vac.insert(ptr);
+                            rptr = Some(ptr);
+                            break;
+                        }
+                    }
                 }
-                ptr
+
+                rptr
             }
         }
     }
@@ -531,7 +639,16 @@ impl JITModule {
             functions_to_finalize: Vec::new(),
             data_objects_to_finalize: Vec::new(),
             pending_got_updates: Vec::new(),
+            lib_handles: Vec::new(),
         };
+
+        for lib in builder.libraries {
+            module.add_library_from_path(lib);
+        }
+
+        for lib in builder.pc_libraries {
+            module.add_library_from_pkgconfig(lib);
+        }
 
         // Pre-create a GOT and PLT entry for each libcall.
         let all_libcalls = if module.isa.flags().is_pic() {
@@ -580,6 +697,14 @@ impl JITModule {
         // FIXME return some kind of handle that allows for deallocating the function
 
         Ok(())
+    }
+
+    pub fn dlclose_all(self) {
+        for lib in self.lib_handles {
+            unsafe {
+                dlclose(lib);
+            }
+        }
     }
 }
 
@@ -952,6 +1077,20 @@ fn lookup_with_dlsym(name: &str) -> Option<*const u8> {
     let c_str = CString::new(name).unwrap();
     let c_str_ptr = c_str.as_ptr();
     let sym = unsafe { libc::dlsym(libc::RTLD_DEFAULT, c_str_ptr) };
+
+    if sym.is_null() {
+        None
+    } else {
+        Some(sym as *const u8)
+    }
+}
+
+#[cfg(not(windows))]
+fn lookup_from_library(name: &str, lib: *mut c_void) -> Option<*const u8> {
+    let c_str = CString::new(name).unwrap();
+    let c_str_ptr = c_str.as_ptr();
+    let sym = unsafe { libc::dlsym(lib, c_str_ptr) };
+
     if sym.is_null() {
         None
     } else {

@@ -38,7 +38,7 @@ ident_char = { 'a'..'z' | 'A'..'Z' | digit | "_" }
 
 // Operators
 binary_op = { unary_op ~ operator ~ unary_op }
-unary_op  = { (("+" | "-") ~ term) | term }
+unary_op  = { (("+" | "-") ~ term) | term | "(" ~ binary_op ~ ")" }
 
 operator = {
     "+"

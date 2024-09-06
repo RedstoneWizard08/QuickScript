@@ -27,7 +27,13 @@ pub struct JitGenerator {
 }
 
 impl JitGenerator {
-    pub fn new(triple: Triple, name: String, source: String, tree: AbstractTree) -> Result<Self> {
+    pub fn new(
+        triple: Triple,
+        name: String,
+        source: String,
+        tree: AbstractTree,
+        libs: Vec<String>,
+    ) -> Result<Self> {
         let mut flags = settings::builder();
 
         flags
@@ -45,6 +51,10 @@ impl JitGenerator {
         let mut builder = JITBuilder::with_isa(isa, default_libcall_names());
 
         builder.symbol_lookup_fn(lookup_symbol(Arc::clone(&map)));
+
+        for lib in libs {
+            builder.lib(lib);
+        }
 
         let module = JITModule::new(builder);
 
@@ -211,10 +221,16 @@ impl JitGenerator {
         debug!("Executing main function...");
 
         if let Some(main) = main {
-            Ok(main())
+            let res = main();
+
+            Ok(res)
         } else {
             Err(miette!("No main function found"))
         }
+    }
+
+    pub fn dlclose_all(self) {
+        RwLock::into_inner(self.ctx).module.dlclose_all();
     }
 }
 

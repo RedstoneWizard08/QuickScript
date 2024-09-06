@@ -1,3 +1,12 @@
+# v0.6.0
+
+Entirely rewrote the entire compilation backend!
+Added JIT support!
+Made a new CLI!
+Many debugging functions!
+Completely new lexer!
+More stable syntax!
+
 # v0.5.5
 
 Fixed `cranelift_object::backend` being shown in logs.
